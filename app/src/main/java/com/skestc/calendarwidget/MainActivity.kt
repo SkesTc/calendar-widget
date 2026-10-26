@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,6 +48,7 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.TimelineWidgetReceiver
 import com.skestc.calendarwidget.widget.WidgetUpdater
 import kotlinx.coroutines.launch
 
@@ -99,7 +101,8 @@ private fun HomeScreen() {
                 return@Column
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("加入桌面小工具", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = {
                         scope.launch {
@@ -109,7 +112,7 @@ private fun HomeScreen() {
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("加入行程清單")
+                    Text("行程清單", maxLines = 1)
                 }
                 Button(
                     onClick = {
@@ -120,7 +123,18 @@ private fun HomeScreen() {
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("加入月曆")
+                    Text("月曆", maxLines = 1)
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            GlanceAppWidgetManager(context)
+                                .requestPinGlanceAppWidget(TimelineWidgetReceiver::class.java)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("時間軸", maxLines = 1)
                 }
             }
             Text(
@@ -128,6 +142,10 @@ private fun HomeScreen() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+
+            if (calendars.isNotEmpty() && calendars.none { it.isHoliday }) {
+                HolidayHint()
+            }
 
             Text("已同步的日曆", style = MaterialTheme.typography.titleMedium)
             if (calendars.isEmpty()) {
@@ -165,6 +183,24 @@ private fun CalendarCard(calendar: CalendarInfo) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+/** 還沒訂閱「台灣的節慶假日」時，提示怎麼加，國定假日與補班日才會出現在 widget 上。 */
+@Composable
+private fun HolidayHint() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("顯示國定假日與補班日", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。" +
+                    "同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。",
+                style = MaterialTheme.typography.bodySmall,
+            )
         }
     }
 }

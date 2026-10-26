@@ -15,6 +15,7 @@ object WidgetUpdater {
         get() = listOf(
             AgendaWidget() to AgendaWidgetReceiver::class.java,
             MonthWidget() to MonthWidgetReceiver::class.java,
+            TimelineWidget() to TimelineWidgetReceiver::class.java,
         )
 
     /**

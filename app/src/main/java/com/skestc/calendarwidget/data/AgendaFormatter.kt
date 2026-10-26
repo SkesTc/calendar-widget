@@ -2,6 +2,7 @@ package com.skestc.calendarwidget.data
 
 import android.content.Context
 import android.text.format.DateFormat
+import com.skestc.calendarwidget.lunar.DayLabeler
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -14,7 +15,15 @@ import java.util.Locale
 sealed interface AgendaRow {
     val id: Long
 
-    data class Header(val date: LocalDate, val label: String) : AgendaRow {
+    /**
+     * [note] 是農曆、節氣與節慶假日名稱（例如「九月十七 · 光復節」）；[dayOff] 為 true 時標題用假日色。
+     */
+    data class Header(
+        val date: LocalDate,
+        val label: String,
+        val note: String? = null,
+        val dayOff: Boolean = false,
+    ) : AgendaRow {
         override val id: Long = -date.toEpochDay() - 1
     }
 
@@ -41,13 +50,32 @@ class AgendaFormatter(
         return maxOf(start, today)
     }
 
-    fun rows(events: List<CalendarEvent>, today: LocalDate = LocalDate.now(zone)): List<AgendaRow> =
+    /**
+     * 依日期分組。節慶假日不另外列一張卡片，而是併到當天標題的 note，
+     * 所以只有假日的日子也會出現（只有標題）。
+     */
+    fun rows(
+        events: List<CalendarEvent>,
+        today: LocalDate = LocalDate.now(zone),
+        labeler: DayLabeler? = null,
+    ): List<AgendaRow> =
         events
             .groupBy { displayDate(it, today) }
             .toSortedMap()
             .flatMap { (date, dayEvents) ->
-                listOf<AgendaRow>(AgendaRow.Header(date, dayLabel(date, today))) +
-                    dayEvents
+                val (holidays, regular) = dayEvents.partition { it.holiday != null }
+                val note = listOfNotNull(labeler?.labelOf(date)?.long)
+                    .plus(holidays.map { it.title })
+                    .joinToString(" · ")
+                    .ifEmpty { null }
+                val header = AgendaRow.Header(
+                    date = date,
+                    label = dayLabel(date, today),
+                    note = note,
+                    dayOff = holidays.any { it.holiday == HolidayKind.DAY_OFF },
+                )
+                listOf<AgendaRow>(header) +
+                    regular
                         .sortedWith(compareBy({ !it.allDay }, { it.begin }))
                         .map { AgendaRow.Event(it, timeLabel(it)) }
             }

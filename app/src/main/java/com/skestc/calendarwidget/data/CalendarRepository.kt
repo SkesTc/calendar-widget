@@ -29,6 +29,8 @@ class CalendarRepository(private val context: Context) {
             CalendarContract.Calendars.ACCOUNT_NAME,
             CalendarContract.Calendars.CALENDAR_COLOR,
             CalendarContract.Calendars.VISIBLE,
+            CalendarContract.Calendars.OWNER_ACCOUNT,
+            CalendarContract.Calendars.NAME,
         )
         context.contentResolver.query(
             CalendarContract.Calendars.CONTENT_URI,
@@ -46,6 +48,7 @@ class CalendarRepository(private val context: Context) {
                             accountName = c.getString(2).orEmpty(),
                             color = c.getInt(3),
                             visible = c.getInt(4) == 1,
+                            isHoliday = Holidays.isHolidayCalendar(c.getString(5), c.getString(6)),
                         )
                     )
                 }
@@ -96,7 +99,10 @@ class CalendarRepository(private val context: Context) {
             CalendarContract.Instances.DISPLAY_COLOR,
             CalendarContract.Instances.EVENT_LOCATION,
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
+            CalendarContract.Instances.CALENDAR_ID,
+            CalendarContract.Instances.DESCRIPTION,
         )
+        val holidayCalendarIds = holidayCalendarIds()
 
         var selection = "${CalendarContract.Instances.VISIBLE} = 1"
         if (hiddenCalendarIds.isNotEmpty()) {
@@ -114,18 +120,48 @@ class CalendarRepository(private val context: Context) {
         )?.use { c ->
             buildList {
                 while (c.moveToNext()) {
+                    val title = c.getString(1)?.takeIf { it.isNotBlank() } ?: "(無標題)"
+                    val calendarId = c.getLong(8)
                     add(
                         CalendarEvent(
                             eventId = c.getLong(0),
-                            title = c.getString(1)?.takeIf { it.isNotBlank() } ?: "(無標題)",
+                            title = title,
                             begin = c.getLong(2),
                             end = c.getLong(3),
                             allDay = c.getInt(4) == 1,
                             color = c.getInt(5),
                             location = c.getString(6)?.takeIf { it.isNotBlank() },
                             calendarName = c.getString(7).orEmpty(),
+                            calendarId = calendarId,
+                            holiday = if (calendarId in holidayCalendarIds) {
+                                Holidays.classify(title, c.getString(9))
+                            } else {
+                                null
+                            },
                         )
                     )
+                }
+            }
+        }.orEmpty()
+    }
+
+    /** 已訂閱的 Google 節慶假日日曆。 */
+    private fun holidayCalendarIds(): Set<Long> {
+        val projection = arrayOf(
+            CalendarContract.Calendars._ID,
+            CalendarContract.Calendars.OWNER_ACCOUNT,
+            CalendarContract.Calendars.NAME,
+        )
+        return context.contentResolver.query(
+            CalendarContract.Calendars.CONTENT_URI,
+            projection,
+            null,
+            null,
+            null,
+        )?.use { c ->
+            buildSet {
+                while (c.moveToNext()) {
+                    if (Holidays.isHolidayCalendar(c.getString(1), c.getString(2))) add(c.getLong(0))
                 }
             }
         }.orEmpty()

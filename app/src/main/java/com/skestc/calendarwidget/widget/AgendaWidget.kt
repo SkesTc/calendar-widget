@@ -45,6 +45,8 @@ import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.AgendaRow
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.lunar.DayLabeler
+import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
@@ -57,7 +59,13 @@ import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 private sealed interface AgendaState {
     data object NoPermission : AgendaState
-    data class Loaded(val today: LocalDate, val days: Int, val rows: List<AgendaRow>) : AgendaState
+    data class Loaded(
+        val today: LocalDate,
+        val days: Int,
+        val rows: List<AgendaRow>,
+        /** 標題下方的農曆日期（例如「九月十七 · 霜降」），關閉農曆時為 null。 */
+        val lunarToday: String?,
+    ) : AgendaState
 }
 
 /** 行程清單 widget：大字日期 + 依日期分組的事件清單，配色依每個 widget 的外觀設定。 */
@@ -103,7 +111,13 @@ class AgendaWidget : GlanceAppWidget() {
             limit = 100,
             hiddenCalendarIds = settings.hiddenCalendarIds,
         )
-        return AgendaState.Loaded(today, settings.agendaDays, AgendaFormatter(context).rows(events, today))
+        val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
+        return AgendaState.Loaded(
+            today = today,
+            days = settings.agendaDays,
+            rows = AgendaFormatter(context).rows(events, today, labeler),
+            lunarToday = labeler?.labelOf(today)?.long,
+        )
     }
 }
 
@@ -120,7 +134,7 @@ private fun AgendaContent(state: AgendaState) {
         when (state) {
             AgendaState.NoPermission -> PermissionPrompt()
             is AgendaState.Loaded -> {
-                DateHeader(state.today)
+                DateHeader(state.today, state.lunarToday)
                 Spacer(GlanceModifier.height(8.dp))
                 if (LocalSize.current.width < 180.dp) {
                     NextEventOnly(state.rows, state.days)
@@ -133,7 +147,7 @@ private fun AgendaContent(state: AgendaState) {
 }
 
 @Composable
-private fun DateHeader(today: LocalDate) {
+private fun DateHeader(today: LocalDate, lunar: String?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     Row(
@@ -151,7 +165,9 @@ private fun DateHeader(today: LocalDate) {
                 style = style.text(14, style.colors.onSurface, FontWeight.Medium),
             )
             Text(
-                text = DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today),
+                text = listOfNotNull(DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today), lunar)
+                    .joinToString(" · "),
+                maxLines = 1,
                 style = style.text(12, style.colors.onSurfaceVariant),
             )
         }
@@ -187,7 +203,7 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
         items(rows, itemId = { it.id }) { row ->
             when (row) {
-                is AgendaRow.Header -> DayHeaderRow(row.label)
+                is AgendaRow.Header -> DayHeaderRow(row)
                 is AgendaRow.Event -> EventRow(row.event, row.timeLabel)
             }
         }
@@ -201,12 +217,14 @@ private fun NextEventOnly(rows: List<AgendaRow>, days: Int) {
 }
 
 @Composable
-private fun DayHeaderRow(label: String) {
+private fun DayHeaderRow(header: AgendaRow.Header) {
     val style = LocalWidgetStyle.current
+    val color = if (header.dayOff) style.colors.sunday else style.colors.primary
     Text(
-        text = label,
+        text = listOfNotNull(header.label, header.note).joinToString(" · "),
+        maxLines = 1,
         modifier = GlanceModifier.padding(top = 6.dp, bottom = 4.dp),
-        style = style.text(12, style.colors.primary, FontWeight.Medium),
+        style = style.text(12, color, FontWeight.Medium),
     )
 }
 

@@ -123,4 +123,37 @@ class MonthBuilderTest {
         val data = builder().build(october, today, listOf(event))
         assertTrue(data.weeks.flatten().all { it.eventColors.isEmpty() })
     }
+
+    @Test
+    fun holidayEventsMarkTheDayInsteadOfAddingDots() {
+        val day = LocalDate.of(2026, 10, 10)
+        val events = listOf(
+            allDay(day, day, color = 9).copy(title = "國慶日", holiday = HolidayKind.DAY_OFF),
+            allDay(day, day, color = 7),
+        )
+        val cell = builder().build(october, today, events).cell(day)
+        assertEquals(listOf(7), cell.eventColors)
+        assertEquals(HolidayKind.DAY_OFF, cell.holiday)
+        assertEquals("國慶日", cell.label)
+    }
+
+    @Test
+    fun dayOffWinsOverObservanceOnTheSameDay() {
+        val day = LocalDate.of(2026, 10, 25)
+        val events = listOf(
+            allDay(day, day).copy(title = "某紀念日", holiday = HolidayKind.OBSERVANCE),
+            allDay(day, day).copy(title = "光復節", holiday = HolidayKind.DAY_OFF),
+        )
+        val cell = builder().build(october, today, events).cell(day)
+        assertEquals(HolidayKind.DAY_OFF, cell.holiday)
+        assertEquals("光復節", cell.label)
+    }
+
+    @Test
+    fun lunarLabelsAppearOnlyWhenLabelerGiven() {
+        val labeler = com.skestc.calendarwidget.lunar.DayLabeler { com.skestc.calendarwidget.lunar.LunarDate(9, 17, false) }
+        val day = LocalDate.of(2026, 10, 26)
+        assertEquals("十七", builder().build(october, today, emptyList(), labeler).cell(day).label)
+        assertEquals(null, builder().build(october, today, emptyList()).cell(day).label)
+    }
 }

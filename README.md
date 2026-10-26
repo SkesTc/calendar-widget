@@ -26,6 +26,13 @@
 
 > 限制：widget 不支援即時模糊，所以毛玻璃是用半透明漸層模擬的。Material You 主題的背景調成半透明時，換桌布後要等 widget 下次更新（最多 30 分鐘）才會跟上新顏色。
 
+### P3 進階 ✅（Google Tasks 待確認）
+- **今日時間軸 widget**：今天的行程依時間排成一列；已結束的變淡、進行中的放大並標示「進行中 · 到 15:00」、標出「現在」位置與一小時以上的空檔。行程開始或結束時自動更新（非喚醒鬧鐘，不耗電）
+- **農曆、節氣、傳統節日**：月曆格子顯示農曆小字（初一顯示月份）、二十四節氣、春節／元宵／端午／七夕／中元／中秋／重陽／臘八／除夕；行程清單與時間軸的標題也會顯示農曆日期。每個 widget 可以關閉
+  - 農曆用 Android 內建的 ICU `ChineseCalendar` 換算
+  - 節氣用太陽視黃經計算（Meeus 低精度公式，以東八區判定日期）
+- **台灣國定假日與補班**：讀取 Google 日曆的「台灣的節慶假日」（需要先在 Google 日曆訂閱）。放假日用紅字，補班日標「補班」，紀念日只標名稱。每年政府公布的放假日與補班日由 Google 更新，不必改 App
+
 ## 技術棧
 
 | 項目 | 選用 |
@@ -51,15 +58,22 @@ app/src/main/java/com/skestc/calendarwidget/
 │   ├── CalendarModels.kt          CalendarInfo / CalendarEvent
 │   ├── CalendarRepository.kt      查詢 Calendars 與 Instances 表
 │   ├── AgendaFormatter.kt         清單分組與日期／時間格式
-│   └── MonthBuilder.kt            把事件攤到月曆格子上
+│   ├── MonthBuilder.kt            把事件攤到月曆格子上
+│   ├── TimelineBuilder.kt         時間軸：狀態、現在位置、空檔
+│   └── Holidays.kt                辨識節慶假日日曆與放假／補班／紀念日
+├── lunar/
+│   ├── Lunar.kt                   農曆名稱、傳統節日、格子小字的優先順序
+│   ├── IcuLunarSource.kt          用 ICU ChineseCalendar 換算農曆
+│   └── SolarTerms.kt              二十四節氣（天文計算）
 ├── widget/
 │   ├── AgendaWidget.kt            行程清單 widget
 │   ├── MonthWidget.kt             月曆 widget
+│   ├── TimelineWidget.kt          今日時間軸 widget
 │   ├── ChangeMonthAction.kt       切換月份
 │   ├── WidgetData.kt              依 key 重新載入資料
 │   ├── WidgetUpdater.kt           更新全部 widget、管理背景排程
 │   ├── CalendarChangeWorker.kt    日曆有變動就更新
-│   ├── DayChangeScheduler.kt      午夜換日
+│   ├── DayChangeScheduler.kt      午夜換日、時間軸的行程邊界
 │   └── TimeChangeReceiver.kt      時區／時間／開機
 └── ui/theme/Theme.kt              Material You 主題
 ```
@@ -77,9 +91,10 @@ app/src/main/java/com/skestc/calendarwidget/
 
 ## 使用前提
 
-手機的「設定 → 帳戶 → Google → 帳戶同步」要開啟「Google 日曆」，事件才會出現在系統的 Calendar Provider 裡。
+- 手機的「設定 → 帳戶 → Google → 帳戶同步」要開啟「Google 日曆」，事件才會出現在系統的 Calendar Provider 裡。
+- 要顯示國定假日與補班日：在電腦版 Google 日曆「設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日」勾選「台灣的節慶假日」。
 
 ## 開發路線圖
 
-- **P3 進階**：時間軸 widget、農曆與節氣、台灣國定假日、Google Tasks
+- **Google Tasks**：需要 Google 登入（OAuth）與 Google Cloud 專案設定
 - **P4 上架**：各家桌面（One UI、MIUI、Pixel）相容性測試、Play 上架

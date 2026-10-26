@@ -34,6 +34,7 @@ import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -67,6 +68,8 @@ import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidget
 import com.skestc.calendarwidget.widget.MonthWidget
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.TimelineWidget
+import com.skestc.calendarwidget.widget.TimelineWidgetReceiver
 import com.skestc.calendarwidget.widget.WidgetUpdater
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -95,14 +98,22 @@ class WidgetConfigActivity : ComponentActivity() {
 
         val providerClass = AppWidgetManager.getInstance(this)
             .getAppWidgetInfo(appWidgetId)?.provider?.className
-        val isMonth = providerClass == MonthWidgetReceiver::class.java.name
-        val widget: GlanceAppWidget = if (isMonth) MonthWidget() else AgendaWidget()
+        val kind = when (providerClass) {
+            MonthWidgetReceiver::class.java.name -> WidgetKind.MONTH
+            TimelineWidgetReceiver::class.java.name -> WidgetKind.TIMELINE
+            else -> WidgetKind.AGENDA
+        }
+        val widget: GlanceAppWidget = when (kind) {
+            WidgetKind.AGENDA -> AgendaWidget()
+            WidgetKind.MONTH -> MonthWidget()
+            WidgetKind.TIMELINE -> TimelineWidget()
+        }
 
         enableEdgeToEdge()
         setContent {
             CalendarWidgetTheme {
                 ConfigScreen(
-                    isMonth = isMonth,
+                    kind = kind,
                     loadSettings = { glanceId -> loadSettings(glanceId) },
                     glanceId = { GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId) },
                     onSave = { glanceId, settings -> save(widget, glanceId, settings) },
@@ -125,6 +136,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetSettings.KEY_CORNER] = settings.appearance.cornerDp
                 prefs[WidgetSettings.KEY_TEXT_SCALE] = settings.appearance.textScalePercent
                 prefs[WidgetSettings.KEY_FONT] = settings.appearance.font.name
+                prefs[WidgetSettings.KEY_SHOW_LUNAR] = settings.showLunar
                 prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
             }
             widget.update(this@WidgetConfigActivity, glanceId)
@@ -140,7 +152,7 @@ class WidgetConfigActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ConfigScreen(
-    isMonth: Boolean,
+    kind: WidgetKind,
     loadSettings: suspend (GlanceId) -> WidgetSettings,
     glanceId: () -> GlanceId,
     onSave: (GlanceId, WidgetSettings) -> Unit,
@@ -169,7 +181,7 @@ private fun ConfigScreen(
         ) {
             WidgetPreview(
                 appearance = settings.appearance,
-                isMonth = isMonth,
+                kind = kind,
                 darkTheme = isSystemInDarkTheme(),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -237,7 +249,30 @@ private fun ConfigScreen(
                     }
                 }
 
-                if (!isMonth) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { settings = settings.copy(showLunar = !settings.showLunar) }
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text("顯示農曆、節氣與傳統節日", style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                "國定假日與補班日來自 Google 日曆的「台灣的節慶假日」",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = settings.showLunar,
+                            onCheckedChange = { settings = settings.copy(showLunar = it) },
+                        )
+                    }
+                }
+
+                if (kind == WidgetKind.AGENDA) {
                     item {
                         Section("顯示天數") {
                             Segmented(

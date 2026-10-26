@@ -41,6 +41,9 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.data.HolidayKind
+import com.skestc.calendarwidget.lunar.DayLabeler
+import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthData
@@ -103,7 +106,8 @@ class MonthWidget : GlanceAppWidget() {
         val start = range.start.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         val end = range.endInclusive.plusDays(2).atStartOfDay(zone).toInstant().toEpochMilli()
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
-        return MonthState.Loaded(builder.build(month, today, events), settings.monthOffset)
+        val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
+        return MonthState.Loaded(builder.build(month, today, events, labeler), settings.monthOffset)
     }
 }
 
@@ -120,7 +124,10 @@ private fun MonthContent(state: MonthState) {
         when (state) {
             MonthState.NoPermission -> PermissionPrompt()
             is MonthState.Loaded -> {
-                val compact = LocalSize.current.width < 250.dp
+                val size = LocalSize.current
+                val compact = size.width < 250.dp
+                // 格子夠高才放農曆／假日小字（約每格 40dp 以上）。
+                val showLabels = !compact && size.height >= 260.dp
                 MonthHeader(state.data.month, state.monthOffset)
                 WeekdayRow(state.data.firstDayOfWeek, compact)
                 for (week in state.data.weeks) {
@@ -130,6 +137,7 @@ private fun MonthContent(state: MonthState) {
                                 day = day,
                                 today = state.data.today,
                                 compact = compact,
+                                showLabel = showLabels,
                                 modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
                             )
                         }
@@ -212,14 +220,27 @@ private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean) {
 }
 
 @Composable
-private fun DayCellView(day: DayCell, today: LocalDate, compact: Boolean, modifier: GlanceModifier) {
+private fun DayCellView(
+    day: DayCell,
+    today: LocalDate,
+    compact: Boolean,
+    showLabel: Boolean,
+    modifier: GlanceModifier,
+) {
     val style = LocalWidgetStyle.current
     val isToday = day.date == today
-    val circle = if (compact) 22.dp else 28.dp
+    val circle = when {
+        compact -> 22.dp
+        showLabel -> 24.dp
+        else -> 28.dp
+    }
 
     val textColor = when {
         isToday -> style.colors.onPrimary
         !day.inMonth -> style.colors.outline
+        day.holiday == HolidayKind.DAY_OFF -> style.colors.sunday
+        // 補班日就算是週末也用一般顏色。
+        day.holiday == HolidayKind.MAKEUP_WORKDAY -> style.colors.onSurface
         else -> weekendColor(day.date.dayOfWeek) ?: style.colors.onSurface
     }
 
@@ -250,8 +271,29 @@ private fun DayCellView(day: DayCell, today: LocalDate, compact: Boolean, modifi
                 ),
             )
         }
+        if (showLabel) DayLabelText(day)
         EventDots(day.eventColors, dimmed = !day.inMonth)
     }
+}
+
+@Composable
+private fun DayLabelText(day: DayCell) {
+    val style = LocalWidgetStyle.current
+    val text = when (day.holiday) {
+        HolidayKind.MAKEUP_WORKDAY -> "補班"
+        else -> day.label
+    } ?: return
+    val color = when {
+        !day.inMonth -> style.colors.outline
+        day.holiday == HolidayKind.DAY_OFF -> style.colors.sunday
+        day.labelHighlighted -> style.colors.primary
+        else -> style.colors.onSurfaceVariant
+    }
+    Text(
+        text = text,
+        maxLines = 1,
+        style = style.text(9, color, align = TextAlign.Center),
+    )
 }
 
 @Composable

@@ -1,6 +1,7 @@
 package com.skestc.calendarwidget.settings
 
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
@@ -19,6 +20,8 @@ data class WidgetSettings(
     val monthOffset: Int = 0,
     val refresh: Long = 0,
     val appearance: Appearance = Appearance(),
+    /** 顯示農曆、節氣與傳統節日。 */
+    val showLunar: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_AGENDA_DAYS = 7
@@ -33,6 +36,7 @@ data class WidgetSettings(
         val KEY_CORNER = intPreferencesKey("corner_dp")
         val KEY_TEXT_SCALE = intPreferencesKey("text_scale_percent")
         val KEY_FONT = stringPreferencesKey("font")
+        val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
 
         fun from(prefs: Preferences) = WidgetSettings(
             hiddenCalendarIds = prefs[KEY_HIDDEN_CALENDARS].orEmpty()
@@ -48,6 +52,7 @@ data class WidgetSettings(
                 textScalePercent = prefs[KEY_TEXT_SCALE] ?: 100,
                 font = FontChoice.fromKey(prefs[KEY_FONT]),
             ),
+            showLunar = prefs[KEY_SHOW_LUNAR] ?: true,
         )
     }
 }

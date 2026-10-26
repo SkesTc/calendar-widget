@@ -1,5 +1,6 @@
 package com.skestc.calendarwidget.data
 
+import com.skestc.calendarwidget.lunar.DayLabeler
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -13,8 +14,14 @@ import java.util.Locale
 data class DayCell(
     val date: LocalDate,
     val inMonth: Boolean,
-    /** 當天事件的顏色（不重複，最多 [MonthBuilder.MAX_DOTS] 個）。 */
+    /** 當天事件的顏色（不重複，最多 [MonthBuilder.MAX_DOTS] 個），不含節慶假日。 */
     val eventColors: List<Int>,
+    /** 節慶假日日曆標示的類型；同一天有多個時，放假優先。 */
+    val holiday: HolidayKind? = null,
+    /** 格子裡的小字：假日名稱 > 傳統節日 > 節氣 > 農曆。 */
+    val label: String? = null,
+    /** 小字是假日、傳統節日或節氣（不是一般農曆日期），顯示時用強調色。 */
+    val labelHighlighted: Boolean = false,
 )
 
 data class MonthData(
@@ -39,24 +46,47 @@ class MonthBuilder(
         return start..end
     }
 
-    fun build(month: YearMonth, today: LocalDate, events: List<CalendarEvent>): MonthData {
+    /** [labeler] 為 null 時不顯示農曆／節氣／傳統節日（節慶假日日曆的名稱仍會顯示）。 */
+    fun build(
+        month: YearMonth,
+        today: LocalDate,
+        events: List<CalendarEvent>,
+        labeler: DayLabeler? = null,
+    ): MonthData {
         val range = gridRange(month)
         val colorsByDay = mutableMapOf<LocalDate, LinkedHashSet<Int>>()
+        val holidaysByDay = mutableMapOf<LocalDate, MutableList<CalendarEvent>>()
 
         for (event in events) {
             val (first, last) = dateSpan(event)
             var day = maxOf(first, range.start)
             val stop = minOf(last, range.endInclusive)
             while (day <= stop) {
-                val colors = colorsByDay.getOrPut(day) { LinkedHashSet() }
-                if (colors.size < MAX_DOTS) colors += event.color
+                if (event.holiday != null) {
+                    holidaysByDay.getOrPut(day) { mutableListOf() } += event
+                } else {
+                    val colors = colorsByDay.getOrPut(day) { LinkedHashSet() }
+                    if (colors.size < MAX_DOTS) colors += event.color
+                }
                 day = day.plusDays(1)
             }
         }
 
         val days = generateSequence(range.start) { it.plusDays(1) }
             .takeWhile { it <= range.endInclusive }
-            .map { DayCell(it, YearMonth.from(it) == month, colorsByDay[it]?.toList().orEmpty()) }
+            .map { date ->
+                // 放假 > 補班 > 紀念日。
+                val holiday = holidaysByDay[date]?.minByOrNull { it.holiday!!.ordinal }
+                val dayLabel = labeler?.labelOf(date)
+                DayCell(
+                    date = date,
+                    inMonth = YearMonth.from(date) == month,
+                    eventColors = colorsByDay[date]?.toList().orEmpty(),
+                    holiday = holiday?.holiday,
+                    label = holiday?.title ?: dayLabel?.short,
+                    labelHighlighted = holiday != null || dayLabel?.festival != null || dayLabel?.solarTerm != null,
+                )
+            }
             .toList()
 
         return MonthData(month, today, firstDayOfWeek, days.chunked(7))

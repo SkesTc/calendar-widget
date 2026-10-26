@@ -49,6 +49,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 
+enum class WidgetKind { AGENDA, MONTH, TIMELINE }
+
 private class PreviewPalette(
     val background: Color,
     val card: Color,
@@ -67,7 +69,7 @@ private class PreviewPalette(
  * 背後墊一張示意桌布，才看得出透明度與毛玻璃的效果。
  */
 @Composable
-fun WidgetPreview(appearance: Appearance, isMonth: Boolean, darkTheme: Boolean, modifier: Modifier = Modifier) {
+fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val dynamicSpec = remember { DynamicSpec.resolve(context) }
     val spec = ThemeSpecs.fixed(appearance.theme) ?: dynamicSpec
@@ -135,13 +137,13 @@ fun WidgetPreview(appearance: Appearance, isMonth: Boolean, darkTheme: Boolean, 
         Box(
             modifier = widgetModifier
                 .fillMaxWidth()
-                .height(if (isMonth) 260.dp else 190.dp)
+                .height(if (kind == WidgetKind.MONTH) 260.dp else 190.dp)
                 .padding(12.dp),
         ) {
-            if (isMonth) {
-                MonthPreview(palette, appearance, ::text)
-            } else {
-                AgendaPreview(palette, appearance, ::text)
+            when (kind) {
+                WidgetKind.AGENDA -> AgendaPreview(palette, appearance, ::text)
+                WidgetKind.MONTH -> MonthPreview(palette, appearance, ::text)
+                WidgetKind.TIMELINE -> TimelinePreview(palette, appearance, ::text)
             }
         }
     }
@@ -290,6 +292,60 @@ private fun MonthPreview(palette: PreviewPalette, appearance: Appearance, text: 
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun TimelinePreview(palette: PreviewPalette, appearance: Appearance, text: TextStyler) {
+    val cardShape = RoundedCornerShape(min((appearance.cornerDp / 2).dp, 12.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text("今天", style = text(16, palette.onSurface, FontWeight.Bold, null))
+        Spacer(Modifier.height(2.dp))
+        TimelinePreviewRow(palette, cardShape, text, "09:30", "晨會", "09:30 – 10:00", Color(0xFF4285F4), past = true)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("現在", Modifier.width(46.dp), style = text(12, palette.primary, FontWeight.Bold, null))
+            Box(Modifier.weight(1f).height(2.dp).background(palette.primary))
+        }
+        Text(
+            "空檔 2 小時",
+            Modifier.padding(start = 72.dp),
+            style = text(12, palette.onSurfaceVariant, FontWeight.Normal, null),
+        )
+        TimelinePreviewRow(palette, cardShape, text, "14:00", "專案討論", "14:00 – 15:00 · 線上", Color(0xFF0B8043), past = false)
+    }
+}
+
+@Composable
+private fun TimelinePreviewRow(
+    palette: PreviewPalette,
+    cardShape: RoundedCornerShape,
+    text: TextStyler,
+    time: String,
+    title: String,
+    detail: String,
+    dot: Color,
+    past: Boolean,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            time,
+            Modifier.width(46.dp),
+            style = text(12, if (past) palette.outline else palette.onSurface, FontWeight.Normal, null),
+        )
+        Box(Modifier.width(18.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(if (past) palette.outline else dot))
+        }
+        Column(
+            Modifier
+                .weight(1f)
+                .clip(cardShape)
+                .background(if (past) Color.Transparent else palette.card)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            val color = if (past) palette.outline else palette.onCard
+            Text(title, style = text(14, color, FontWeight.Medium, null))
+            Text(detail, style = text(12, color, FontWeight.Normal, null))
         }
     }
 }

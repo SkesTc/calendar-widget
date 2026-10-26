@@ -7,6 +7,8 @@ data class CalendarInfo(
     val accountName: String,
     val color: Int,
     val visible: Boolean,
+    /** Google「節慶假日」日曆。 */
+    val isHoliday: Boolean = false,
 )
 
 /**
@@ -22,4 +24,7 @@ data class CalendarEvent(
     val color: Int,
     val location: String?,
     val calendarName: String,
+    val calendarId: Long = 0,
+    /** 來自節慶假日日曆時才有值。 */
+    val holiday: HolidayKind? = null,
 )
