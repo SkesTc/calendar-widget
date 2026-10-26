@@ -65,7 +65,9 @@ Play Console → Store presence → Main store listing → Manage translations �
 
 ## App name (≤ 30)
 
-Calendar Widgets: Google Cal
+Calendar Widgets: Week & Month
+
+> 不要在名稱裡放「Google」：Play 的中繼資料政策可能視為冒用商標。說明文字裡提到「支援 Google 日曆」沒有問題。
 
 ## Short description (≤ 80)
 
