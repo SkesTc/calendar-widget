@@ -226,7 +226,9 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
 /** 同一天連續、未結束的行程連成一組卡片；已結束的行程沒有底色，會把組切開。 */
 internal fun segmentsOf(rows: List<AgendaRow>): List<Segment> {
     fun card(i: Int) = (rows.getOrNull(i) as? AgendaRow.Event)?.past == false
-    return rows.indices.map { Segment.of(hasPrevious = card(it - 1), hasNext = card(it + 1)) }
+    return rows.indices.map {
+        if (card(it)) Segment.of(hasPrevious = card(it - 1), hasNext = card(it + 1)) else Segment.SINGLE
+    }
 }
 
 @Composable
