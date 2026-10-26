@@ -43,6 +43,7 @@ import com.skestc.calendarwidget.theme.DayNight
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.ThemeSpecs
 import com.skestc.calendarwidget.theme.resolveCornerDp
+import com.skestc.calendarwidget.theme.specFor
 import com.skestc.calendarwidget.theme.WidgetThemeId
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -76,7 +77,7 @@ private class PreviewPalette(
 fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val dynamicSpec = remember { DynamicSpec.resolve(context) }
-    val spec = ThemeSpecs.fixed(appearance.theme) ?: dynamicSpec
+    val spec = specFor(appearance) ?: dynamicSpec
     fun DayNight.pick() = Color(if (darkTheme) night else day)
     val palette = PreviewPalette(
         background = spec.background.pick(),

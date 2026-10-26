@@ -34,7 +34,10 @@ enum class WidgetThemeId {
     AMOLED,
     MORANDI,
     JOURNAL,
-    GLASS;
+    GLASS,
+
+    /** 使用者自選主色與背景色，其餘顏色由 [CustomTheme.derive] 推算。 */
+    CUSTOM;
 
     /** 毛玻璃用半透明漸層圖片當背景，不套用背景透明度設定。 */
     val supportsOpacity: Boolean get() = this != GLASS
@@ -120,14 +123,85 @@ object ThemeSpecs {
         saturday = DayNight(0xFF1A5FC4, 0xFF9DC1FF),
     )
 
-    /** 固定配色的主題；Material You 要在執行時依桌布取色，所以回傳 null。 */
+    /**
+     * 固定配色的主題。Material You 要在執行時依桌布取色、自訂主題要看使用者選的顏色
+     * （[CustomTheme.derive]），所以這兩個回傳 null。
+     */
     fun fixed(id: WidgetThemeId): ThemeSpec? = when (id) {
-        WidgetThemeId.DYNAMIC -> null
+        WidgetThemeId.DYNAMIC, WidgetThemeId.CUSTOM -> null
         WidgetThemeId.AMOLED -> AMOLED
         WidgetThemeId.MORANDI -> MORANDI
         WidgetThemeId.JOURNAL -> JOURNAL
         WidgetThemeId.GLASS -> GLASS
     }
+}
+
+/**
+ * 自訂主題：只讓使用者選主色和背景色，其他顏色自動推算，
+ * 而且保證和 [ThemeSpecs] 內建主題一樣的對比度（內文 4.5:1、強調色 3:1）。
+ */
+object CustomTheme {
+    const val DEFAULT_PRIMARY = 0xFF1A73E8
+    const val DEFAULT_BACKGROUND = 0xFFFFFFFF
+
+    private const val SOFT_DARK = 0xFF1B1C1F
+    private const val SOFT_LIGHT = 0xFFF1F3F4
+    private const val BLACK = 0xFF000000
+    private const val WHITE = 0xFFFFFFFF
+
+    fun derive(primary: Long, background: Long): ThemeSpec {
+        val bg = opaque(background)
+        val onSurface = readableOn(bg)
+        val onSurfaceVariant = listOf(0.72, 0.85)
+            .map { mix(onSurface, bg, it) }
+            .firstOrNull { Contrast.ratio(it, bg) >= 4.5 } ?: onSurface
+        val accent = ensureContrast(opaque(primary), bg, onSurface, 3.0)
+        val card = mix(accent, bg, 0.14)
+        return ThemeSpec(
+            background = DayNight(bg),
+            card = DayNight(card),
+            onCard = DayNight(readableOn(card)),
+            primary = DayNight(accent),
+            onPrimary = DayNight(readableOn(accent)),
+            onSurface = DayNight(onSurface),
+            onSurfaceVariant = DayNight(onSurfaceVariant),
+            outline = DayNight(mix(onSurface, bg, 0.45)),
+            sunday = DayNight(pickAccent(listOf(0xFFC5221F, 0xFFFF8A80), bg, onSurface)),
+            saturday = DayNight(pickAccent(listOf(0xFF1A5FC4, 0xFF9DC1FF), bg, onSurface)),
+        )
+    }
+
+    /**
+     * 在 [background] 上看得清楚的文字色：優先用柔和的深灰／淺灰，不夠時用純黑／純白。
+     * 任何顏色和純黑或純白之一的對比度至少 4.58:1，所以一定找得到。
+     */
+    fun readableOn(background: Long): Long {
+        val dark = if (Contrast.ratio(SOFT_DARK, background) >= 4.5) SOFT_DARK else BLACK
+        val light = if (Contrast.ratio(SOFT_LIGHT, background) >= 4.5) SOFT_LIGHT else WHITE
+        return if (Contrast.ratio(dark, background) >= Contrast.ratio(light, background)) dark else light
+    }
+
+    /** 把 [color] 慢慢往 [toward]（文字色）混，直到和背景的對比度達到 [min]。 */
+    private fun ensureContrast(color: Long, background: Long, toward: Long, min: Double): Long {
+        var amount = 0.0
+        var result = color
+        while (Contrast.ratio(result, background) < min && amount < 1.0) {
+            amount = minOf(1.0, amount + 0.05)
+            result = mix(toward, color, amount)
+        }
+        return result
+    }
+
+    private fun pickAccent(candidates: List<Long>, background: Long, toward: Long): Long =
+        ensureContrast(candidates.maxBy { Contrast.ratio(it, background) }, background, toward, 3.0)
+
+    /** [top] 以 [amount]（0～1）的比例疊在 [bottom] 上，結果不透明。 */
+    fun mix(top: Long, bottom: Long, amount: Double): Long {
+        val alpha = Math.round(amount.coerceIn(0.0, 1.0) * 255)
+        return Contrast.composite((alpha shl 24) or (top and 0xFFFFFF), opaque(bottom))
+    }
+
+    private fun opaque(color: Long): Long = 0xFF000000 or (color and 0xFFFFFF)
 }
 
 /** WCAG 2.x 對比度計算。 */

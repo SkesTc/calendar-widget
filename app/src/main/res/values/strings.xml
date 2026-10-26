@@ -46,6 +46,14 @@
     <string name="theme_morandi">Morandi</string>
     <string name="theme_journal">Journal</string>
     <string name="theme_glass">Frosted glass</string>
+    <string name="theme_custom">Custom</string>
+    <string name="section_custom_colors">Custom colors</string>
+    <string name="custom_target_accent">Accent</string>
+    <string name="custom_target_background">Background</string>
+    <string name="custom_hue">Hue</string>
+    <string name="custom_saturation">Saturation</string>
+    <string name="custom_lightness">Lightness</string>
+    <string name="custom_contrast_note">Text colors adjust automatically so everything stays readable.</string>
     <string name="font_theme">Theme</string>
     <string name="font_sans">Sans</string>
     <string name="font_serif">Serif</string>

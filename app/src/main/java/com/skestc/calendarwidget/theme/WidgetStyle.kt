@@ -74,7 +74,7 @@ val LocalWidgetStyle = staticCompositionLocalOf<WidgetStyle> {
 @Composable
 fun ProvideWidgetStyle(appearance: Appearance, content: @Composable () -> Unit) {
     val context = LocalContext.current
-    val spec = ThemeSpecs.fixed(appearance.theme)
+    val spec = specFor(appearance)
     val colors = if (spec == null) dynamicColors(context, appearance) else fixedColors(spec, appearance)
     val serif = appearance.font == FontChoice.SERIF ||
         (appearance.font == FontChoice.THEME && spec?.serifByDefault == true)
@@ -102,6 +102,12 @@ fun resolveCornerDp(context: Context, cornerDp: Int): Float {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return 16f
     val res = context.resources
     return res.getDimension(android.R.dimen.system_app_widget_background_radius) / res.displayMetrics.density
+}
+
+/** 主題的配色；Material You 要在 Glance 裡用資源色，回傳 null。 */
+fun specFor(appearance: Appearance): ThemeSpec? = when (appearance.theme) {
+    WidgetThemeId.CUSTOM -> CustomTheme.derive(appearance.customPrimary, appearance.customBackground)
+    else -> ThemeSpecs.fixed(appearance.theme)
 }
 
 /** widget 外框背景：毛玻璃用圖片，其他用顏色，再套上圓角。 */

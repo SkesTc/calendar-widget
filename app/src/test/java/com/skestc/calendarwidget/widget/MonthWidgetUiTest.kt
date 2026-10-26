@@ -7,6 +7,8 @@ import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.MonthBuilder
+import com.skestc.calendarwidget.settings.Appearance
+import com.skestc.calendarwidget.theme.WidgetThemeId
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
 import com.skestc.calendarwidget.widget.WidgetFixtures.context
 import com.skestc.calendarwidget.widget.WidgetFixtures.labeler
@@ -62,6 +64,16 @@ class MonthWidgetUiTest {
         provideComposable { WidgetFrame { MonthContent(october()) } }
         onNode(hasTextEqualTo("國慶日")).assertDoesNotExist()
         onNode(hasTextEqualTo("十七")).assertDoesNotExist()
+        onNode(hasTextEqualTo("31")).assertExists()
+    }
+
+    @Test
+    fun customThemeRenders() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 320.dp))
+        val appearance = Appearance(theme = WidgetThemeId.CUSTOM, customPrimary = 0xFFE67C73, customBackground = 0xFF1B2A41)
+        provideComposable { WidgetFrame(appearance) { MonthContent(october()) } }
+        onNode(hasTextEqualTo("國慶日")).assertExists()
         onNode(hasTextEqualTo("31")).assertExists()
     }
 

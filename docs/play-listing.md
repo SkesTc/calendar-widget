@@ -20,7 +20,7 @@
 • 下一個行程：2×1 極簡小卡，放在時鐘旁邊剛剛好
 
 🎨 美化你的桌面
-• 5 種主題：Material You（跟著桌布變色）、AMOLED 純黑、莫蘭迪、手帳、毛玻璃
+• 6 種主題：Material You（跟著桌布變色）、AMOLED 純黑、莫蘭迪、手帳、毛玻璃，以及自選顏色的「自訂」主題（自動確保文字看得清楚）
 • 可以調整背景透明度、圓角、文字大小與字型
 • 設定時有即時預覽，調到喜歡為止
 • 每個小工具可以分開設定，例如工作用和家庭用各放一個
@@ -85,7 +85,7 @@ Put your Google Calendar on your home screen and see your day at a glance.
 • Next event — a tiny 2×1 card that sits nicely next to your clock
 
 🎨 Make it yours
-• Five themes: Material You (follows your wallpaper), AMOLED black, Morandi, Journal, Frosted glass
+• Six themes: Material You (follows your wallpaper), AMOLED black, Morandi, Journal, Frosted glass, plus a Custom theme in your own colors that always stays readable
 • Adjust background opacity, corners, text size and font
 • Live preview while you tweak, and separate settings for every widget
 

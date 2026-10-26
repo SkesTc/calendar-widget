@@ -64,7 +64,7 @@ import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.DynamicSpec
-import com.skestc.calendarwidget.theme.ThemeSpecs
+import com.skestc.calendarwidget.theme.specFor
 import com.skestc.calendarwidget.theme.WidgetThemeId
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidget
@@ -146,6 +146,8 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetSettings.KEY_CORNER] = settings.appearance.cornerDp
                 prefs[WidgetSettings.KEY_TEXT_SCALE] = settings.appearance.textScalePercent
                 prefs[WidgetSettings.KEY_FONT] = settings.appearance.font.name
+                prefs[WidgetSettings.KEY_CUSTOM_PRIMARY] = settings.appearance.customPrimary.toInt()
+                prefs[WidgetSettings.KEY_CUSTOM_BACKGROUND] = settings.appearance.customBackground.toInt()
                 prefs[WidgetSettings.KEY_SHOW_LUNAR] = settings.showLunar
                 prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
             }
@@ -207,9 +209,23 @@ private fun ConfigScreen(
                 item {
                     Section(stringResource(R.string.section_theme)) {
                         ThemePicker(
-                            selected = settings.appearance.theme,
+                            appearance = settings.appearance,
                             onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
                         )
+                    }
+                }
+
+                if (settings.appearance.theme == WidgetThemeId.CUSTOM) {
+                    item {
+                        Section(stringResource(R.string.section_custom_colors)) {
+                            CustomColorEditor(
+                                primary = settings.appearance.customPrimary,
+                                background = settings.appearance.customBackground,
+                                onChange = { primary, background ->
+                                    updateAppearance { it.copy(customPrimary = primary, customBackground = background) }
+                                },
+                            )
+                        }
                     }
                 }
 
@@ -345,16 +361,18 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 
 /** 每個主題一顆色票：背景色＋主色圓點，下面是名稱。 */
 @Composable
-private fun ThemePicker(selected: WidgetThemeId, onSelect: (WidgetThemeId) -> Unit) {
+private fun ThemePicker(appearance: Appearance, onSelect: (WidgetThemeId) -> Unit) {
     val context = LocalContext.current
     val dynamic = remember { DynamicSpec.resolve(context) }
     val dark = isSystemInDarkTheme()
+    val selected = appearance.theme
     LazyRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
         items(WidgetThemeId.entries) { theme ->
-            val spec = ThemeSpecs.fixed(theme) ?: dynamic
+            // 自訂主題的色票顯示目前選的顏色。
+            val spec = specFor(appearance.copy(theme = theme)) ?: dynamic
             val bg = Color(if (dark) spec.background.night else spec.background.day)
             val primary = Color(if (dark) spec.primary.night else spec.primary.day)
             val isSelected = theme == selected
@@ -443,6 +461,7 @@ private val WidgetThemeId.labelRes: Int
         WidgetThemeId.MORANDI -> R.string.theme_morandi
         WidgetThemeId.JOURNAL -> R.string.theme_journal
         WidgetThemeId.GLASS -> R.string.theme_glass
+        WidgetThemeId.CUSTOM -> R.string.theme_custom
     }
 
 private val FontChoice.labelRes: Int

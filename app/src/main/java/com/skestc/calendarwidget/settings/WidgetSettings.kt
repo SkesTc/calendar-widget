@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.skestc.calendarwidget.theme.CustomTheme
 import com.skestc.calendarwidget.theme.WidgetThemeId
 import java.util.Locale
 
@@ -37,6 +38,8 @@ data class WidgetSettings(
         val KEY_CORNER = intPreferencesKey("corner_dp")
         val KEY_TEXT_SCALE = intPreferencesKey("text_scale_percent")
         val KEY_FONT = stringPreferencesKey("font")
+        val KEY_CUSTOM_PRIMARY = intPreferencesKey("custom_primary")
+        val KEY_CUSTOM_BACKGROUND = intPreferencesKey("custom_background")
         val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
 
         fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
@@ -54,6 +57,8 @@ data class WidgetSettings(
                 cornerDp = prefs[KEY_CORNER] ?: Appearance.DEFAULT_CORNER,
                 textScalePercent = prefs[KEY_TEXT_SCALE] ?: 100,
                 font = FontChoice.fromKey(prefs[KEY_FONT]),
+                customPrimary = prefs[KEY_CUSTOM_PRIMARY]?.toArgbLong() ?: CustomTheme.DEFAULT_PRIMARY,
+                customBackground = prefs[KEY_CUSTOM_BACKGROUND]?.toArgbLong() ?: CustomTheme.DEFAULT_BACKGROUND,
             ),
             showLunar = prefs[KEY_SHOW_LUNAR] ?: defaultShowLunar(),
         )
@@ -81,6 +86,9 @@ data class Appearance(
     val cornerDp: Int = DEFAULT_CORNER,
     val textScalePercent: Int = 100,
     val font: FontChoice = FontChoice.THEME,
+    /** 自訂主題的主色與背景色（ARGB）；其他主題不會用到。 */
+    val customPrimary: Long = CustomTheme.DEFAULT_PRIMARY,
+    val customBackground: Long = CustomTheme.DEFAULT_BACKGROUND,
 ) {
     companion object {
         const val SYSTEM_CORNER = -1
@@ -90,3 +98,6 @@ data class Appearance(
         val TEXT_SCALE_OPTIONS = listOf(90, 100, 115, 130)
     }
 }
+
+/** Preferences 只能存 Int；轉回不帶正負號的 ARGB Long。 */
+private fun Int.toArgbLong(): Long = toLong() and 0xFFFFFFFFL

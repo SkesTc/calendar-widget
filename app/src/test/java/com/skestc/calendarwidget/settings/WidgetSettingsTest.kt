@@ -45,6 +45,27 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun customColorsSurviveTheIntRoundTrip() {
+        // Preferences 存 Int：大於 0x7FFFFFFF 的 ARGB 會變成負數，讀回時要還原。
+        val prefs = mutablePreferencesOf(
+            WidgetSettings.KEY_THEME to "CUSTOM",
+            WidgetSettings.KEY_CUSTOM_PRIMARY to 0xFFE67C73.toInt(),
+            WidgetSettings.KEY_CUSTOM_BACKGROUND to 0xFF1B2A41.toInt(),
+        )
+        val appearance = WidgetSettings.from(prefs).appearance
+        assertEquals(WidgetThemeId.CUSTOM, appearance.theme)
+        assertEquals(0xFFE67C73, appearance.customPrimary)
+        assertEquals(0xFF1B2A41, appearance.customBackground)
+    }
+
+    @Test
+    fun customColorsDefaultToGoogleBlueOnWhite() {
+        val appearance = WidgetSettings.from(emptyPreferences()).appearance
+        assertEquals(0xFF1A73E8, appearance.customPrimary)
+        assertEquals(0xFFFFFFFF, appearance.customBackground)
+    }
+
+    @Test
     fun invalidValuesFallBackSafely() {
         val prefs = mutablePreferencesOf(
             WidgetSettings.KEY_THEME to "REMOVED_THEME",
