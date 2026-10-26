@@ -10,8 +10,10 @@ import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.theme.WidgetThemeId
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
+import com.skestc.calendarwidget.widget.WidgetFixtures.at
 import com.skestc.calendarwidget.widget.WidgetFixtures.context
 import com.skestc.calendarwidget.widget.WidgetFixtures.labeler
+import com.skestc.calendarwidget.widget.WidgetFixtures.timed
 import com.skestc.calendarwidget.widget.WidgetFixtures.today
 import org.junit.Before
 import org.junit.Test
@@ -65,6 +67,41 @@ class MonthWidgetUiTest {
         onNode(hasTextEqualTo("國慶日")).assertDoesNotExist()
         onNode(hasTextEqualTo("十七")).assertDoesNotExist()
         onNode(hasTextEqualTo("31")).assertExists()
+    }
+
+    @Test
+    fun tallMonthShowsSelectedDayEvents() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 420.dp))
+        val selected = LocalDate.of(2026, 10, 28)
+        val state = (october() as MonthState.Loaded).copy(
+            selected = selected,
+            selectedEvents = listOf(
+                timed(1, "牙醫", at(15, date = selected), at(16, date = selected)),
+                allDay(2, "旅行", selected),
+            ),
+        )
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasText("牙醫")).assertExists()
+        onNode(hasText("旅行")).assertExists()
+        onNode(hasText("10月28日")).assertExists()
+        onNode(hasTextEqualTo("開啟 ›")).assertExists()
+    }
+
+    @Test
+    fun selectedDayWithoutEventsSaysSo() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 420.dp))
+        provideComposable { WidgetFrame { MonthContent(october()) } }
+        onNode(hasTextEqualTo("沒有行程")).assertExists()
+    }
+
+    @Test
+    fun shorterMonthHasNoDayPanel() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 320.dp))
+        provideComposable { WidgetFrame { MonthContent(october()) } }
+        onNode(hasTextEqualTo("開啟 ›")).assertDoesNotExist()
     }
 
     @Test

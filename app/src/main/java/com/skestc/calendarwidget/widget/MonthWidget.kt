@@ -1,5 +1,6 @@
 package com.skestc.calendarwidget.widget
 
+import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
 import android.provider.CalendarContract
@@ -12,6 +13,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.clickable
@@ -41,6 +43,7 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.R
+import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.lunar.DayLabeler
@@ -57,6 +60,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Date
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
@@ -64,7 +68,13 @@ import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface MonthState {
     data object NoPermission : MonthState
-    data class Loaded(val data: MonthData, val monthOffset: Int) : MonthState
+    data class Loaded(
+        val data: MonthData,
+        val monthOffset: Int,
+        /** 選取的日期與當天行程，顯示在月曆下方（widget 夠高時）。 */
+        val selected: LocalDate = data.today,
+        val selectedEvents: List<CalendarEvent> = emptyList(),
+    ) : MonthState
 }
 
 /** 月曆 widget：有事件的日子會打上日曆顏色的小圓點，可以切換月份；配色依外觀設定。 */
@@ -109,7 +119,13 @@ class MonthWidget : GlanceAppWidget() {
         val end = range.endInclusive.plusDays(2).atStartOfDay(zone).toInstant().toEpochMilli()
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
-        return MonthState.Loaded(builder.build(month, today, events, labeler), settings.monthOffset)
+        val selected = builder.selectedDate(month, today, settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
+        return MonthState.Loaded(
+            data = builder.build(month, today, events, labeler),
+            monthOffset = settings.monthOffset,
+            selected = selected,
+            selectedEvents = builder.eventsOn(events, selected),
+        )
     }
 }
 
@@ -130,6 +146,8 @@ internal fun MonthContent(state: MonthState) {
                 val compact = size.width < 250.dp
                 // 格子夠高才放農曆／假日小字（約每格 40dp 以上）。
                 val showLabels = !compact && size.height >= 260.dp
+                // 再高一點（約 4×5 以上）時，點日期改成在下方列出當天行程。
+                val showDayPanel = !compact && size.height >= 380.dp
                 MonthHeader(state.data.month, state.monthOffset)
                 WeekdayRow(state.data.firstDayOfWeek, compact)
                 for (week in state.data.weeks) {
@@ -140,11 +158,14 @@ internal fun MonthContent(state: MonthState) {
                                 today = state.data.today,
                                 compact = compact,
                                 showLabel = showLabels,
+                                selected = showDayPanel && day.date == state.selected,
+                                selectInWidget = showDayPanel,
                                 modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
                             )
                         }
                     }
                 }
+                if (showDayPanel) DayPanel(state.selected, state.selectedEvents)
             }
         }
     }
@@ -227,6 +248,8 @@ private fun DayCellView(
     today: LocalDate,
     compact: Boolean,
     showLabel: Boolean,
+    selected: Boolean,
+    selectInWidget: Boolean,
     modifier: GlanceModifier,
 ) {
     val style = LocalWidgetStyle.current
@@ -247,7 +270,13 @@ private fun DayCellView(
     }
 
     Column(
-        modifier = modifier.clickable(actionStartIntent(openDayIntent(day.date))),
+        modifier = modifier.clickable(
+            if (selectInWidget) {
+                actionRunCallback<SelectDayAction>(actionParametersOf(SelectDayAction.EpochDayKey to day.date.toEpochDay()))
+            } else {
+                actionStartIntent(openDayIntent(day.date))
+            },
+        ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -255,10 +284,11 @@ private fun DayCellView(
             modifier = GlanceModifier
                 .size(circle)
                 .then(
-                    if (isToday) {
-                        GlanceModifier.background(style.colors.primary).cornerRadius(circle / 2)
-                    } else {
-                        GlanceModifier
+                    when {
+                        isToday -> GlanceModifier.background(style.colors.primary).cornerRadius(circle / 2)
+                        // 選取的（非今天）日期用卡片色圓底標示。
+                        selected -> GlanceModifier.background(style.colors.card).cornerRadius(circle / 2)
+                        else -> GlanceModifier
                     },
                 ),
             contentAlignment = Alignment.Center,
@@ -317,6 +347,66 @@ private fun EventDots(colors: List<Int>, dimmed: Boolean) {
                     .background(ColorProvider(dotColor))
                     .cornerRadius(3.dp),
             ) {}
+        }
+    }
+}
+
+/** 月曆下方：選取那天的日期與最多 3 筆行程；點行程開啟該事件、點標題開啟那一天。 */
+@Composable
+private fun DayPanel(date: LocalDate, events: List<CalendarEvent>) {
+    val style = LocalWidgetStyle.current
+    val locale = Locale.getDefault()
+    val title = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(date)
+    Column(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .padding(top = 6.dp)
+            .background(style.colors.card)
+            .cornerRadius(style.cardCorner)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Row(
+            modifier = GlanceModifier.fillMaxWidth().clickable(actionStartIntent(openDayIntent(date))),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                modifier = GlanceModifier.defaultWeight(),
+                style = style.text(12, style.colors.onCard, FontWeight.Bold),
+            )
+            Text(
+                text = glanceString(R.string.month_open_day),
+                style = style.text(11, style.colors.onCard),
+            )
+        }
+        if (events.isEmpty()) {
+            Text(text = glanceString(R.string.month_day_empty), style = style.text(12, style.colors.onCard))
+        }
+        val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
+        for (event in events.take(3)) {
+            val openEvent = Intent(
+                Intent.ACTION_VIEW,
+                ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),
+            ).putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
+            Row(
+                modifier = GlanceModifier.fillMaxWidth().padding(top = 2.dp).clickable(actionStartIntent(openEvent)),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = GlanceModifier.size(6.dp).background(ColorProvider(Color(event.color))).cornerRadius(3.dp),
+                ) {}
+                Text(
+                    text = (if (event.allDay) glanceString(R.string.all_day) else timeFormat.format(Date(event.begin))) +
+                        "  " + event.title,
+                    maxLines = 1,
+                    modifier = GlanceModifier.padding(start = 6.dp),
+                    style = style.text(12, style.colors.onCard),
+                )
+            }
+        }
+        if (events.size > 3) {
+            Text(text = "+${events.size - 3}", style = style.text(11, style.colors.onCard))
         }
     }
 }

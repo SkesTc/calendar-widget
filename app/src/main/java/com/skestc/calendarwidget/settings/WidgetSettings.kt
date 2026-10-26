@@ -20,6 +20,8 @@ data class WidgetSettings(
     val hiddenCalendarIds: Set<Long> = emptySet(),
     val agendaDays: Int = DEFAULT_AGENDA_DAYS,
     val monthOffset: Int = 0,
+    /** 月曆上點選的日期（epoch day），null 表示沒點過。 */
+    val selectedEpochDay: Long? = null,
     val refresh: Long = 0,
     val appearance: Appearance = Appearance(),
     /** 顯示農曆、節氣與傳統節日；預設只在中文介面開啟。 */
@@ -32,6 +34,7 @@ data class WidgetSettings(
         val KEY_HIDDEN_CALENDARS = stringSetPreferencesKey("hidden_calendars")
         val KEY_AGENDA_DAYS = intPreferencesKey("agenda_days")
         val KEY_MONTH_OFFSET = intPreferencesKey("month_offset")
+        val KEY_SELECTED_DAY = longPreferencesKey("selected_day")
         val KEY_REFRESH = longPreferencesKey("refresh")
         val KEY_THEME = stringPreferencesKey("theme")
         val KEY_BG_OPACITY = intPreferencesKey("bg_opacity")
@@ -50,6 +53,7 @@ data class WidgetSettings(
                 .toSet(),
             agendaDays = prefs[KEY_AGENDA_DAYS] ?: DEFAULT_AGENDA_DAYS,
             monthOffset = prefs[KEY_MONTH_OFFSET] ?: 0,
+            selectedEpochDay = prefs[KEY_SELECTED_DAY],
             refresh = prefs[KEY_REFRESH] ?: 0,
             appearance = Appearance(
                 theme = WidgetThemeId.fromKey(prefs[KEY_THEME]),

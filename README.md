@@ -69,6 +69,11 @@
 - 其他顏色由 `CustomTheme.derive` 自動推算：文字用深色或淺色中對比較高的、主色太接近背景時自動加深或調亮、卡片用主色淡淡地疊在背景上
 - 單元測試掃過 46,656 種主色 × 背景組合，全部符合 WCAG 對比度（內文 4.5:1、強調色 3:1）
 
+### 月曆點日期看行程 ✅
+- 月曆 widget 拉到約 4×5 以上時，下方會列出選取日期的行程（預設今天，最多 3 筆，其餘顯示「+N」）
+- 點日期切換選取，選取的日期用卡片色圓底標示；點行程開啟該事件，點「開啟 ›」在日曆中開啟那一天
+- 比較矮時維持原本的行為：點日期直接開啟 Google 日曆；切換月份時清除選取
+
 ## 技術棧
 
 | 項目 | 選用 |
@@ -109,6 +114,7 @@ app/src/main/java/com/skestc/calendarwidget/
 │   ├── NextEventWidget.kt         下一個行程 widget
 │   ├── WeekWidget.kt              一週 widget
 │   ├── ChangeMonthAction.kt       切換月份
+│   ├── SelectDayAction.kt         月曆上點選日期
 │   ├── WidgetData.kt              依 key 重新載入資料
 │   ├── WidgetUpdater.kt           更新全部 widget、管理背景排程
 │   ├── CalendarChangeWorker.kt    日曆有變動就更新

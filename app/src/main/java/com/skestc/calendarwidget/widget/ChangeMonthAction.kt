@@ -14,6 +14,8 @@ class ChangeMonthAction : ActionCallback {
         updateAppWidgetState(context, glanceId) { prefs ->
             prefs[WidgetSettings.KEY_MONTH_OFFSET] =
                 if (delta == 0) 0 else (prefs[WidgetSettings.KEY_MONTH_OFFSET] ?: 0) + delta
+            // 換月份時清掉選取的日期，改選今天或該月 1 號。
+            prefs.remove(WidgetSettings.KEY_SELECTED_DAY)
         }
         MonthWidget().update(context, glanceId)
     }

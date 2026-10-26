@@ -82,6 +82,8 @@ S = [
  ("tap_to_grant", "Tap to allow calendar access", "點此授權讀取日曆"),
  ("back_to_this_month", "↩", "今"),
  ("makeup_workday", "Work", "補班"),
+ ("month_open_day", "Open ›", "開啟 ›"),
+ ("month_day_empty", "No events", "沒有行程"),
  ("in_progress_until", "Now · until %1$s", "進行中 · 到 %1$s"),
  ("next_empty", "No events in the next 7 days", "接下來 7 天沒有行程"),
  ("timeline_all_day", "All day: %1$s", "全天：%1$s"),

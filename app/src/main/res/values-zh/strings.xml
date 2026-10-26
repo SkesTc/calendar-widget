@@ -75,6 +75,8 @@
     <string name="tap_to_grant">點此授權讀取日曆</string>
     <string name="back_to_this_month">今</string>
     <string name="makeup_workday">補班</string>
+    <string name="month_open_day">開啟 ›</string>
+    <string name="month_day_empty">沒有行程</string>
     <string name="in_progress_until">進行中 · 到 %1$s</string>
     <string name="next_empty">接下來 7 天沒有行程</string>
     <string name="timeline_all_day">全天：%1$s</string>

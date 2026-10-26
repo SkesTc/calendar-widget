@@ -75,6 +75,8 @@
     <string name="tap_to_grant">Tap to allow calendar access</string>
     <string name="back_to_this_month">↩</string>
     <string name="makeup_workday">Work</string>
+    <string name="month_open_day">Open ›</string>
+    <string name="month_day_empty">No events</string>
     <string name="in_progress_until">Now · until %1$s</string>
     <string name="next_empty">No events in the next 7 days</string>
     <string name="timeline_all_day">All day: %1$s</string>

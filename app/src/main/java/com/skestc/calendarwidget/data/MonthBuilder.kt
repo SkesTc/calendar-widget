@@ -106,6 +106,26 @@ class MonthBuilder(
         }
     }
 
+    /** [date] 當天的行程（不含節慶假日），全天事件在前，依開始時間排序。 */
+    fun eventsOn(events: List<CalendarEvent>, date: LocalDate): List<CalendarEvent> =
+        events
+            .filter { it.holiday == null }
+            .filter { event -> dateSpan(event).let { (first, last) -> date in first..last } }
+            .sortedWith(compareBy({ !it.allDay }, { it.begin }))
+
+    /**
+     * 月曆上被選取的日期：使用者點過、而且在這個月的格子裡就用它；
+     * 否則今天在這個月就選今天，再否則選這個月 1 號。
+     */
+    fun selectedDate(month: YearMonth, today: LocalDate, picked: LocalDate?): LocalDate {
+        val range = gridRange(month)
+        return when {
+            picked != null && picked in range -> picked
+            YearMonth.from(today) == month -> today
+            else -> month.atDay(1)
+        }
+    }
+
     companion object {
         const val MAX_DOTS = 3
     }

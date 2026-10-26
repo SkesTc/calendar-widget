@@ -156,4 +156,31 @@ class MonthBuilderTest {
         assertEquals("十七", builder().build(october, today, emptyList(), labeler).cell(day).label)
         assertEquals(null, builder().build(october, today, emptyList()).cell(day).label)
     }
+
+    @Test
+    fun eventsOnSkipsHolidaysAndPutsAllDayFirst() {
+        val day = LocalDate.of(2026, 10, 28)
+        val events = listOf(
+            timed(LocalDateTime.of(2026, 10, 28, 15, 0), LocalDateTime.of(2026, 10, 28, 16, 0)).copy(title = "下午"),
+            timed(LocalDateTime.of(2026, 10, 28, 9, 0), LocalDateTime.of(2026, 10, 28, 10, 0)).copy(title = "早上"),
+            allDay(day, day).copy(title = "全天"),
+            allDay(day, day).copy(title = "假日", holiday = HolidayKind.DAY_OFF),
+            allDay(day.plusDays(1), day.plusDays(1)).copy(title = "隔天"),
+        )
+        assertEquals(listOf("全天", "早上", "下午"), builder().eventsOn(events, day).map { it.title })
+    }
+
+    @Test
+    fun selectedDateFallsBackSensibly() {
+        val b = builder()
+        val picked = LocalDate.of(2026, 10, 15)
+        assertEquals(picked, b.selectedDate(october, today, picked))
+        // 格子裡的上個月日期也可以選。
+        assertEquals(LocalDate.of(2026, 9, 28), b.selectedDate(october, today, LocalDate.of(2026, 9, 28)))
+        assertEquals(today, b.selectedDate(october, today, null))
+        assertEquals(today, b.selectedDate(october, today, LocalDate.of(2026, 12, 1)))
+        // 看別的月份、沒點過時選那個月 1 號。
+        val december = YearMonth.of(2026, 12)
+        assertEquals(LocalDate.of(2026, 12, 1), b.selectedDate(december, today, null))
+    }
 }
