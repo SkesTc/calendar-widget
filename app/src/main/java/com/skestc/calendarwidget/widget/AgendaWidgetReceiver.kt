@@ -9,11 +9,11 @@ class AgendaWidgetReceiver : GlanceAppWidgetReceiver() {
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        CalendarChangeWorker.schedule(context)
+        WidgetUpdater.syncSchedules(context)
     }
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        CalendarChangeWorker.cancel(context)
+        WidgetUpdater.syncSchedules(context)
     }
 }

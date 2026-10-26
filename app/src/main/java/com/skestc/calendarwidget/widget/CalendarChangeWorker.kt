@@ -2,7 +2,6 @@ package com.skestc.calendarwidget.widget
 
 import android.content.Context
 import android.provider.CalendarContract
-import androidx.glance.appwidget.updateAll
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingWorkPolicy
@@ -21,7 +20,7 @@ class CalendarChangeWorker(
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
-        AgendaWidget().updateAll(applicationContext)
+        WidgetUpdater.refreshAll(applicationContext)
         enqueue(applicationContext, ExistingWorkPolicy.APPEND_OR_REPLACE)
         return Result.success()
     }

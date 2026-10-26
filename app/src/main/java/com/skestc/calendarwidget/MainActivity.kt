@@ -42,13 +42,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import androidx.glance.appwidget.updateAll
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
-import com.skestc.calendarwidget.widget.AgendaWidget
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
-import com.skestc.calendarwidget.widget.CalendarChangeWorker
+import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.WidgetUpdater
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -79,8 +78,8 @@ private fun HomeScreen() {
     LaunchedEffect(granted) {
         if (granted) {
             calendars = repository.calendars()
-            CalendarChangeWorker.schedule(context)
-            AgendaWidget().updateAll(context)
+            WidgetUpdater.syncSchedules(context)
+            WidgetUpdater.refreshAll(context)
         }
     }
 
@@ -100,17 +99,35 @@ private fun HomeScreen() {
                 return@Column
             }
 
-            Button(
-                onClick = {
-                    scope.launch {
-                        GlanceAppWidgetManager(context)
-                            .requestPinGlanceAppWidget(AgendaWidgetReceiver::class.java)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("加入桌面小工具")
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            GlanceAppWidgetManager(context)
+                                .requestPinGlanceAppWidget(AgendaWidgetReceiver::class.java)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("加入行程清單")
+                }
+                Button(
+                    onClick = {
+                        scope.launch {
+                            GlanceAppWidgetManager(context)
+                                .requestPinGlanceAppWidget(MonthWidgetReceiver::class.java)
+                        }
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text("加入月曆")
+                }
             }
+            Text(
+                "長按桌面上的小工具 →「編輯小工具」可以選擇要顯示哪些日曆。",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
 
             Text("已同步的日曆", style = MaterialTheme.typography.titleMedium)
             if (calendars.isEmpty()) {

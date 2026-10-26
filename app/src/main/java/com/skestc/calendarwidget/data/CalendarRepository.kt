@@ -55,21 +55,36 @@ class CalendarRepository(private val context: Context) {
 
     /**
      * 取得從現在起 [days] 天內、尚未結束的事件，依開始時間排序。
-     * 查詢的是 Instances 表，重複事件已由系統展開。
      */
     suspend fun upcomingEvents(
         days: Int = 7,
         limit: Int = 30,
+        hiddenCalendarIds: Set<Long> = emptySet(),
         now: Long = System.currentTimeMillis(),
-    ): List<CalendarEvent> = withContext(Dispatchers.IO) {
-        if (!hasPermission()) return@withContext emptyList()
-
+    ): List<CalendarEvent> {
         // 往前多抓一天，才能拿到「今天」的全天事件（以 UTC 午夜為起點）。
         val rangeStart = now - TimeUnit.DAYS.toMillis(1)
         val rangeEnd = now + TimeUnit.DAYS.toMillis(days.toLong())
+        return instances(rangeStart, rangeEnd, hiddenCalendarIds)
+            .asSequence()
+            .filter { it.end > now }
+            .take(limit)
+            .toList()
+    }
+
+    /**
+     * 查詢 [start, end) 之間的事件實例。查的是 Instances 表，重複事件已由系統展開。
+     */
+    suspend fun instances(
+        start: Long,
+        end: Long,
+        hiddenCalendarIds: Set<Long> = emptySet(),
+    ): List<CalendarEvent> = withContext(Dispatchers.IO) {
+        if (!hasPermission()) return@withContext emptyList()
+
         val uri = CalendarContract.Instances.CONTENT_URI.buildUpon().also {
-            ContentUris.appendId(it, rangeStart)
-            ContentUris.appendId(it, rangeEnd)
+            ContentUris.appendId(it, start)
+            ContentUris.appendId(it, end)
         }.build()
 
         val projection = arrayOf(
@@ -83,23 +98,28 @@ class CalendarRepository(private val context: Context) {
             CalendarContract.Instances.CALENDAR_DISPLAY_NAME,
         )
 
+        var selection = "${CalendarContract.Instances.VISIBLE} = 1"
+        if (hiddenCalendarIds.isNotEmpty()) {
+            // ID 都是 Long，直接組進 SQL 不會有注入問題。
+            selection += " AND ${CalendarContract.Instances.CALENDAR_ID} NOT IN " +
+                hiddenCalendarIds.joinToString(",", "(", ")")
+        }
+
         context.contentResolver.query(
             uri,
             projection,
-            "${CalendarContract.Instances.VISIBLE} = 1",
+            selection,
             null,
             "${CalendarContract.Instances.BEGIN} ASC",
         )?.use { c ->
             buildList {
-                while (c.moveToNext() && size < limit) {
-                    val end = c.getLong(3)
-                    if (end <= now) continue
+                while (c.moveToNext()) {
                     add(
                         CalendarEvent(
                             eventId = c.getLong(0),
                             title = c.getString(1)?.takeIf { it.isNotBlank() } ?: "(無標題)",
                             begin = c.getLong(2),
-                            end = end,
+                            end = c.getLong(3),
                             allDay = c.getInt(4) == 1,
                             color = c.getInt(5),
                             location = c.getString(6)?.takeIf { it.isNotBlank() },

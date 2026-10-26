@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
@@ -22,6 +23,9 @@ import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.currentState
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.background
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
@@ -43,6 +47,7 @@ import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.AgendaRow
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.settings.WidgetSettings
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
@@ -51,7 +56,7 @@ import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 private sealed interface AgendaState {
     data object NoPermission : AgendaState
-    data class Loaded(val today: LocalDate, val rows: List<AgendaRow>) : AgendaState
+    data class Loaded(val today: LocalDate, val days: Int, val rows: List<AgendaRow>) : AgendaState
 }
 
 /** 行程清單 widget：大字日期 + 依日期分組的事件清單，顏色跟隨 Material You。 */
@@ -67,19 +72,35 @@ class AgendaWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = CalendarRepository(context)
-        val state = if (repository.hasPermission()) {
-            val formatter = AgendaFormatter(context)
-            val today = LocalDate.now()
-            AgendaState.Loaded(today, formatter.rows(repository.upcomingEvents(), today))
-        } else {
-            AgendaState.NoPermission
-        }
+        val initialSettings = WidgetSettings.from(
+            getAppWidgetState(context, PreferencesGlanceStateDefinition, id),
+        )
+        val initial = load(context, repository, initialSettings)
 
         provideContent {
+            val settings = WidgetSettings.from(currentState<Preferences>())
+            val state = rememberWidgetData(settings, initialSettings, initial) {
+                load(context, repository, it)
+            }
             GlanceTheme {
                 AgendaContent(state)
             }
         }
+    }
+
+    private suspend fun load(
+        context: Context,
+        repository: CalendarRepository,
+        settings: WidgetSettings,
+    ): AgendaState {
+        if (!repository.hasPermission()) return AgendaState.NoPermission
+        val today = LocalDate.now()
+        val events = repository.upcomingEvents(
+            days = settings.agendaDays,
+            limit = 100,
+            hiddenCalendarIds = settings.hiddenCalendarIds,
+        )
+        return AgendaState.Loaded(today, settings.agendaDays, AgendaFormatter(context).rows(events, today))
     }
 }
 
@@ -99,9 +120,9 @@ private fun AgendaContent(state: AgendaState) {
                 DateHeader(state.today)
                 Spacer(GlanceModifier.height(8.dp))
                 if (LocalSize.current.width < 180.dp) {
-                    NextEventOnly(state.rows)
+                    NextEventOnly(state.rows, state.days)
                 } else {
-                    AgendaList(state.rows)
+                    AgendaList(state.rows, state.days)
                 }
             }
         }
@@ -143,7 +164,7 @@ private fun DateHeader(today: LocalDate) {
 }
 
 @Composable
-private fun AddEventButton() {
+internal fun AddEventButton() {
     val intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
     Box(
         modifier = GlanceModifier
@@ -165,9 +186,9 @@ private fun AddEventButton() {
 }
 
 @Composable
-private fun AgendaList(rows: List<AgendaRow>) {
+private fun AgendaList(rows: List<AgendaRow>, days: Int) {
     if (rows.isEmpty()) {
-        EmptyState()
+        EmptyState(days)
         return
     }
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
@@ -181,9 +202,9 @@ private fun AgendaList(rows: List<AgendaRow>) {
 }
 
 @Composable
-private fun NextEventOnly(rows: List<AgendaRow>) {
+private fun NextEventOnly(rows: List<AgendaRow>, days: Int) {
     val next = rows.firstNotNullOfOrNull { it as? AgendaRow.Event }
-    if (next == null) EmptyState() else EventRow(next.event, next.timeLabel)
+    if (next == null) EmptyState(days) else EventRow(next.event, next.timeLabel)
 }
 
 @Composable
@@ -246,17 +267,17 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
 }
 
 @Composable
-private fun EmptyState() {
+private fun EmptyState(days: Int) {
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = "接下來 7 天沒有行程 🎉",
+            text = "接下來 $days 天沒有行程 🎉",
             style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
         )
     }
 }
 
 @Composable
-private fun PermissionPrompt() {
+internal fun PermissionPrompt() {
     Box(
         modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>()),
         contentAlignment = Alignment.Center,
