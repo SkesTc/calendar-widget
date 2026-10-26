@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.TimelineBuilder
@@ -37,12 +38,12 @@ class TimelineWidgetUiTest {
                 TimelineContent(state(at(12), timed(1, "晨會", at(9), at(10)), timed(2, "專案討論", at(15), at(16))))
             }
         }
-        onNode(hasText("晨會")).assertExists()
-        onNode(hasText("專案討論")).assertExists()
-        onNode(hasText("現在")).assertExists()
-        onNode(hasText("空檔 3 小時")).assertExists()
-        onNode(hasText("今天 ·", substring = true)).assertExists()
-        onNode(hasText("九月十七")).assertExists()
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasTextEqualTo("專案討論")).assertExists()
+        onNode(hasTextEqualTo("現在")).assertExists()
+        onNode(hasTextEqualTo("空檔 3 小時")).assertExists()
+        onNode(hasText("今天 ·")).assertExists()
+        onNode(hasTextEqualTo("九月十七")).assertExists()
     }
 
     @Test
@@ -52,9 +53,9 @@ class TimelineWidgetUiTest {
         provideComposable {
             WidgetFrame { TimelineContent(state(at(9, 30), timed(1, "晨會", at(9), at(10), location = "線上"))) }
         }
-        onNode(hasText("進行中 · 到", substring = true)).assertExists()
+        onNode(hasText("進行中 · 到")).assertExists()
         // 有進行中的行程時不顯示「現在」。
-        onNode(hasText("現在")).assertDoesNotExist()
+        onNode(hasTextEqualTo("現在")).assertDoesNotExist()
     }
 
     @Test
@@ -73,11 +74,11 @@ class TimelineWidgetUiTest {
                 )
             }
         }
-        onNode(hasText("全天：", substring = true)).assertExists()
-        onNode(hasText("生日", substring = true)).assertExists()
-        onNode(hasText("某紀念日", substring = true)).assertExists()
-        onNode(hasText("某放假日", substring = true)).assertDoesNotExist()
-        onNode(hasText("今天沒有其他排定時間的行程")).assertExists()
+        onNode(hasText("全天：")).assertExists()
+        onNode(hasText("生日")).assertExists()
+        onNode(hasText("某紀念日")).assertExists()
+        onNode(hasText("某放假日")).assertDoesNotExist()
+        onNode(hasTextEqualTo("今天沒有其他排定時間的行程")).assertExists()
     }
 
     @Test
@@ -85,6 +86,6 @@ class TimelineWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(250.dp, 300.dp))
         provideComposable { WidgetFrame { TimelineContent(state(at(8))) } }
-        onNode(hasText("今天沒有行程", substring = true)).assertExists()
+        onNode(hasText("今天沒有行程")).assertExists()
     }
 }

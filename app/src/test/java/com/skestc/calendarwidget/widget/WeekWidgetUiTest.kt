@@ -3,7 +3,7 @@ package com.skestc.calendarwidget.widget
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
-import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.WeekBuilder
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
@@ -46,15 +46,15 @@ class WeekWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 120.dp))
         provideComposable { WidgetFrame { WeekContent(week()) } }
-        onNode(hasText("早會")).assertExists()
-        onNode(hasText("午餐")).assertExists()
-        onNode(hasText("健身")).assertDoesNotExist()
-        onNode(hasText("+2")).assertExists()
+        onNode(hasTextEqualTo("早會")).assertExists()
+        onNode(hasTextEqualTo("午餐")).assertExists()
+        onNode(hasTextEqualTo("健身")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+2")).assertExists()
         // 太矮時不顯示農曆／假日小字。
-        onNode(hasText("某假日")).assertDoesNotExist()
+        onNode(hasTextEqualTo("某假日")).assertDoesNotExist()
         // 7 天：26 日到 11/1。
-        onNode(hasText("26")).assertExists()
-        onNode(hasText("1")).assertExists()
+        onNode(hasTextEqualTo("26")).assertExists()
+        onNode(hasTextEqualTo("1")).assertExists()
     }
 
     @Test
@@ -62,9 +62,9 @@ class WeekWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 220.dp))
         provideComposable { WidgetFrame { WeekContent(week()) } }
-        onNode(hasText("讀書")).assertExists()
-        onNode(hasText("+2")).assertDoesNotExist()
-        onNode(hasText("某假日")).assertExists()
-        onAllNodes(hasText("十七")).assertCountEquals(6)
+        onNode(hasTextEqualTo("讀書")).assertExists()
+        onNode(hasTextEqualTo("+2")).assertDoesNotExist()
+        onNode(hasTextEqualTo("某假日")).assertExists()
+        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(6)
     }
 }

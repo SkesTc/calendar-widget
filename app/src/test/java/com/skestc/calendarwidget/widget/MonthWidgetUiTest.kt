@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
@@ -40,15 +41,15 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october()) } }
-        onNode(hasText("10月", substring = true)).assertExists()
-        onNode(hasText("‹")).assertExists()
-        onNode(hasText("›")).assertExists()
+        onNode(hasText("10月")).assertExists()
+        onNode(hasTextEqualTo("‹")).assertExists()
+        onNode(hasTextEqualTo("›")).assertExists()
         // 在本月時不顯示「今」。
-        onNode(hasText("今")).assertDoesNotExist()
-        onNode(hasText("國慶日")).assertExists()
-        onNode(hasText("補班")).assertExists()
+        onNode(hasTextEqualTo("今")).assertDoesNotExist()
+        onNode(hasTextEqualTo("國慶日")).assertExists()
+        onNode(hasTextEqualTo("補班")).assertExists()
         // 假農曆每天都是十七；10 月格子共 35 天，其中 2 天顯示假日名稱。
-        onAllNodes(hasText("十七")).assertCountEquals(33)
+        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(33)
     }
 
     @Test
@@ -56,9 +57,9 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(180.dp, 180.dp))
         provideComposable { WidgetFrame { MonthContent(october()) } }
-        onNode(hasText("國慶日")).assertDoesNotExist()
-        onNode(hasText("十七")).assertDoesNotExist()
-        onNode(hasText("31")).assertExists()
+        onNode(hasTextEqualTo("國慶日")).assertDoesNotExist()
+        onNode(hasTextEqualTo("十七")).assertDoesNotExist()
+        onNode(hasTextEqualTo("31")).assertExists()
     }
 
     @Test
@@ -66,6 +67,6 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october(monthOffset = 1)) } }
-        onNode(hasText("今")).assertExists()
+        onNode(hasTextEqualTo("今")).assertExists()
     }
 }

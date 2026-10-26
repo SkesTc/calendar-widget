@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
@@ -45,15 +46,15 @@ class AgendaWidgetUiTest {
                 )
             }
         }
-        onNode(hasText("晨會")).assertExists()
-        onNode(hasText("會議室 A", substring = true)).assertExists()
-        onNode(hasText("牙醫")).assertExists()
-        onNode(hasText("今天 ·", substring = true)).assertExists()
-        onNode(hasText("明天 ·", substring = true)).assertExists()
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasText("會議室 A")).assertExists()
+        onNode(hasTextEqualTo("牙醫")).assertExists()
+        onNode(hasText("今天 ·")).assertExists()
+        onNode(hasText("明天 ·")).assertExists()
         // 大字日期與標題下方的農曆。
-        onNode(hasText("26")).assertExists()
+        onNode(hasTextEqualTo("26")).assertExists()
         // 頂端日期下方一次，加上「今天」「明天」兩個日期標題各一次。
-        onAllNodes(hasText("九月十七", substring = true)).assertCountEquals(3)
+        onAllNodes(hasText("九月十七")).assertCountEquals(3)
     }
 
     @Test
@@ -65,8 +66,8 @@ class AgendaWidgetUiTest {
                 AgendaContent(loaded(allDay(1, "光復節", today.plusDays(2), HolidayKind.DAY_OFF)))
             }
         }
-        onNode(hasText("光復節", substring = true)).assertExists()
-        onNode(hasText("光復節")).assertDoesNotExist()
+        onNode(hasText("光復節")).assertExists()
+        onNode(hasTextEqualTo("光復節")).assertDoesNotExist()
     }
 
     @Test
@@ -78,8 +79,8 @@ class AgendaWidgetUiTest {
                 AgendaContent(loaded(timed(1, "晨會", at(9), at(10)), timed(2, "午餐", at(12), at(13))))
             }
         }
-        onNode(hasText("晨會")).assertExists()
-        onNode(hasText("午餐")).assertDoesNotExist()
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasTextEqualTo("午餐")).assertDoesNotExist()
     }
 
     @Test
@@ -89,7 +90,7 @@ class AgendaWidgetUiTest {
         provideComposable {
             WidgetFrame { AgendaContent(AgendaState.Loaded(today, days = 14, rows = emptyList(), lunarToday = null)) }
         }
-        onNode(hasText("接下來 14 天沒有行程", substring = true)).assertExists()
+        onNode(hasText("接下來 14 天沒有行程")).assertExists()
     }
 
     @Test
@@ -97,6 +98,6 @@ class AgendaWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(250.dp, 250.dp))
         provideComposable { WidgetFrame { AgendaContent(AgendaState.NoPermission) } }
-        onNode(hasText("點此授權讀取日曆")).assertExists()
+        onNode(hasTextEqualTo("點此授權讀取日曆")).assertExists()
     }
 }

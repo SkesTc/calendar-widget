@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasText
+import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.NextEvent
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
 import com.skestc.calendarwidget.widget.WidgetFixtures.at
@@ -32,10 +33,10 @@ class NextEventWidgetUiTest {
                 NextEventContent(NextEventState.Loaded(today, NextEvent(timed(1, "晨會", at(9), at(10), location = "會議室 A"), true)))
             }
         }
-        onNode(hasText("晨會")).assertExists()
-        onNode(hasText("進行中 · 到", substring = true)).assertExists()
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasText("進行中 · 到")).assertExists()
         // 1 格高時不顯示地點。
-        onNode(hasText("會議室 A")).assertDoesNotExist()
+        onNode(hasTextEqualTo("會議室 A")).assertDoesNotExist()
     }
 
     @Test
@@ -47,7 +48,7 @@ class NextEventWidgetUiTest {
                 NextEventContent(NextEventState.Loaded(today, NextEvent(timed(1, "晨會", at(9), at(10), location = "會議室 A"), false)))
             }
         }
-        onNode(hasText("會議室 A")).assertExists()
+        onNode(hasTextEqualTo("會議室 A")).assertExists()
     }
 
     @Test
@@ -59,7 +60,7 @@ class NextEventWidgetUiTest {
                 NextEventContent(NextEventState.Loaded(today, NextEvent(allDay(1, "旅行", today.plusDays(1)), false)))
             }
         }
-        onNode(hasText("明天 · 全天")).assertExists()
+        onNode(hasTextEqualTo("明天 · 全天")).assertExists()
     }
 
     @Test
@@ -67,6 +68,6 @@ class NextEventWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(180.dp, 40.dp))
         provideComposable { WidgetFrame { NextEventContent(NextEventState.Loaded(today, null)) } }
-        onNode(hasText("接下來 7 天沒有行程")).assertExists()
+        onNode(hasTextEqualTo("接下來 7 天沒有行程")).assertExists()
     }
 }
