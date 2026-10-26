@@ -36,6 +36,7 @@ import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -66,6 +67,7 @@ import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.specFor
 import com.skestc.calendarwidget.theme.WidgetThemeId
+import com.skestc.calendarwidget.ui.LongEventsActivity
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidget
 import com.skestc.calendarwidget.widget.MonthWidget
@@ -332,6 +334,15 @@ private fun ConfigScreen(
                             )
                         },
                     )
+                }
+
+                item {
+                    TextButton(
+                        onClick = { context.startActivity(Intent(context, LongEventsActivity::class.java)) },
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    ) {
+                        Text(stringResource(R.string.long_events_manage_link))
+                    }
                 }
             }
 

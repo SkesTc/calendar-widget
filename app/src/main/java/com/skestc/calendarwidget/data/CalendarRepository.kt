@@ -78,11 +78,13 @@ class CalendarRepository(private val context: Context) {
 
     /**
      * 查詢 [start, end) 之間的事件實例。查的是 Instances 表，重複事件已由系統展開。
+     * [includeHiddenEvents] 為 true 時連使用者隱藏的行程也回傳（給「長期行程」管理畫面用）。
      */
     suspend fun instances(
         start: Long,
         end: Long,
         hiddenCalendarIds: Set<Long> = emptySet(),
+        includeHiddenEvents: Boolean = false,
     ): List<CalendarEvent> = withContext(Dispatchers.IO) {
         if (!hasPermission()) return@withContext emptyList()
 
@@ -104,6 +106,7 @@ class CalendarRepository(private val context: Context) {
             CalendarContract.Instances.DESCRIPTION,
         )
         val holidayCalendarIds = holidayCalendarIds()
+        val hiddenEventIds = if (includeHiddenEvents) emptySet() else HiddenEvents(context).ids()
 
         var selection = "${CalendarContract.Instances.VISIBLE} = 1"
         if (hiddenCalendarIds.isNotEmpty()) {
@@ -121,6 +124,8 @@ class CalendarRepository(private val context: Context) {
         )?.use { c ->
             buildList {
                 while (c.moveToNext()) {
+                    // 使用者在「長期行程」隱藏的事件，所有 widget 都不顯示。
+                    if (c.getLong(0) in hiddenEventIds) continue
                     val title = c.getString(1)?.takeIf { it.isNotBlank() } ?: context.getString(R.string.untitled)
                     val calendarId = c.getLong(8)
                     add(

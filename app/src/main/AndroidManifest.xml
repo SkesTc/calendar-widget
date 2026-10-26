@@ -23,6 +23,11 @@
         </activity>
 
         <activity
+            android:name=".ui.LongEventsActivity"
+            android:exported="false"
+            android:label="@string/long_events_title" />
+
+        <activity
             android:name=".config.WidgetConfigActivity"
             android:exported="true">
             <intent-filter>

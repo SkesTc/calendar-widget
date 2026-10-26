@@ -25,6 +25,16 @@
     <string name="calendar_hidden">%1$s · hidden</string>
     <string name="holiday_hint_title">Show public holidays</string>
     <string name="holiday_hint_body">In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.</string>
+    <string name="long_events_title">Long events</string>
+    <string name="long_events_card_body">Hide multi-day events (like a whole term) that fill up your widgets. Google Calendar isn’t changed.</string>
+    <string name="long_events_manage">Manage</string>
+    <string name="long_events_manage_link">Hide long events…</string>
+    <string name="long_events_hidden_count">%1$d hidden</string>
+    <string name="long_events_description">Events lasting 3 days or more, from a month ago to three months ahead. Hidden events disappear from every widget; recurring events are hidden together.</string>
+    <string name="long_events_none">No events lasting 3 days or more.</string>
+    <string name="long_event_range">%1$s – %2$s · %3$d days</string>
+    <string name="long_event_out_of_range">Hidden · not in the current range</string>
+    <string name="long_event_hide">Hide</string>
     <string name="update_help_title">Widgets not updating?</string>
     <string name="update_help_body">Some phones block background updates to save battery, so widgets may miss the new day or event changes. Allow this app to run in the background:</string>
     <string name="open_app_info">Open app info</string>

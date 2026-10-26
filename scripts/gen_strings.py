@@ -29,6 +29,17 @@ S = [
  ("calendar_hidden", "%1$s · hidden", "%1$s · 已隱藏"),
  ("holiday_hint_title", "Show public holidays", "顯示國定假日與補班日"),
  ("holiday_hint_body", "In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.", "在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。"),
+ # 長期行程
+ ("long_events_title", "Long events", "長期行程"),
+ ("long_events_card_body", "Hide multi-day events (like a whole term) that fill up your widgets. Google Calendar isn’t changed.", "隱藏跨很多天、佔滿小工具的行程（例如整個學期）。Google 日曆裡的行程不受影響。"),
+ ("long_events_manage", "Manage", "管理"),
+ ("long_events_manage_link", "Hide long events…", "隱藏長期行程…"),
+ ("long_events_hidden_count", "%1$d hidden", "已隱藏 %1$d 個"),
+ ("long_events_description", "Events lasting 3 days or more, from a month ago to three months ahead. Hidden events disappear from every widget; recurring events are hidden together.", "跨 3 天以上的行程（一個月前到三個月後）。隱藏後所有小工具都不再顯示；重複的行程會一起隱藏。"),
+ ("long_events_none", "No events lasting 3 days or more.", "沒有跨 3 天以上的行程。"),
+ ("long_event_range", "%1$s – %2$s · %3$d days", "%1$s – %2$s · %3$d 天"),
+ ("long_event_out_of_range", "Hidden · not in the current range", "已隱藏 · 不在目前查詢的範圍"),
+ ("long_event_hide", "Hide", "隱藏"),
  # 小工具沒有自動更新
  ("update_help_title", "Widgets not updating?", "小工具沒有自動更新？"),
  ("update_help_body", "Some phones block background updates to save battery, so widgets may miss the new day or event changes. Allow this app to run in the background:", "部分手機的省電功能會擋住背景更新，導致換日、行程變動後小工具沒跟著變。請依下列步驟允許本 App 在背景執行："),
