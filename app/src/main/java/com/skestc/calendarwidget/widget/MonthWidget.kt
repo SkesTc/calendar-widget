@@ -11,7 +11,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
@@ -55,6 +58,7 @@ import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.WidgetStyle
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -274,9 +278,9 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
             NavButton(glanceString(R.string.back_to_this_month), delta = 0)
             Spacer(GlanceModifier.width(4.dp))
         }
-        NavButton("‹", delta = -1)
+        NavIconButton(R.drawable.ic_chevron_left, glanceString(R.string.previous_month), delta = -1)
         Spacer(GlanceModifier.width(4.dp))
-        NavButton("›", delta = 1)
+        NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1)
         Spacer(GlanceModifier.width(4.dp))
         SettingsButton(size = 32.dp)
         Spacer(GlanceModifier.width(4.dp))
@@ -284,24 +288,35 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
     }
 }
 
+private fun navModifier(style: WidgetStyle, delta: Int) = GlanceModifier
+    .size(32.dp)
+    .background(style.colors.card)
+    .cornerRadius(16.dp)
+    .clickable(
+        actionRunCallback<ChangeMonthAction>(
+            actionParametersOf(ChangeMonthAction.DeltaKey to delta),
+        ),
+    )
+
+/** 「今」：回到本月。 */
 @Composable
 private fun NavButton(label: String, delta: Int) {
     val style = LocalWidgetStyle.current
-    Box(
-        modifier = GlanceModifier
-            .size(32.dp)
-            .background(style.colors.card)
-            .cornerRadius(16.dp)
-            .clickable(
-                actionRunCallback<ChangeMonthAction>(
-                    actionParametersOf(ChangeMonthAction.DeltaKey to delta),
-                ),
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = style.text(if (delta == 0) 13 else 18, style.colors.onCard, FontWeight.Bold),
+    Box(modifier = navModifier(style, delta), contentAlignment = Alignment.Center) {
+        Text(text = label, style = style.text(13, style.colors.onCard, FontWeight.Bold))
+    }
+}
+
+/** 上個月／下個月：向量箭頭，在圓圈裡置中（「‹」「›」文字會因字型留白而偏移）。 */
+@Composable
+private fun NavIconButton(icon: Int, description: String, delta: Int) {
+    val style = LocalWidgetStyle.current
+    Box(modifier = navModifier(style, delta), contentAlignment = Alignment.Center) {
+        Image(
+            provider = ImageProvider(icon),
+            contentDescription = description,
+            colorFilter = ColorFilter.tint(style.colors.onCard),
+            modifier = GlanceModifier.size(22.dp),
         )
     }
 }

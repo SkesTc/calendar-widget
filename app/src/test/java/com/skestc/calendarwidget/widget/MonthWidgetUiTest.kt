@@ -3,6 +3,7 @@ package com.skestc.calendarwidget.widget
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
@@ -46,8 +47,8 @@ class MonthWidgetUiTest {
         setAppWidgetSize(DpSize(300.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october()) } }
         onNode(hasText("10月")).assertExists()
-        onNode(hasTextEqualTo("‹")).assertExists()
-        onNode(hasTextEqualTo("›")).assertExists()
+        onNode(hasContentDescriptionEqualTo("上個月")).assertExists()
+        onNode(hasContentDescriptionEqualTo("下個月")).assertExists()
         // 在本月時不顯示「今」。
         onNode(hasTextEqualTo("今")).assertDoesNotExist()
         onNode(hasTextEqualTo("國慶日")).assertExists()

@@ -14,7 +14,7 @@ class SelectDayAction : ActionCallback {
         updateAppWidgetState(context, glanceId) { prefs ->
             prefs[WidgetSettings.KEY_SELECTED_DAY] = epochDay
         }
-        MonthWidget().update(context, glanceId)
+        InstantRender.render(context, MonthWidget(), glanceId)
     }
 
     companion object {

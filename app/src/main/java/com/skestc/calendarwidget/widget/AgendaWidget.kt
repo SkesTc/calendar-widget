@@ -265,9 +265,12 @@ internal fun AddEventButton() {
             .clickable(openInCalendar(EventEditor.insertIntent(), editor = true)),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            text = "+",
-            style = style.text(20, style.colors.onPrimary, FontWeight.Bold),
+        // 用向量圖示而不是「+」文字：字型的上下留白會讓文字在圓圈裡偏離中心。
+        Image(
+            provider = ImageProvider(R.drawable.ic_add),
+            contentDescription = glanceString(R.string.add_event),
+            colorFilter = ColorFilter.tint(style.colors.onPrimary),
+            modifier = GlanceModifier.size(22.dp),
         )
     }
 }

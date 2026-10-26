@@ -17,7 +17,7 @@ class ChangeMonthAction : ActionCallback {
             // 換月份時清掉選取的日期，改選今天或該月 1 號。
             prefs.remove(WidgetSettings.KEY_SELECTED_DAY)
         }
-        MonthWidget().update(context, glanceId)
+        InstantRender.render(context, MonthWidget(), glanceId)
     }
 
     companion object {

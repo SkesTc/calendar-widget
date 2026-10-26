@@ -35,6 +35,9 @@
     <string name="editor_ask">Ask every time</string>
     <string name="editor_chooser_title">Add event with</string>
     <string name="widget_settings">Widget settings</string>
+    <string name="add_event">Add event</string>
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
     <string name="editor_change">Change</string>
     <string name="long_events_hidden_count">%1$d hidden</string>
     <string name="long_events_description">Events lasting 3 days or more, or repeating 3 times or more, from a month ago to three months ahead. Hidden events disappear from every widget; every occurrence of a repeating event is hidden together.</string>
