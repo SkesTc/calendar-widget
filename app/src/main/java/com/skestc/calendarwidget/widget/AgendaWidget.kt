@@ -67,6 +67,7 @@ import com.skestc.calendarwidget.theme.Segment
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.LocalDate
+import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
@@ -210,7 +211,7 @@ internal fun SettingsButton(size: Dp = 36.dp) {
     // 測試或預覽時沒有真正的 widget id，就只畫按鈕。
     val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(glanceId) }.getOrNull()
     val open = appWidgetId?.let {
-        actionStartActivity(
+        actionStartIntent(
             Intent(context, WidgetConfigActivity::class.java)
                 .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, it)
                 // 每個 widget 一個 PendingIntent，避免開到別的 widget 的設定。
