@@ -105,6 +105,23 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun wideMonthShowsTheDayPanelBesideTheGrid() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(520.dp, 300.dp))
+        val selected = LocalDate.of(2026, 10, 28)
+        val state = (october() as MonthState.Loaded).copy(
+            selected = selected,
+            selectedEvents = (1..7).map { timed(it.toLong(), "行程$it", at(8 + it, date = selected), at(9 + it, date = selected)) },
+        )
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasTextEqualTo("開啟 ›")).assertExists()
+        onNode(hasText("行程6")).assertExists()
+        onNode(hasText("行程7")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+1")).assertExists()
+        onNode(hasTextEqualTo("國慶日")).assertExists()
+    }
+
+    @Test
     fun customThemeRenders() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))

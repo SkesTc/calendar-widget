@@ -64,14 +64,19 @@ internal sealed interface WeekState {
 class WeekWidget : GlanceAppWidget() {
 
     companion object {
+        // Responsive 模式下 LocalSize 只會是下面其中一個尺寸，版面的高度門檻要一一列出。
+        /** 每天 2 筆。 */
         private val SHORT = DpSize(250.dp, 110.dp)
-        private val TALL = DpSize(250.dp, 180.dp)
+        /** 每天 3 筆＋農曆小字。 */
+        private val TALL = DpSize(250.dp, 140.dp)
+        /** 每天 4 筆。 */
+        private val TALLER = DpSize(250.dp, 200.dp)
 
         /** 先多載一些，畫面依高度決定實際顯示幾筆。 */
         private const val MAX_PER_DAY = 4
     }
 
-    override val sizeMode = SizeMode.Responsive(setOf(SHORT, TALL))
+    override val sizeMode = SizeMode.Responsive(setOf(SHORT, TALL, TALLER))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = CalendarRepository(context)

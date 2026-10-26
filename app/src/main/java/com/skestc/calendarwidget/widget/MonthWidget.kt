@@ -29,6 +29,7 @@ import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
+import androidx.glance.layout.ColumnScope
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -81,11 +82,23 @@ internal sealed interface MonthState {
 class MonthWidget : GlanceAppWidget() {
 
     companion object {
+        // Responsive 模式下 LocalSize 只會是下面其中一個尺寸（不是 widget 的實際大小），
+        // 所以版面上每個依大小切換的門檻都要在這裡列出來，否則實機上永遠不會觸發。
         private val COMPACT = DpSize(180.dp, 180.dp)
-        private val REGULAR = DpSize(250.dp, 250.dp)
+        private val REGULAR = DpSize(250.dp, 200.dp)
+        /** 顯示農曆／假日小字。 */
+        private val LABELED = DpSize(250.dp, 260.dp)
+        /** 下方加上選取日期的行程。 */
+        private val WITH_PANEL = DpSize(250.dp, 380.dp)
+        /** 平板、摺疊機展開：行程改放在月曆右邊。 */
+        private val WIDE = DpSize(480.dp, 260.dp)
+
+        val WIDE_MIN_WIDTH = WIDE.width
+        val LABELS_MIN_HEIGHT = LABELED.height
+        val PANEL_MIN_HEIGHT = WITH_PANEL.height
     }
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, REGULAR))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, REGULAR, LABELED, WITH_PANEL, WIDE))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = CalendarRepository(context)
@@ -144,28 +157,59 @@ internal fun MonthContent(state: MonthState) {
             is MonthState.Loaded -> {
                 val size = LocalSize.current
                 val compact = size.width < 250.dp
+                val wide = size.width >= MonthWidget.WIDE_MIN_WIDTH
                 // 格子夠高才放農曆／假日小字（約每格 40dp 以上）。
-                val showLabels = !compact && size.height >= 260.dp
+                val showLabels = !compact && size.height >= MonthWidget.LABELS_MIN_HEIGHT
                 // 再高一點（約 4×5 以上）時，點日期改成在下方列出當天行程。
-                val showDayPanel = !compact && size.height >= 380.dp
-                MonthHeader(state.data.month, state.monthOffset)
-                WeekdayRow(state.data.firstDayOfWeek, compact)
-                for (week in state.data.weeks) {
-                    Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                        for (day in week) {
-                            DayCellView(
-                                day = day,
-                                today = state.data.today,
-                                compact = compact,
-                                showLabel = showLabels,
-                                selected = showDayPanel && day.date == state.selected,
-                                selectInWidget = showDayPanel,
-                                modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                            )
+                val panelBelow = !wide && !compact && size.height >= MonthWidget.PANEL_MIN_HEIGHT
+                val selectable = wide || panelBelow
+                if (wide) {
+                    // 平板、摺疊機：月曆在左、選取日期的行程在右。
+                    Row(modifier = GlanceModifier.fillMaxSize()) {
+                        Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight()) {
+                            MonthGrid(state, compact = false, showLabels = showLabels, selectable = true)
                         }
+                        Spacer(GlanceModifier.width(10.dp))
+                        DayPanel(
+                            date = state.selected,
+                            events = state.selectedEvents,
+                            maxEvents = 6,
+                            modifier = GlanceModifier.width(200.dp).fillMaxHeight(),
+                        )
+                    }
+                } else {
+                    MonthGrid(state, compact, showLabels, selectable)
+                    if (panelBelow) {
+                        DayPanel(
+                            date = state.selected,
+                            events = state.selectedEvents,
+                            maxEvents = 3,
+                            modifier = GlanceModifier.fillMaxWidth().padding(top = 6.dp),
+                        )
                     }
                 }
-                if (showDayPanel) DayPanel(state.selected, state.selectedEvents)
+            }
+        }
+    }
+}
+
+/** 標題、星期列與日期格子；放在 Column 裡，週列平分剩下的高度。 */
+@Composable
+private fun ColumnScope.MonthGrid(state: MonthState.Loaded, compact: Boolean, showLabels: Boolean, selectable: Boolean) {
+    MonthHeader(state.data.month, state.monthOffset)
+    WeekdayRow(state.data.firstDayOfWeek, compact)
+    for (week in state.data.weeks) {
+        Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+            for (day in week) {
+                DayCellView(
+                    day = day,
+                    today = state.data.today,
+                    compact = compact,
+                    showLabel = showLabels,
+                    selected = selectable && day.date == state.selected,
+                    selectInWidget = selectable,
+                    modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+                )
             }
         }
     }
@@ -351,16 +395,14 @@ private fun EventDots(colors: List<Int>, dimmed: Boolean) {
     }
 }
 
-/** 月曆下方：選取那天的日期與最多 3 筆行程；點行程開啟該事件、點標題開啟那一天。 */
+/** 選取那天的日期與行程（下方或右側）；點行程開啟該事件、點標題開啟那一天。 */
 @Composable
-private fun DayPanel(date: LocalDate, events: List<CalendarEvent>) {
+private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, maxEvents: Int, modifier: GlanceModifier) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     val title = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(date)
     Column(
-        modifier = GlanceModifier
-            .fillMaxWidth()
-            .padding(top = 6.dp)
+        modifier = modifier
             .background(style.colors.card)
             .cornerRadius(style.cardCorner)
             .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -383,7 +425,7 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>) {
             Text(text = glanceString(R.string.month_day_empty), style = style.text(12, style.colors.onCard))
         }
         val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
-        for (event in events.take(3)) {
+        for (event in events.take(maxEvents)) {
             val openEvent = Intent(
                 Intent.ACTION_VIEW,
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),
@@ -405,8 +447,8 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>) {
                 )
             }
         }
-        if (events.size > 3) {
-            Text(text = "+${events.size - 3}", style = style.text(11, style.colors.onCard))
+        if (events.size > maxEvents) {
+            Text(text = "+${events.size - maxEvents}", style = style.text(11, style.colors.onCard))
         }
     }
 }
