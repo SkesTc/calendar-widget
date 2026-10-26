@@ -69,19 +69,28 @@ class CalendarRepository(private val context: Context) {
         keepEndedToday: Boolean = false,
     ): List<CalendarEvent> {
         val zone = java.time.ZoneId.systemDefault()
-        val cutoff = if (keepEndedToday) {
-            java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
-        } else {
-            now
-        }
         // 往前多抓一天，才能拿到「今天」的全天事件（以 UTC 午夜為起點）。
         val rangeStart = now - TimeUnit.DAYS.toMillis(1)
         val rangeEnd = now + TimeUnit.DAYS.toMillis(days.toLong())
         return instances(rangeStart, rangeEnd, hiddenCalendarIds)
             .asSequence()
-            .filter { it.end > cutoff }
+            .filter { isUpcoming(it, now, zone, keepEndedToday) }
             .take(limit)
             .toList()
+    }
+
+    companion object {
+        /**
+         * 還要列出來的事件。全天事件以 UTC 午夜為界（例如昨天的全天行程在台灣到今天早上 8 點才「結束」），
+         * 所以要用它的日期判斷，而不是結束的時間點，否則昨天的全天行程會跑到今天。
+         * [keepEndedToday]：今天已經結束的行程也留著（畫面上淡化顯示）。
+         */
+        fun isUpcoming(event: CalendarEvent, now: Long, zone: java.time.ZoneId, keepEndedToday: Boolean): Boolean {
+            val today = java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+            if (event.allDay) return MonthBuilder(zone).dateSpan(event).second >= today
+            val cutoff = if (keepEndedToday) today.atStartOfDay(zone).toInstant().toEpochMilli() else now
+            return event.end > cutoff
+        }
     }
 
     /**

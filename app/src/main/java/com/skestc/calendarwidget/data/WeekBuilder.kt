@@ -1,6 +1,7 @@
 package com.skestc.calendarwidget.data
 
 import com.skestc.calendarwidget.lunar.DayLabeler
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -53,11 +54,17 @@ object NextEventPicker {
     /**
      * 優先挑有時間的行程（進行中或最早開始的）；沒有的話才挑全天事件。節慶假日不算。
      */
-    fun pick(events: List<CalendarEvent>, now: Long): NextEvent? {
-        val candidates = events.filter { it.holiday == null && it.end > now }
-        val timed = candidates.filter { !it.allDay }.minByOrNull { it.begin }
-        val chosen = timed ?: candidates.filter { it.allDay }.minByOrNull { it.begin } ?: return null
-        return NextEvent(chosen, inProgress = chosen.begin <= now)
+    fun pick(events: List<CalendarEvent>, now: Long, zone: ZoneId = ZoneId.systemDefault()): NextEvent? {
+        val today = Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        val spans = MonthBuilder(zone)
+        val candidates = events.filter { it.holiday == null }
+        val timed = candidates.filter { !it.allDay && it.end > now }.minByOrNull { it.begin }
+        if (timed != null) return NextEvent(timed, inProgress = timed.begin <= now)
+        // 全天事件以 UTC 午夜為界，要用日期判斷：昨天的全天行程不能算「進行中」。
+        val allDay = candidates
+            .filter { it.allDay && spans.dateSpan(it).second >= today }
+            .minByOrNull { it.begin } ?: return null
+        return NextEvent(allDay, inProgress = spans.dateSpan(allDay).first <= today)
     }
 
     /** 下一次畫面需要改變的時刻：行程開始（變成進行中）或結束（換下一個）。 */

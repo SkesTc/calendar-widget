@@ -91,6 +91,18 @@ class WeekBuilderTest {
         assertEquals(at(today, 13), NextEventPicker.nextBoundary(later, at(today, 12)))
     }
 
+    /** 昨天的全天行程在台灣到今天 08:00（UTC 午夜）才結束，但不能算今天的「下一個行程」。 */
+    @Test
+    fun yesterdaysAllDayEventIsNotPickedBeforeEightAm() {
+        val now = at(today, 7)
+        assertNull(NextEventPicker.pick(listOf(allDay(1, today.minusDays(1))), now, zone))
+        val todays = NextEventPicker.pick(listOf(allDay(1, today.minusDays(1)), allDay(2, today)), now, zone)!!
+        assertEquals("a2", todays.event.title)
+        assertEquals(true, todays.inProgress)
+        val tomorrow = NextEventPicker.pick(listOf(allDay(3, today.plusDays(1))), now, zone)!!
+        assertEquals(false, tomorrow.inProgress)
+    }
+
     @Test
     fun nextEventFallsBackToAllDayThenNothing() {
         val now = at(today, 20)
