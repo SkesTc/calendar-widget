@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="今天 · 星期一"
+        android:text="@string/preview_today_weekday"
         android:textColor="@color/preview_on_surface"
         android:textSize="16sp"
         android:textStyle="bold" />
@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="九月十七"
+        android:text="@string/preview_subtitle"
         android:textColor="@color/preview_variant"
         android:textSize="12sp"
         android:layout_marginBottom="6dp" />
@@ -54,7 +54,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="晨會"
+                android:text="@string/sample_standup"
                 android:textColor="@color/preview_outline"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -78,7 +78,7 @@
         <TextView
             android:layout_width="46dp"
             android:layout_height="wrap_content"
-            android:text="現在"
+            android:text="@string/now"
             android:textColor="@color/preview_primary"
             android:textSize="12sp"
             android:textStyle="bold" />
@@ -93,7 +93,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="空檔 2 小時"
+        android:text="@string/preview_gap"
         android:textColor="@color/preview_variant"
         android:textSize="12sp"
         android:layout_marginStart="64dp"
@@ -131,7 +131,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="專案討論"
+                android:text="@string/sample_project"
                 android:textColor="@color/preview_on_card"
                 android:textSize="14sp"
                 android:textStyle="bold" />
@@ -139,7 +139,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="14:00 – 15:00 · 線上"
+                android:text="@string/preview_project_detail"
                 android:textColor="@color/preview_on_card"
                 android:textSize="12sp" />
         </LinearLayout>

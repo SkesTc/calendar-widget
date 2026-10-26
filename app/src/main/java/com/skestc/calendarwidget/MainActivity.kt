@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
@@ -91,7 +92,7 @@ private fun HomeScreen() {
         }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("行事曆小工具") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -100,20 +101,20 @@ private fun HomeScreen() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (!granted) {
-                Text("需要讀取日曆的權限，才能顯示手機上已同步的 Google 日曆行程。")
+                Text(stringResource(R.string.permission_rationale))
                 Button(onClick = { permissionLauncher.launch(Manifest.permission.READ_CALENDAR) }) {
-                    Text("授權讀取日曆")
+                    Text(stringResource(R.string.grant_permission))
                 }
                 return@Column
             }
 
-            Text("加入桌面小工具", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.add_widgets_title), style = MaterialTheme.typography.titleMedium)
             val pinOptions = listOf(
-                "行程清單" to AgendaWidgetReceiver::class.java,
-                "月曆" to MonthWidgetReceiver::class.java,
-                "時間軸" to TimelineWidgetReceiver::class.java,
-                "下一個行程" to NextEventWidgetReceiver::class.java,
-                "一週" to WeekWidgetReceiver::class.java,
+                R.string.pin_agenda to AgendaWidgetReceiver::class.java,
+                R.string.pin_month to MonthWidgetReceiver::class.java,
+                R.string.pin_timeline to TimelineWidgetReceiver::class.java,
+                R.string.pin_next to NextEventWidgetReceiver::class.java,
+                R.string.pin_week to WeekWidgetReceiver::class.java,
             )
             for (row in pinOptions.chunked(3)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -122,7 +123,7 @@ private fun HomeScreen() {
                             onClick = { scope.launch { requestPin(context, receiver) } },
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text(label, maxLines = 1)
+                            Text(stringResource(label), maxLines = 1)
                         }
                     }
                     // 最後一列不滿三個時補空位，按鈕寬度才會一致。
@@ -134,10 +135,10 @@ private fun HomeScreen() {
             }
             UpdateHelpCard()
 
-            Text("已同步的日曆", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.synced_calendars), style = MaterialTheme.typography.titleMedium)
             if (calendars.isEmpty()) {
                 Text(
-                    "找不到日曆。請確認手機的「設定 → 帳戶 → Google」已開啟日曆同步。",
+                    stringResource(R.string.no_calendars),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
@@ -165,7 +166,11 @@ private fun CalendarCard(calendar: CalendarInfo) {
             Column {
                 Text(calendar.displayName, style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    calendar.accountName + if (calendar.visible) "" else " · 已隱藏",
+                    if (calendar.visible) {
+                        calendar.accountName
+                    } else {
+                        stringResource(R.string.calendar_hidden, calendar.accountName)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -182,10 +187,9 @@ private fun HolidayHint() {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("顯示國定假日與補班日", style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.holiday_hint_title), style = MaterialTheme.typography.titleSmall)
             Text(
-                "在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。" +
-                    "同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。",
+                stringResource(R.string.holiday_hint_body),
                 style = MaterialTheme.typography.bodySmall,
             )
         }

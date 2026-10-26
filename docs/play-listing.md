@@ -56,3 +56,41 @@
 |---|---|
 | `READ_CALENDAR` | 讀取手機上已同步的日曆行程，顯示在桌面小工具 |
 | `RECEIVE_BOOT_COMPLETED` | 重新開機後重新排定午夜換日的更新 |
+
+---
+
+# English store listing (en-US)
+
+Play Console → Store presence → Main store listing → Manage translations → add **English (United States)**.
+
+## App name (≤ 30)
+
+Calendar Widgets: Google Cal
+
+## Short description (≤ 80)
+
+Agenda, month, week, timeline and next-event widgets for Google Calendar.
+
+## Full description
+
+Put your Google Calendar on your home screen and see your day at a glance.
+
+📅 Five widgets
+• Agenda — events grouped by Today / Tomorrow / date, with your calendar colors
+• Month — colored dots on busy days, swipe between months, tap a day to open it
+• Week — seven days side by side, starting today
+• Today timeline — past, current and upcoming events, with "now" and free time marked
+• Next event — a tiny 2×1 card that sits nicely next to your clock
+
+🎨 Make it yours
+• Five themes: Material You (follows your wallpaper), AMOLED black, Morandi, Journal, Frosted glass
+• Adjust background opacity, corners, text size and font
+• Live preview while you tweak, and separate settings for every widget
+
+🔒 Private by design
+• Reads the calendars already synced to your phone — no extra sign-in
+• No internet access, no data collection, no ads
+
+Also shows public holidays when you subscribe to a holiday calendar in Google Calendar, and optional Chinese lunar dates and solar terms.
+
+Make sure calendar sync is turned on in Settings → Accounts → Google.

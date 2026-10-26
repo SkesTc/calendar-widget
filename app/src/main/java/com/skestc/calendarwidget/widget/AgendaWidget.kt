@@ -41,6 +41,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.MainActivity
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.AgendaRow
 import com.skestc.calendarwidget.data.CalendarEvent
@@ -277,7 +278,7 @@ private fun EmptyState(days: Int) {
     val style = LocalWidgetStyle.current
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = "接下來 $days 天沒有行程 🎉",
+            text = glanceString(R.string.agenda_empty, days),
             style = style.text(13, style.colors.onSurfaceVariant),
         )
     }
@@ -291,7 +292,7 @@ internal fun PermissionPrompt() {
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "點此授權讀取日曆",
+            text = glanceString(R.string.tap_to_grant),
             style = style.text(14, style.colors.primary, FontWeight.Medium),
         )
     }

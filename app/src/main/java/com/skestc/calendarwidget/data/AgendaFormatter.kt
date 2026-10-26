@@ -2,6 +2,7 @@ package com.skestc.calendarwidget.data
 
 import android.content.Context
 import android.text.format.DateFormat
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.lunar.DayLabeler
 import java.time.Instant
 import java.time.LocalDate
@@ -81,14 +82,14 @@ class AgendaFormatter(
             }
 
     fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
-        today -> "今天 · ${headerFormat.format(date)}"
-        today.plusDays(1) -> "明天 · ${headerFormat.format(date)}"
+        today -> context.getString(R.string.today_prefix, headerFormat.format(date))
+        today.plusDays(1) -> context.getString(R.string.tomorrow_prefix, headerFormat.format(date))
         else -> headerFormat.format(date)
     }
 
     fun timeLabel(event: CalendarEvent): String =
         if (event.allDay) {
-            "全天"
+            context.getString(R.string.all_day)
         } else {
             "${timeFormat.format(Date(event.begin))} – ${timeFormat.format(Date(event.end))}"
         }

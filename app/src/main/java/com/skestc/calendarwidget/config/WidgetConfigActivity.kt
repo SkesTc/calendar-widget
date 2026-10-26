@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
@@ -56,6 +57,7 @@ import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.appwidget.state.updateAppWidgetState
 import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.settings.Appearance
@@ -181,7 +183,7 @@ private fun ConfigScreen(
         settings = settings.copy(appearance = change(settings.appearance))
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("小工具設定") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.config_title)) }) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -203,7 +205,7 @@ private fun ConfigScreen(
                 item { Spacer(Modifier.size(4.dp)) }
 
                 item {
-                    Section("主題") {
+                    Section(stringResource(R.string.section_theme)) {
                         ThemePicker(
                             selected = settings.appearance.theme,
                             onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
@@ -213,7 +215,7 @@ private fun ConfigScreen(
 
                 if (settings.appearance.theme.supportsOpacity) {
                     item {
-                        Section("背景不透明度 ${settings.appearance.backgroundOpacity}%") {
+                        Section(stringResource(R.string.section_opacity, settings.appearance.backgroundOpacity)) {
                             Slider(
                                 value = settings.appearance.backgroundOpacity.toFloat(),
                                 onValueChange = { v ->
@@ -228,9 +230,9 @@ private fun ConfigScreen(
                 }
 
                 item {
-                    Section("圓角") {
+                    Section(stringResource(R.string.section_corner)) {
                         Segmented(
-                            options = Appearance.CORNER_OPTIONS,
+                            options = Appearance.CORNER_OPTIONS.map { it to stringResource(cornerLabel(it)) },
                             selected = settings.appearance.cornerDp,
                             onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
                         )
@@ -238,9 +240,9 @@ private fun ConfigScreen(
                 }
 
                 item {
-                    Section("文字大小") {
+                    Section(stringResource(R.string.section_text_size)) {
                         Segmented(
-                            options = Appearance.TEXT_SCALE_OPTIONS,
+                            options = Appearance.TEXT_SCALE_OPTIONS.map { it to stringResource(textScaleLabel(it)) },
                             selected = settings.appearance.textScalePercent,
                             onSelect = { v -> updateAppearance { it.copy(textScalePercent = v) } },
                         )
@@ -248,9 +250,9 @@ private fun ConfigScreen(
                 }
 
                 item {
-                    Section("字型") {
+                    Section(stringResource(R.string.section_font)) {
                         Segmented(
-                            options = FontChoice.entries.map { it to it.label },
+                            options = FontChoice.entries.map { it to stringResource(it.labelRes) },
                             selected = settings.appearance.font,
                             onSelect = { v -> updateAppearance { it.copy(font = v) } },
                         )
@@ -267,9 +269,9 @@ private fun ConfigScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column(Modifier.weight(1f)) {
-                            Text("顯示農曆、節氣與傳統節日", style = MaterialTheme.typography.titleSmall)
+                            Text(stringResource(R.string.show_lunar_title), style = MaterialTheme.typography.titleSmall)
                             Text(
-                                "國定假日與補班日來自 Google 日曆的「台灣的節慶假日」",
+                                stringResource(R.string.show_lunar_subtitle),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -283,9 +285,9 @@ private fun ConfigScreen(
 
                 if (kind == WidgetKind.AGENDA) {
                     item {
-                        Section("顯示天數") {
+                        Section(stringResource(R.string.section_days)) {
                             Segmented(
-                                options = WidgetSettings.AGENDA_DAY_OPTIONS.map { it to "$it 天" },
+                                options = WidgetSettings.AGENDA_DAY_OPTIONS.map { it to stringResource(R.string.days_option, it) },
                                 selected = settings.agendaDays,
                                 onSelect = { v -> settings = settings.copy(agendaDays = v) },
                             )
@@ -294,10 +296,10 @@ private fun ConfigScreen(
                 }
 
                 item {
-                    Section("顯示的日曆") {
+                    Section(stringResource(R.string.section_calendars)) {
                         if (!repository.hasPermission()) {
                             Text(
-                                "尚未授權讀取日曆，請先開啟 App 完成授權。",
+                                stringResource(R.string.config_no_permission),
                                 modifier = Modifier.padding(horizontal = 16.dp),
                             )
                         }
@@ -323,7 +325,7 @@ private fun ConfigScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
-                Text("完成")
+                Text(stringResource(R.string.done))
             }
         }
     }
@@ -376,7 +378,7 @@ private fun ThemePicker(selected: WidgetThemeId, onSelect: (WidgetThemeId) -> Un
                     Box(Modifier.size(18.dp).clip(CircleShape).background(primary))
                 }
                 Text(
-                    theme.label,
+                    stringResource(theme.labelRes),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(top = 4.dp),
@@ -432,4 +434,36 @@ private fun CalendarCheckRow(calendar: CalendarInfo, checked: Boolean, onToggle:
             )
         }
     }
+}
+
+private val WidgetThemeId.labelRes: Int
+    get() = when (this) {
+        WidgetThemeId.DYNAMIC -> R.string.theme_dynamic
+        WidgetThemeId.AMOLED -> R.string.theme_amoled
+        WidgetThemeId.MORANDI -> R.string.theme_morandi
+        WidgetThemeId.JOURNAL -> R.string.theme_journal
+        WidgetThemeId.GLASS -> R.string.theme_glass
+    }
+
+private val FontChoice.labelRes: Int
+    get() = when (this) {
+        FontChoice.THEME -> R.string.font_theme
+        FontChoice.SANS -> R.string.font_sans
+        FontChoice.SERIF -> R.string.font_serif
+        FontChoice.MONO -> R.string.font_mono
+    }
+
+private fun cornerLabel(cornerDp: Int): Int = when (cornerDp) {
+    Appearance.SYSTEM_CORNER -> R.string.corner_system
+    0 -> R.string.corner_square
+    12 -> R.string.size_small
+    24 -> R.string.size_medium
+    else -> R.string.size_large
+}
+
+private fun textScaleLabel(percent: Int): Int = when (percent) {
+    90 -> R.string.size_small
+    100 -> R.string.size_medium
+    115 -> R.string.size_large
+    else -> R.string.size_xlarge
 }

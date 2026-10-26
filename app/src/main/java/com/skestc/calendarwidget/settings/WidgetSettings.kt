@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.skestc.calendarwidget.theme.WidgetThemeId
+import java.util.Locale
 
 /**
  * 每個 widget 各自的設定，存在 Glance 的 per-widget Preferences 狀態裡。
@@ -20,8 +21,8 @@ data class WidgetSettings(
     val monthOffset: Int = 0,
     val refresh: Long = 0,
     val appearance: Appearance = Appearance(),
-    /** 顯示農曆、節氣與傳統節日。 */
-    val showLunar: Boolean = true,
+    /** 顯示農曆、節氣與傳統節日；預設只在中文介面開啟。 */
+    val showLunar: Boolean = defaultShowLunar(),
 ) {
     companion object {
         const val DEFAULT_AGENDA_DAYS = 7
@@ -38,6 +39,8 @@ data class WidgetSettings(
         val KEY_FONT = stringPreferencesKey("font")
         val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
 
+        fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
+
         fun from(prefs: Preferences) = WidgetSettings(
             hiddenCalendarIds = prefs[KEY_HIDDEN_CALENDARS].orEmpty()
                 .mapNotNull { it.toLongOrNull() }
@@ -52,16 +55,17 @@ data class WidgetSettings(
                 textScalePercent = prefs[KEY_TEXT_SCALE] ?: 100,
                 font = FontChoice.fromKey(prefs[KEY_FONT]),
             ),
-            showLunar = prefs[KEY_SHOW_LUNAR] ?: true,
+            showLunar = prefs[KEY_SHOW_LUNAR] ?: defaultShowLunar(),
         )
     }
 }
 
-enum class FontChoice(val label: String) {
-    THEME("跟隨主題"),
-    SANS("無襯線"),
-    SERIF("襯線"),
-    MONO("等寬");
+/** 顯示名稱在 strings.xml（font_*）。 */
+enum class FontChoice {
+    THEME,
+    SANS,
+    SERIF,
+    MONO;
 
     companion object {
         fun fromKey(key: String?): FontChoice = entries.firstOrNull { it.name == key } ?: THEME
@@ -81,8 +85,8 @@ data class Appearance(
     companion object {
         const val SYSTEM_CORNER = -1
         const val DEFAULT_CORNER = SYSTEM_CORNER
-        val CORNER_OPTIONS = listOf(SYSTEM_CORNER to "系統", 0 to "直角", 12 to "小", 24 to "中", 32 to "大")
+        val CORNER_OPTIONS = listOf(SYSTEM_CORNER, 0, 12, 24, 32)
         /** 小／中／大／特大。 */
-        val TEXT_SCALE_OPTIONS = listOf(90 to "小", 100 to "中", 115 to "大", 130 to "特大")
+        val TEXT_SCALE_OPTIONS = listOf(90, 100, 115, 130)
     }
 }

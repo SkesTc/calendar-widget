@@ -55,6 +55,14 @@
   - 一週：依高度顯示筆數與「+N」、假日與農曆小字
 - 農曆換算改用 Robolectric 內的 `android.icu` 驗證已知日期（2026 春節、除夕、清明、2025 閏六月）
 
+### 英文介面 ✅
+- 所有介面文字移到字串資源：`values/`（英文，預設）、`values-zh/`（繁體中文）。由 `scripts/gen_strings.py` 從同一張表產生，確保兩種語言的 key 一致（Lint 會擋缺少的翻譯）
+- 手機是中文時跟原本一樣；其他語言顯示英文，且預設關閉農曆（設定裡仍可開啟）
+- 小工具清單的預覽圖文字也跟著語系切換
+- [英文版 Play 商店資訊](docs/play-listing.md#english-store-listing-en-us)
+
+> 修改介面文字：編輯 `scripts/gen_strings.py` 後執行 `python3 scripts/gen_strings.py app/src/main/res`。
+
 ## 技術棧
 
 | 項目 | 選用 |

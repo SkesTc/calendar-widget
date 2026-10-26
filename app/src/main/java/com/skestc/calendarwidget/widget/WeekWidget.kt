@@ -35,6 +35,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.unit.ColorProvider
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.HolidayKind
@@ -188,7 +189,7 @@ private fun WeekDayColumn(
                 ),
             )
         }
-        val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) "補班" else day.label
+        val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label
         if (showLabel && label != null) {
             Text(
                 text = label,

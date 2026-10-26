@@ -1,0 +1,152 @@
+# 產生 values/strings.xml（英文，預設）與 values-zh/strings.xml（繁體中文），確保兩邊的 key 完全一致。
+import sys
+from xml.sax.saxutils import escape
+RES = sys.argv[1]
+S = [
+ # App 與 widget 名稱
+ ("app_name", "Calendar Widgets", "行事曆小工具"),
+ ("widget_name", "Agenda", "行程清單"),
+ ("widget_description", "Upcoming events from your Google Calendar", "顯示 Google 日曆接下來的行程"),
+ ("month_widget_name", "Month", "月曆"),
+ ("month_widget_description", "A full month with colored dots on busy days", "整個月的月曆，有行程的日子會標上彩色圓點"),
+ ("timeline_widget_name", "Today timeline", "今日時間軸"),
+ ("timeline_widget_description", "Today's events in order, with now and free time marked", "今天的行程依時間排列，標出現在的位置和空檔"),
+ ("next_widget_name", "Next event", "下一個行程"),
+ ("next_widget_description", "A tiny card with just your current or next event", "極簡小卡，只顯示進行中或下一個行程"),
+ ("week_widget_name", "Week", "一週"),
+ ("week_widget_description", "Seven days side by side, starting today", "從今天起 7 天並排，每天的行程一目了然"),
+ # 首頁
+ ("permission_rationale", "Calendar access is needed to show the Google Calendar events synced to this phone.", "需要讀取日曆的權限，才能顯示手機上已同步的 Google 日曆行程。"),
+ ("grant_permission", "Allow calendar access", "授權讀取日曆"),
+ ("add_widgets_title", "Add to home screen", "加入桌面小工具"),
+ ("pin_agenda", "Agenda", "行程清單"),
+ ("pin_month", "Month", "月曆"),
+ ("pin_timeline", "Timeline", "時間軸"),
+ ("pin_next", "Next", "下一個行程"),
+ ("pin_week", "Week", "一週"),
+ ("synced_calendars", "Synced calendars", "已同步的日曆"),
+ ("no_calendars", "No calendars found. Make sure calendar sync is on in Settings → Accounts → Google.", "找不到日曆。請確認手機的「設定 → 帳戶 → Google」已開啟日曆同步。"),
+ ("calendar_hidden", "%1$s · hidden", "%1$s · 已隱藏"),
+ ("holiday_hint_title", "Show public holidays", "顯示國定假日與補班日"),
+ ("holiday_hint_body", "In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.", "在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。"),
+ # 小工具沒有自動更新
+ ("update_help_title", "Widgets not updating?", "小工具沒有自動更新？"),
+ ("update_help_body", "Some phones block background updates to save battery, so widgets may miss the new day or event changes. Allow this app to run in the background:", "部分手機的省電功能會擋住背景更新，導致換日、行程變動後小工具沒跟著變。請依下列步驟允許本 App 在背景執行："),
+ ("open_app_info", "Open app info", "開啟應用程式資訊"),
+ # 設定頁
+ ("config_title", "Widget settings", "小工具設定"),
+ ("section_theme", "Theme", "主題"),
+ ("section_opacity", "Background opacity %1$d%%", "背景不透明度 %1$d%%"),
+ ("section_corner", "Corners", "圓角"),
+ ("section_text_size", "Text size", "文字大小"),
+ ("section_font", "Font", "字型"),
+ ("show_lunar_title", "Show lunar calendar and solar terms", "顯示農曆、節氣與傳統節日"),
+ ("show_lunar_subtitle", "Public holidays come from Google Calendar’s holiday calendars", "國定假日與補班日來自 Google 日曆的「台灣的節慶假日」"),
+ ("section_days", "Days to show", "顯示天數"),
+ ("days_option", "%1$d days", "%1$d 天"),
+ ("section_calendars", "Calendars", "顯示的日曆"),
+ ("config_no_permission", "Calendar access hasn’t been allowed yet. Open the app to allow it first.", "尚未授權讀取日曆，請先開啟 App 完成授權。"),
+ ("done", "Done", "完成"),
+ ("theme_dynamic", "Material You", "Material You"),
+ ("theme_amoled", "AMOLED black", "AMOLED 純黑"),
+ ("theme_morandi", "Morandi", "莫蘭迪"),
+ ("theme_journal", "Journal", "手帳"),
+ ("theme_glass", "Frosted glass", "毛玻璃"),
+ ("font_theme", "Theme", "跟隨主題"),
+ ("font_sans", "Sans", "無襯線"),
+ ("font_serif", "Serif", "襯線"),
+ ("font_mono", "Mono", "等寬"),
+ ("corner_system", "System", "系統"),
+ ("corner_square", "Square", "直角"),
+ ("size_small", "S", "小"),
+ ("size_medium", "M", "中"),
+ ("size_large", "L", "大"),
+ ("size_xlarge", "XL", "特大"),
+ # widget 內文
+ ("today_prefix", "Today · %1$s", "今天 · %1$s"),
+ ("tomorrow_prefix", "Tomorrow · %1$s", "明天 · %1$s"),
+ ("today_word", "Today", "今天"),
+ ("tomorrow_word", "Tomorrow", "明天"),
+ ("all_day", "All day", "全天"),
+ ("day_all_day", "%1$s · all day", "%1$s · 全天"),
+ ("untitled", "(No title)", "(無標題)"),
+ ("agenda_empty", "No events in the next %1$d days 🎉", "接下來 %1$d 天沒有行程 🎉"),
+ ("tap_to_grant", "Tap to allow calendar access", "點此授權讀取日曆"),
+ ("back_to_this_month", "↩", "今"),
+ ("makeup_workday", "Work", "補班"),
+ ("in_progress_until", "Now · until %1$s", "進行中 · 到 %1$s"),
+ ("next_empty", "No events in the next 7 days", "接下來 7 天沒有行程"),
+ ("timeline_all_day", "All day: %1$s", "全天：%1$s"),
+ ("list_separator", ", ", "、"),
+ ("now", "Now", "現在"),
+ ("free_time", "Free %1$s", "空檔 %1$s"),
+ ("timeline_no_more", "No other timed events today", "今天沒有其他排定時間的行程"),
+ ("timeline_empty", "Nothing scheduled today ☕", "今天沒有行程 ☕"),
+ ("duration_minutes", "%1$d min", "%1$d 分"),
+ ("duration_hours", "%1$d h", "%1$d 小時"),
+ ("duration_hours_minutes", "%1$d h %2$d min", "%1$d 小時 %2$d 分"),
+ # 設定頁預覽與小工具清單預覽的示意文字
+ ("sample_standup", "Stand-up", "晨會"),
+ ("sample_lunch", "Lunch", "午餐約"),
+ ("sample_project", "Project sync", "專案討論"),
+ ("sample_dentist", "Dentist", "牙醫"),
+ ("sample_book_club", "Book club", "讀書會"),
+ ("sample_gym", "Gym", "健身"),
+ ("sample_dinner", "Dinner", "聚餐"),
+ ("sample_hike", "Hike", "爬山"),
+ ("sample_room", "Room A", "會議室 A"),
+ ("sample_online", "Online", "線上"),
+ ("preview_weekday", "Monday", "星期一"),
+ ("preview_subtitle", "Oct 2026", "九月十七"),
+ ("preview_today_weekday", "Today · Monday", "今天 · 星期一"),
+ ("preview_month_title", "October 2026", "2026年10月"),
+ ("preview_gap", "Free 2 h", "空檔 2 小時"),
+ ("preview_next_when", "Today 14:00", "今天 14:00"),
+ ("preview_standup_detail", "09:30 – 10:00 · Room A", "09:30 – 10:00 · 會議室 A"),
+ ("preview_project_detail", "14:00 – 15:00 · Online", "14:00 – 15:00 · 線上"),
+ ("wd_sun", "S", "日"), ("wd_mon", "M", "一"), ("wd_tue", "T", "二"), ("wd_wed", "W", "三"),
+ ("wd_thu", "T", "四"), ("wd_fri", "F", "五"), ("wd_sat", "S", "六"),
+]
+ARRAYS = [
+ ("tips_xiaomi",
+  ["App info → turn on “Autostart”", "App info → Battery saver → “No restrictions”", "In Recents, pull the app down to lock it so it isn’t cleared"],
+  ["應用程式資訊 → 開啟「自啟動」", "應用程式資訊 → 省電策略 → 選「無限制」", "最近使用的 App 畫面中，把本 App 往下拉鎖定，避免被一鍵清除"]),
+ ("tips_samsung",
+  ["App info → Battery → “Unrestricted”", "Settings → Battery → Background usage limits: make sure this app isn’t in Sleeping or Deep sleeping apps"],
+  ["應用程式資訊 → 電池 → 選「不受限制」", "設定 → 電池 → 背景使用限制：確認本 App 不在「睡眠中」或「深度睡眠中」的應用程式"]),
+ ("tips_oppo",
+  ["App info → Battery usage → allow background activity and auto launch"],
+  ["應用程式資訊 → 電池使用 → 開啟「允許背景活動」與「允許自動啟動」"]),
+ ("tips_vivo",
+  ["i Manager → App manager → Autostart: allow this app", "Settings → Battery → Background power consumption: allow this app"],
+  ["i 管家 → 應用程式管理 → 自啟動管理：允許本 App", "設定 → 電池 → 背景耗電管理：允許本 App 在背景執行"]),
+ ("tips_huawei",
+  ["Settings → Battery → App launch: set this app to “Manage manually” and turn everything on"],
+  ["設定 → 電池 → 應用程式啟動管理：本 App 改成「手動管理」並全部開啟"]),
+ ("tips_asus",
+  ["Mobile Manager → Auto-start Manager: allow this app"],
+  ["手機管家 → 自動啟動管理員：允許本 App"]),
+ ("tips_generic",
+  ["App info → Battery → “Unrestricted” (or turn off battery optimization)"],
+  ["應用程式資訊 → 電池 → 選「不受限制」（或關閉電池最佳化）"]),
+]
+
+def esc(v):
+    v = escape(v).replace("'", "\\'").replace('"', '\\"')
+    if v != v.strip(): v = '"' + v + '"'
+    return v
+
+def write(path, idx, comment):
+    out = ['<?xml version="1.0" encoding="utf-8"?>', f'<!-- {comment}（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->', '<resources>']
+    for key, en, zh in S:
+        out.append(f'    <string name="{key}">{esc((en, zh)[idx])}</string>')
+    for key, en, zh in ARRAYS:
+        out.append(f'    <string-array name="{key}">')
+        out += [f'        <item>{esc(x)}</item>' for x in (en, zh)[idx]]
+        out.append('    </string-array>')
+    out.append('</resources>\n')
+    open(path, 'w', encoding='utf-8').write('\n'.join(out))
+
+write(f'{RES}/values/strings.xml', 0, '英文（預設語系）')
+write(f'{RES}/values-zh/strings.xml', 1, '繁體中文')
+print(len(S), 'strings,', len(ARRAYS), 'arrays')

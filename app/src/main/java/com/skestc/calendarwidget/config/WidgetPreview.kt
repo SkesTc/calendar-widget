@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.settings.Appearance
@@ -190,10 +192,14 @@ private fun AgendaPreview(palette: PreviewPalette, cornerDp: Float, text: TextSt
             }
         }
         Spacer(Modifier.height(8.dp))
-        Text("今天", style = text(12, palette.primary, FontWeight.Medium, null))
+        Text(stringResource(R.string.today_word), style = text(12, palette.primary, FontWeight.Medium, null))
         Spacer(Modifier.height(4.dp))
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            for ((title, time, color) in SAMPLE_AGENDA) {
+            val samples = listOf(
+                Triple(stringResource(R.string.sample_standup), "09:30 – 10:00 · " + stringResource(R.string.sample_room), Color(0xFF4285F4)),
+                Triple(stringResource(R.string.sample_lunch), "12:00 – 13:00", Color(0xFF0B8043)),
+            )
+            for ((title, time, color) in samples) {
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -312,19 +318,25 @@ private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
 private fun TimelinePreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler) {
     val cardShape = RoundedCornerShape(min((cornerDp / 2).dp, 12.dp))
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("今天", style = text(16, palette.onSurface, FontWeight.Bold, null))
+        Text(stringResource(R.string.today_word), style = text(16, palette.onSurface, FontWeight.Bold, null))
         Spacer(Modifier.height(2.dp))
-        TimelinePreviewRow(palette, cardShape, text, "09:30", "晨會", "09:30 – 10:00", Color(0xFF4285F4), past = true)
+        TimelinePreviewRow(
+            palette, cardShape, text, "09:30", stringResource(R.string.sample_standup), "09:30 – 10:00",
+            Color(0xFF4285F4), past = true,
+        )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("現在", Modifier.width(46.dp), style = text(12, palette.primary, FontWeight.Bold, null))
+            Text(stringResource(R.string.now), Modifier.width(46.dp), style = text(12, palette.primary, FontWeight.Bold, null))
             Box(Modifier.weight(1f).height(2.dp).background(palette.primary))
         }
         Text(
-            "空檔 2 小時",
+            stringResource(R.string.preview_gap),
             Modifier.padding(start = 72.dp),
             style = text(12, palette.onSurfaceVariant, FontWeight.Normal, null),
         )
-        TimelinePreviewRow(palette, cardShape, text, "14:00", "專案討論", "14:00 – 15:00 · 線上", Color(0xFF0B8043), past = false)
+        TimelinePreviewRow(
+            palette, cardShape, text, "14:00", stringResource(R.string.sample_project),
+            "14:00 – 15:00 · " + stringResource(R.string.sample_online), Color(0xFF0B8043), past = false,
+        )
     }
 }
 
@@ -368,8 +380,8 @@ private fun NextPreview(palette: PreviewPalette, text: TextStyler) {
         Box(Modifier.width(4.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(Color(0xFF4285F4)))
         Spacer(Modifier.width(10.dp))
         Column {
-            Text("今天 14:00", style = text(11, palette.onSurfaceVariant, FontWeight.Bold, null))
-            Text("專案討論", maxLines = 1, style = text(15, palette.onSurface, FontWeight.Bold, null))
+            Text(stringResource(R.string.preview_next_when), style = text(11, palette.onSurfaceVariant, FontWeight.Bold, null))
+            Text(stringResource(R.string.sample_project), maxLines = 1, style = text(15, palette.onSurface, FontWeight.Bold, null))
         }
     }
 }
@@ -379,11 +391,11 @@ private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
     val today = LocalDate.now()
     val locale = Locale.getDefault()
     val samples = mapOf(
-        0 to listOf("晨會" to Color(0xFF4285F4)),
-        1 to listOf("牙醫" to Color(0xFFE67C73)),
-        3 to listOf("讀書會" to Color(0xFF0B8043), "健身" to Color(0xFF8E24AA)),
-        4 to listOf("聚餐" to Color(0xFFE67C73)),
-        6 to listOf("爬山" to Color(0xFF0B8043)),
+        0 to listOf(R.string.sample_standup to Color(0xFF4285F4)),
+        1 to listOf(R.string.sample_dentist to Color(0xFFE67C73)),
+        3 to listOf(R.string.sample_book_club to Color(0xFF0B8043), R.string.sample_gym to Color(0xFF8E24AA)),
+        4 to listOf(R.string.sample_dinner to Color(0xFFE67C73)),
+        6 to listOf(R.string.sample_hike to Color(0xFF0B8043)),
     )
     Row(Modifier.fillMaxSize()) {
         for (offset in 0 until 7) {
@@ -415,7 +427,7 @@ private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
                 }
                 for ((title, color) in samples[offset].orEmpty()) {
                     Text(
-                        title,
+                        stringResource(title),
                         maxLines = 1,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -432,8 +444,3 @@ private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
 }
 
 private val SAMPLE_COLORS = listOf(0xFF4285F4.toInt(), 0xFF0B8043.toInt(), 0xFFE67C73.toInt(), 0xFFF6BF26.toInt())
-
-private val SAMPLE_AGENDA = listOf(
-    Triple("晨會", "09:30 – 10:00 · 會議室 A", Color(0xFF4285F4)),
-    Triple("午餐約", "12:00 – 13:00", Color(0xFF0B8043)),
-)

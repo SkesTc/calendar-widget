@@ -1,21 +1,23 @@
 package com.skestc.calendarwidget.ui
 
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class DeviceTipsTest {
 
     @Test
-    fun brandSpecificTips() {
-        assertTrue(DeviceTips.forManufacturer("Xiaomi").any { "自啟動" in it })
-        assertTrue(DeviceTips.forManufacturer("POCO").any { "自啟動" in it })
-        assertTrue(DeviceTips.forManufacturer("samsung").any { "不受限制" in it })
-        assertTrue(DeviceTips.forManufacturer("OnePlus").any { "自動啟動" in it })
+    fun brandsAreDetectedCaseInsensitively() {
+        assertEquals(PhoneBrand.XIAOMI, DeviceTips.brandOf("Xiaomi"))
+        assertEquals(PhoneBrand.XIAOMI, DeviceTips.brandOf("POCO"))
+        assertEquals(PhoneBrand.XIAOMI, DeviceTips.brandOf("Redmi"))
+        assertEquals(PhoneBrand.SAMSUNG, DeviceTips.brandOf("samsung"))
+        assertEquals(PhoneBrand.OPPO, DeviceTips.brandOf("OnePlus"))
+        assertEquals(PhoneBrand.VIVO, DeviceTips.brandOf("iQOO"))
+        assertEquals(PhoneBrand.HUAWEI, DeviceTips.brandOf("HONOR"))
     }
 
     @Test
-    fun unknownBrandGetsGenericTip() {
-        val tips = DeviceTips.forManufacturer("Google")
-        assertTrue(tips.size == 1 && "電池" in tips.single())
+    fun unknownBrandFallsBackToGenericTips() {
+        assertEquals(PhoneBrand.OTHER, DeviceTips.brandOf("Google"))
     }
 }

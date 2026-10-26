@@ -20,7 +20,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringArrayResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.skestc.calendarwidget.R
 
 /** 首頁的「小工具沒有自動更新？」說明，點開後顯示這支手機品牌的設定步驟。 */
 @Composable
@@ -35,16 +38,21 @@ fun UpdateHelpCard(modifier: Modifier = Modifier) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                (if (expanded) "▾ " else "▸ ") + "小工具沒有自動更新？",
+                (if (expanded) "▾ " else "▸ ") + stringResource(R.string.update_help_title),
                 style = MaterialTheme.typography.titleSmall,
             )
             if (expanded) {
-                Text(
-                    "部分手機的省電功能會擋住背景更新，導致換日、行程變動後小工具沒跟著變。" +
-                        "請依下列步驟允許本 App 在背景執行：",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                DeviceTips.forManufacturer(Build.MANUFACTURER).forEachIndexed { i, tip ->
+                Text(stringResource(R.string.update_help_body), style = MaterialTheme.typography.bodySmall)
+                val tips = when (DeviceTips.brandOf(Build.MANUFACTURER)) {
+                    PhoneBrand.XIAOMI -> R.array.tips_xiaomi
+                    PhoneBrand.SAMSUNG -> R.array.tips_samsung
+                    PhoneBrand.OPPO -> R.array.tips_oppo
+                    PhoneBrand.VIVO -> R.array.tips_vivo
+                    PhoneBrand.HUAWEI -> R.array.tips_huawei
+                    PhoneBrand.ASUS -> R.array.tips_asus
+                    PhoneBrand.OTHER -> R.array.tips_generic
+                }
+                stringArrayResource(tips).forEachIndexed { i, tip ->
                     Text("${i + 1}. $tip", style = MaterialTheme.typography.bodySmall)
                 }
                 OutlinedButton(
@@ -57,7 +65,7 @@ fun UpdateHelpCard(modifier: Modifier = Modifier) {
                         )
                     },
                 ) {
-                    Text("開啟應用程式資訊")
+                    Text(stringResource(R.string.open_app_info))
                 }
             }
         }

@@ -40,6 +40,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.EventStatus
@@ -47,7 +48,6 @@ import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.Timeline
 import com.skestc.calendarwidget.data.TimelineBuilder
 import com.skestc.calendarwidget.data.TimelineItem
-import com.skestc.calendarwidget.data.formatDuration
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
@@ -165,7 +165,10 @@ private fun TimelineHeader(today: LocalDate, note: String?) {
     Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = "今天 · " + today.dayOfWeek.getDisplayName(DayTextStyle.FULL, Locale.getDefault()),
+                text = glanceString(
+                    R.string.today_prefix,
+                    today.dayOfWeek.getDisplayName(DayTextStyle.FULL, Locale.getDefault()),
+                ),
                 style = style.text(16, style.colors.onSurface, FontWeight.Bold),
             )
             if (note != null) {
@@ -181,7 +184,10 @@ private fun TimelineHeader(today: LocalDate, note: String?) {
 private fun AllDayStrip(events: List<CalendarEvent>) {
     val style = LocalWidgetStyle.current
     Text(
-        text = "全天：" + events.joinToString("、") { it.title },
+        text = glanceString(
+            R.string.timeline_all_day,
+            events.joinToString(glanceString(R.string.list_separator)) { it.title },
+        ),
         maxLines = 1,
         modifier = GlanceModifier
             .fillMaxWidth()
@@ -259,7 +265,11 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
                 style = style.text(14, textColor, if (current) FontWeight.Bold else FontWeight.Medium),
             )
             val until = timeFormat.format(Date(event.end))
-            val detail = if (current) "進行中 · 到 $until" else "${timeFormat.format(Date(event.begin))} – $until"
+            val detail = if (current) {
+                glanceString(R.string.in_progress_until, until)
+            } else {
+                "${timeFormat.format(Date(event.begin))} – $until"
+            }
             Text(
                 text = listOfNotNull(detail, event.location).joinToString(" · "),
                 maxLines = 1,
@@ -277,7 +287,7 @@ private fun NowMarkerRow() {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = "現在",
+            text = glanceString(R.string.now),
             modifier = GlanceModifier.width(TIME_COLUMN),
             style = style.text(12, style.colors.primary, FontWeight.Bold),
         )
@@ -295,7 +305,7 @@ private fun NowMarkerRow() {
 private fun GapRow(minutes: Long) {
     val style = LocalWidgetStyle.current
     Text(
-        text = "空檔 ${formatDuration(minutes)}",
+        text = glanceString(R.string.free_time, formatDuration(LocalContext.current, minutes)),
         modifier = GlanceModifier.padding(start = TIME_COLUMN + RAIL_COLUMN + 8.dp, top = 2.dp, bottom = 6.dp),
         style = style.text(12, style.colors.onSurfaceVariant),
     )
@@ -306,7 +316,7 @@ private fun TimelineEmpty(hasAllDay: Boolean) {
     val style = LocalWidgetStyle.current
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
-            text = if (hasAllDay) "今天沒有其他排定時間的行程" else "今天沒有行程 ☕",
+            text = glanceString(if (hasAllDay) R.string.timeline_no_more else R.string.timeline_empty),
             style = style.text(13, style.colors.onSurfaceVariant),
         )
     }

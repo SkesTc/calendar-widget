@@ -76,14 +76,3 @@ class TimelineBuilder(private val zone: ZoneId = ZoneId.systemDefault()) {
         const val MIN_GAP_MINUTES = 60L
     }
 }
-
-/** 「2 小時 30 分」「45 分」。 */
-fun formatDuration(minutes: Long): String {
-    val h = minutes / 60
-    val m = minutes % 60
-    return when {
-        h == 0L -> "$m 分"
-        m == 0L -> "$h 小時"
-        else -> "$h 小時 $m 分"
-    }
-}

@@ -95,11 +95,4 @@ class TimelineBuilderTest {
         assertEquals(at(10), builder.nextBoundary(timeline, at(9, 30)))
         assertEquals(null, builder.nextBoundary(builder.build(events, today, at(13)), at(13)))
     }
-
-    @Test
-    fun durations() {
-        assertEquals("45 分", formatDuration(45))
-        assertEquals("2 小時", formatDuration(120))
-        assertEquals("2 小時 30 分", formatDuration(150))
-    }
 }

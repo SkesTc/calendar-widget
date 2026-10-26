@@ -28,12 +28,13 @@ data class ThemeSpec(
     val serifByDefault: Boolean = false,
 )
 
-enum class WidgetThemeId(val label: String) {
-    DYNAMIC("Material You"),
-    AMOLED("AMOLED 純黑"),
-    MORANDI("莫蘭迪"),
-    JOURNAL("手帳"),
-    GLASS("毛玻璃");
+/** 顯示名稱在各語系的 strings.xml（theme_ 開頭）。 */
+enum class WidgetThemeId {
+    DYNAMIC,
+    AMOLED,
+    MORANDI,
+    JOURNAL,
+    GLASS;
 
     /** 毛玻璃用半透明漸層圖片當背景，不套用背景透明度設定。 */
     val supportsOpacity: Boolean get() = this != GLASS

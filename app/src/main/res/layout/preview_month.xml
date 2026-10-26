@@ -10,7 +10,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="2026年10月"
+        android:text="@string/preview_month_title"
         android:textColor="@color/preview_on_surface"
         android:textSize="16sp"
         android:textStyle="bold"
@@ -26,7 +26,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="日"
+            android:text="@string/wd_sun"
             android:textColor="@color/preview_sunday"
             android:textSize="11sp" />
         <TextView
@@ -34,7 +34,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="一"
+            android:text="@string/wd_mon"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
         <TextView
@@ -42,7 +42,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="二"
+            android:text="@string/wd_tue"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
         <TextView
@@ -50,7 +50,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="三"
+            android:text="@string/wd_wed"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
         <TextView
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="四"
+            android:text="@string/wd_thu"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
         <TextView
@@ -66,7 +66,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="五"
+            android:text="@string/wd_fri"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
         <TextView
@@ -74,7 +74,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="六"
+            android:text="@string/wd_sat"
             android:textColor="@color/preview_variant"
             android:textSize="11sp" />
     </LinearLayout>

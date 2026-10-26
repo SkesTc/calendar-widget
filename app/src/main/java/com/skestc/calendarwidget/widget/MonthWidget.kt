@@ -40,6 +40,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.unit.ColorProvider
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.lunar.DayLabeler
@@ -166,7 +167,7 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
             style = style.text(16, style.colors.onSurface, FontWeight.Bold),
         )
         if (monthOffset != 0) {
-            NavButton("今", delta = 0)
+            NavButton(glanceString(R.string.back_to_this_month), delta = 0)
             Spacer(GlanceModifier.width(4.dp))
         }
         NavButton("‹", delta = -1)
@@ -194,7 +195,7 @@ private fun NavButton(label: String, delta: Int) {
     ) {
         Text(
             text = label,
-            style = style.text(if (label == "今") 13 else 18, style.colors.onCard, FontWeight.Bold),
+            style = style.text(if (delta == 0) 13 else 18, style.colors.onCard, FontWeight.Bold),
         )
     }
 }
@@ -281,7 +282,7 @@ private fun DayCellView(
 private fun DayLabelText(day: DayCell) {
     val style = LocalWidgetStyle.current
     val text = when (day.holiday) {
-        HolidayKind.MAKEUP_WORKDAY -> "補班"
+        HolidayKind.MAKEUP_WORKDAY -> glanceString(R.string.makeup_workday)
         else -> day.label
     } ?: return
     val color = when {

@@ -37,6 +37,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
+import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.NextEvent
 import com.skestc.calendarwidget.data.NextEventPicker
@@ -176,19 +177,22 @@ private fun NextEventRow(next: NextEvent, today: LocalDate) {
     }
 }
 
-/** 「進行中 · 到 15:00」「今天 14:00」「明天 · 全天」「10/28（三）09:00」。 */
+/** 「進行中 · 到 15:00」「今天 14:00」「明天 · 全天」「10月28日 週三 09:00」。 */
 private fun whenLabel(context: Context, next: NextEvent, today: LocalDate): String {
     val event = next.event
     val timeFormat = DateFormat.getTimeFormat(context)
-    if (next.inProgress && !event.allDay) return "進行中 · 到 ${timeFormat.format(Date(event.end))}"
+    if (next.inProgress && !event.allDay) {
+        return context.getString(R.string.in_progress_until, timeFormat.format(Date(event.end)))
+    }
     val zone = if (event.allDay) ZoneOffset.UTC else ZoneId.systemDefault()
     val date = Instant.ofEpochMilli(event.begin).atZone(zone).toLocalDate()
+    val locale = Locale.getDefault()
     val day = when {
-        date <= today -> "今天"
-        date == today.plusDays(1) -> "明天"
-        else -> DateTimeFormatter.ofPattern("M/d（EEEEE）", Locale.getDefault()).format(date)
+        date <= today -> context.getString(R.string.today_word)
+        date == today.plusDays(1) -> context.getString(R.string.tomorrow_word)
+        else -> DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEE"), locale).format(date)
     }
-    return if (event.allDay) "$day · 全天" else "$day ${timeFormat.format(Date(event.begin))}"
+    return if (event.allDay) context.getString(R.string.day_all_day, day) else "$day ${timeFormat.format(Date(event.begin))}"
 }
 
 @Composable
@@ -203,7 +207,7 @@ private fun NoUpcoming() {
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(
-            text = "接下來 7 天沒有行程",
+            text = glanceString(R.string.next_empty),
             maxLines = 1,
             style = style.text(13, style.colors.onSurfaceVariant),
         )

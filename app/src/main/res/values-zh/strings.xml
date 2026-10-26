@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 繁體中文（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->
+<resources>
+    <string name="app_name">行事曆小工具</string>
+    <string name="widget_name">行程清單</string>
+    <string name="widget_description">顯示 Google 日曆接下來的行程</string>
+    <string name="month_widget_name">月曆</string>
+    <string name="month_widget_description">整個月的月曆，有行程的日子會標上彩色圓點</string>
+    <string name="timeline_widget_name">今日時間軸</string>
+    <string name="timeline_widget_description">今天的行程依時間排列，標出現在的位置和空檔</string>
+    <string name="next_widget_name">下一個行程</string>
+    <string name="next_widget_description">極簡小卡，只顯示進行中或下一個行程</string>
+    <string name="week_widget_name">一週</string>
+    <string name="week_widget_description">從今天起 7 天並排，每天的行程一目了然</string>
+    <string name="permission_rationale">需要讀取日曆的權限，才能顯示手機上已同步的 Google 日曆行程。</string>
+    <string name="grant_permission">授權讀取日曆</string>
+    <string name="add_widgets_title">加入桌面小工具</string>
+    <string name="pin_agenda">行程清單</string>
+    <string name="pin_month">月曆</string>
+    <string name="pin_timeline">時間軸</string>
+    <string name="pin_next">下一個行程</string>
+    <string name="pin_week">一週</string>
+    <string name="synced_calendars">已同步的日曆</string>
+    <string name="no_calendars">找不到日曆。請確認手機的「設定 → 帳戶 → Google」已開啟日曆同步。</string>
+    <string name="calendar_hidden">%1$s · 已隱藏</string>
+    <string name="holiday_hint_title">顯示國定假日與補班日</string>
+    <string name="holiday_hint_body">在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。</string>
+    <string name="update_help_title">小工具沒有自動更新？</string>
+    <string name="update_help_body">部分手機的省電功能會擋住背景更新，導致換日、行程變動後小工具沒跟著變。請依下列步驟允許本 App 在背景執行：</string>
+    <string name="open_app_info">開啟應用程式資訊</string>
+    <string name="config_title">小工具設定</string>
+    <string name="section_theme">主題</string>
+    <string name="section_opacity">背景不透明度 %1$d%%</string>
+    <string name="section_corner">圓角</string>
+    <string name="section_text_size">文字大小</string>
+    <string name="section_font">字型</string>
+    <string name="show_lunar_title">顯示農曆、節氣與傳統節日</string>
+    <string name="show_lunar_subtitle">國定假日與補班日來自 Google 日曆的「台灣的節慶假日」</string>
+    <string name="section_days">顯示天數</string>
+    <string name="days_option">%1$d 天</string>
+    <string name="section_calendars">顯示的日曆</string>
+    <string name="config_no_permission">尚未授權讀取日曆，請先開啟 App 完成授權。</string>
+    <string name="done">完成</string>
+    <string name="theme_dynamic">Material You</string>
+    <string name="theme_amoled">AMOLED 純黑</string>
+    <string name="theme_morandi">莫蘭迪</string>
+    <string name="theme_journal">手帳</string>
+    <string name="theme_glass">毛玻璃</string>
+    <string name="font_theme">跟隨主題</string>
+    <string name="font_sans">無襯線</string>
+    <string name="font_serif">襯線</string>
+    <string name="font_mono">等寬</string>
+    <string name="corner_system">系統</string>
+    <string name="corner_square">直角</string>
+    <string name="size_small">小</string>
+    <string name="size_medium">中</string>
+    <string name="size_large">大</string>
+    <string name="size_xlarge">特大</string>
+    <string name="today_prefix">今天 · %1$s</string>
+    <string name="tomorrow_prefix">明天 · %1$s</string>
+    <string name="today_word">今天</string>
+    <string name="tomorrow_word">明天</string>
+    <string name="all_day">全天</string>
+    <string name="day_all_day">%1$s · 全天</string>
+    <string name="untitled">(無標題)</string>
+    <string name="agenda_empty">接下來 %1$d 天沒有行程 🎉</string>
+    <string name="tap_to_grant">點此授權讀取日曆</string>
+    <string name="back_to_this_month">今</string>
+    <string name="makeup_workday">補班</string>
+    <string name="in_progress_until">進行中 · 到 %1$s</string>
+    <string name="next_empty">接下來 7 天沒有行程</string>
+    <string name="timeline_all_day">全天：%1$s</string>
+    <string name="list_separator">、</string>
+    <string name="now">現在</string>
+    <string name="free_time">空檔 %1$s</string>
+    <string name="timeline_no_more">今天沒有其他排定時間的行程</string>
+    <string name="timeline_empty">今天沒有行程 ☕</string>
+    <string name="duration_minutes">%1$d 分</string>
+    <string name="duration_hours">%1$d 小時</string>
+    <string name="duration_hours_minutes">%1$d 小時 %2$d 分</string>
+    <string name="sample_standup">晨會</string>
+    <string name="sample_lunch">午餐約</string>
+    <string name="sample_project">專案討論</string>
+    <string name="sample_dentist">牙醫</string>
+    <string name="sample_book_club">讀書會</string>
+    <string name="sample_gym">健身</string>
+    <string name="sample_dinner">聚餐</string>
+    <string name="sample_hike">爬山</string>
+    <string name="sample_room">會議室 A</string>
+    <string name="sample_online">線上</string>
+    <string name="preview_weekday">星期一</string>
+    <string name="preview_subtitle">九月十七</string>
+    <string name="preview_today_weekday">今天 · 星期一</string>
+    <string name="preview_month_title">2026年10月</string>
+    <string name="preview_gap">空檔 2 小時</string>
+    <string name="preview_next_when">今天 14:00</string>
+    <string name="preview_standup_detail">09:30 – 10:00 · 會議室 A</string>
+    <string name="preview_project_detail">14:00 – 15:00 · 線上</string>
+    <string name="wd_sun">日</string>
+    <string name="wd_mon">一</string>
+    <string name="wd_tue">二</string>
+    <string name="wd_wed">三</string>
+    <string name="wd_thu">四</string>
+    <string name="wd_fri">五</string>
+    <string name="wd_sat">六</string>
+    <string-array name="tips_xiaomi">
+        <item>應用程式資訊 → 開啟「自啟動」</item>
+        <item>應用程式資訊 → 省電策略 → 選「無限制」</item>
+        <item>最近使用的 App 畫面中，把本 App 往下拉鎖定，避免被一鍵清除</item>
+    </string-array>
+    <string-array name="tips_samsung">
+        <item>應用程式資訊 → 電池 → 選「不受限制」</item>
+        <item>設定 → 電池 → 背景使用限制：確認本 App 不在「睡眠中」或「深度睡眠中」的應用程式</item>
+    </string-array>
+    <string-array name="tips_oppo">
+        <item>應用程式資訊 → 電池使用 → 開啟「允許背景活動」與「允許自動啟動」</item>
+    </string-array>
+    <string-array name="tips_vivo">
+        <item>i 管家 → 應用程式管理 → 自啟動管理：允許本 App</item>
+        <item>設定 → 電池 → 背景耗電管理：允許本 App 在背景執行</item>
+    </string-array>
+    <string-array name="tips_huawei">
+        <item>設定 → 電池 → 應用程式啟動管理：本 App 改成「手動管理」並全部開啟</item>
+    </string-array>
+    <string-array name="tips_asus">
+        <item>手機管家 → 自動啟動管理員：允許本 App</item>
+    </string-array>
+    <string-array name="tips_generic">
+        <item>應用程式資訊 → 電池 → 選「不受限制」（或關閉電池最佳化）</item>
+    </string-array>
+</resources>

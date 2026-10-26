@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import androidx.core.content.ContextCompat
+import com.skestc.calendarwidget.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.concurrent.TimeUnit
@@ -120,7 +121,7 @@ class CalendarRepository(private val context: Context) {
         )?.use { c ->
             buildList {
                 while (c.moveToNext()) {
-                    val title = c.getString(1)?.takeIf { it.isNotBlank() } ?: "(無標題)"
+                    val title = c.getString(1)?.takeIf { it.isNotBlank() } ?: context.getString(R.string.untitled)
                     val calendarId = c.getLong(8)
                     add(
                         CalendarEvent(
