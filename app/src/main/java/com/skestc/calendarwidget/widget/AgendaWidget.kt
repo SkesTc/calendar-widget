@@ -6,7 +6,6 @@ import android.content.Intent
 import android.provider.CalendarContract
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
@@ -48,6 +47,7 @@ import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
+import com.skestc.calendarwidget.settings.EventEditor
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
@@ -73,16 +73,17 @@ internal sealed interface AgendaState {
     ) : AgendaState
 }
 
+/** 一次最多列出的行程數，避免清單太大而無法送到桌面。 */
+private const val MAX_EVENTS = 150
+
 /** 行程清單 widget：大字日期 + 依日期分組的事件清單，配色依每個 widget 的外觀設定。 */
 class AgendaWidget : GlanceAppWidget() {
 
-    companion object {
-        private val SMALL = DpSize(110.dp, 110.dp)
-        private val MEDIUM = DpSize(180.dp, 110.dp)
-        private val LARGE = DpSize(250.dp, 220.dp)
-    }
-
-    override val sizeMode = SizeMode.Responsive(setOf(SMALL, MEDIUM, LARGE))
+    /**
+     * 清單涵蓋一個月以上、行程很多，用 Exact 只送實際大小的版面：
+     * Responsive 會把每個宣告尺寸的整份清單一起送給桌面，容易超過 Binder 的 1MB 上限。
+     */
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = CalendarRepository(context)
@@ -114,7 +115,7 @@ class AgendaWidget : GlanceAppWidget() {
         val now = System.currentTimeMillis()
         val events = repository.upcomingEvents(
             days = settings.agendaDays,
-            limit = 100,
+            limit = MAX_EVENTS,
             hiddenCalendarIds = settings.hiddenCalendarIds,
             now = now,
             keepEndedToday = true,
@@ -161,6 +162,8 @@ internal fun AgendaContent(state: AgendaState) {
 private fun DateHeader(today: LocalDate, lunar: String?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
+    // 點日期（左上角）開啟 Google 日曆的今天；沒裝 Google 日曆時用系統預設的日曆 App。
+    val openToday = openInCalendar(openDayIntent(today), preferredPackage = EventEditor.GOOGLE_CALENDAR)
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -169,9 +172,10 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
             text = today.dayOfMonth.toString(),
             size = 40,
             color = style.colors.primary,
+            modifier = GlanceModifier.clickable(openToday),
         )
         Spacer(GlanceModifier.width(10.dp))
-        Column(modifier = GlanceModifier.defaultWeight()) {
+        Column(modifier = GlanceModifier.defaultWeight().clickable(openToday)) {
             Text(
                 text = today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
                 style = style.text(16, style.colors.onSurface, FontWeight.Bold),
@@ -190,13 +194,13 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
 @Composable
 internal fun AddEventButton() {
     val style = LocalWidgetStyle.current
-    val intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
     Box(
         modifier = GlanceModifier
             .size(36.dp)
             .background(style.colors.primary)
             .cornerRadius(18.dp)
-            .clickable(openInCalendar(intent)),
+            // 依設定開啟指定 App 的新增行程畫面（或每次詢問）。
+            .clickable(openInCalendar(EventEditor.insertIntent(), editor = true)),
         contentAlignment = Alignment.Center,
     ) {
         Text(

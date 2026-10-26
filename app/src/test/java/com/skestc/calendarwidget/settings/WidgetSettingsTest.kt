@@ -20,7 +20,7 @@ class WidgetSettingsTest {
     fun readsAllStoredValues() {
         val prefs = mutablePreferencesOf(
             WidgetSettings.KEY_HIDDEN_CALENDARS to setOf("3", "7", "oops"),
-            WidgetSettings.KEY_AGENDA_DAYS to 14,
+            WidgetSettings.KEY_AGENDA_DAYS to 61,
             WidgetSettings.KEY_MONTH_OFFSET to -2,
             WidgetSettings.KEY_THEME to "JOURNAL",
             WidgetSettings.KEY_BG_OPACITY to 60,
@@ -30,7 +30,7 @@ class WidgetSettingsTest {
         )
         val settings = WidgetSettings.from(prefs)
         assertEquals(setOf(3L, 7L), settings.hiddenCalendarIds)
-        assertEquals(14, settings.agendaDays)
+        assertEquals(61, settings.agendaDays)
         assertEquals(-2, settings.monthOffset)
         assertEquals(
             Appearance(
@@ -42,6 +42,13 @@ class WidgetSettingsTest {
             ),
             settings.appearance,
         )
+    }
+
+    @Test
+    fun agendaShowsAtLeastOneMonth() {
+        assertEquals(31, WidgetSettings.from(mutablePreferencesOf()).agendaDays)
+        // 舊版存的 7 天升到一個月。
+        assertEquals(31, WidgetSettings.from(mutablePreferencesOf(WidgetSettings.KEY_AGENDA_DAYS to 7)).agendaDays)
     }
 
     @Test

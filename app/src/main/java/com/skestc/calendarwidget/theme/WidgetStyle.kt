@@ -45,7 +45,7 @@ class WidgetColors(
 class WidgetStyle(
     val colors: WidgetColors,
     val corner: Dp,
-    private val textScale: Float,
+    val textScale: Float,
     private val fontFamily: FontFamily?,
 ) {
     /** 大號數字用圓潤粗體（[ExpressiveText]）；選了襯線／等寬字型時不用。 */

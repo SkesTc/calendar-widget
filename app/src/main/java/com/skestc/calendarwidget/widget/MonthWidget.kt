@@ -7,6 +7,7 @@ import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
@@ -34,6 +35,7 @@ import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
@@ -50,6 +52,7 @@ import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
+import com.skestc.calendarwidget.data.MonthLayout
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
@@ -87,7 +90,7 @@ class MonthWidget : GlanceAppWidget() {
         /** 顯示農曆／假日小字的最小高度。 */
         val LABELS_MIN_HEIGHT = 260.dp
         /** 下方加上選取日期行程的最小高度。 */
-        val PANEL_MIN_HEIGHT = 380.dp
+        val PANEL_MIN_HEIGHT = 340.dp
         /** 平板、摺疊機展開：行程改放在月曆右邊。 */
         val WIDE_MIN_WIDTH = 480.dp
     }
@@ -159,9 +162,16 @@ internal fun MonthContent(state: MonthState) {
                 val compact = size.width < 250.dp
                 val wide = size.width >= MonthWidget.WIDE_MIN_WIDTH
                 // 格子夠高才放農曆／假日小字（約每格 40dp 以上）。
-                val showLabels = !compact && size.height >= MonthWidget.LABELS_MIN_HEIGHT
-                // 再高一點（約 4×5 以上）時，點日期改成在下方列出當天行程。
+                // 再高一點（約 4×4 以上）時，點日期改成在下方列出當天行程。
                 val panelBelow = !wide && !compact && size.height >= MonthWidget.PANEL_MIN_HEIGHT
+                val inner = size.height.value - 20f
+                // 下方區塊依當天行程數量長高（最多約一半），其餘留給月曆格子。
+                val panelHeight = if (panelBelow) {
+                    MonthLayout.panelHeight(inner, state.selectedEvents.size, style.textScale)
+                } else {
+                    0f
+                }
+                val showLabels = !compact && size.height.value - panelHeight >= MonthWidget.LABELS_MIN_HEIGHT.value
                 val selectable = wide || panelBelow
                 if (wide) {
                     // 平板、摺疊機：月曆在左、選取日期的行程在右。
@@ -174,20 +184,26 @@ internal fun MonthContent(state: MonthState) {
                             date = state.selected,
                             events = state.selectedEvents,
                             now = state.now,
-                            maxEvents = 6,
+                            // 右側區塊沒有上方間距，算法同下方區塊。
+                            maxEvents = MonthLayout.eventsThatFit(inner + 6f, state.selectedEvents.size, style.textScale),
                             modifier = GlanceModifier.width(200.dp).fillMaxHeight(),
                         )
                     }
                 } else {
-                    MonthGrid(state, compact, showLabels, selectable)
                     if (panelBelow) {
+                        Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                            MonthGrid(state, compact, showLabels, selectable)
+                        }
+                        Spacer(GlanceModifier.height(6.dp))
                         DayPanel(
                             date = state.selected,
                             events = state.selectedEvents,
                             now = state.now,
-                            maxEvents = 3,
-                            modifier = GlanceModifier.fillMaxWidth().padding(top = 6.dp),
+                            maxEvents = MonthLayout.eventsThatFit(panelHeight, state.selectedEvents.size, style.textScale),
+                            modifier = GlanceModifier.fillMaxWidth().height((panelHeight - 6f).dp),
                         )
+                    } else {
+                        MonthGrid(state, compact, showLabels, selectable)
                     }
                 }
             }
@@ -344,13 +360,14 @@ private fun DayCellView(
                 style = style.text(
                     size = if (compact) 12 else 14,
                     color = textColor,
-                    weight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                    // 有行程的日子數字加粗，搭配下方圓點更好辨識。
+                    weight = if (isToday || (day.inMonth && day.eventColors.isNotEmpty())) FontWeight.Bold else FontWeight.Normal,
                     align = TextAlign.Center,
                 ),
             )
         }
         if (showLabel) DayLabelText(day)
-        EventDots(day.eventColors, dimmed = !day.inMonth)
+        EventDots(day.eventColors, dimmed = !day.inMonth, dot = if (compact) 6.dp else 7.dp)
     }
 }
 
@@ -375,23 +392,23 @@ private fun DayLabelText(day: DayCell) {
 }
 
 @Composable
-private fun EventDots(colors: List<Int>, dimmed: Boolean) {
+private fun EventDots(colors: List<Int>, dimmed: Boolean, dot: Dp) {
     // 沒有事件時也保留一樣的高度，讓每一格的日期數字對齊。
     Row(
-        modifier = GlanceModifier.padding(top = 2.dp),
+        modifier = GlanceModifier.padding(top = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (colors.isEmpty()) {
-            Spacer(GlanceModifier.size(5.dp))
+            Spacer(GlanceModifier.size(dot))
         }
         colors.forEachIndexed { index, color ->
-            if (index > 0) Spacer(GlanceModifier.width(2.dp))
+            if (index > 0) Spacer(GlanceModifier.width(3.dp))
             val dotColor = Color(color).let { if (dimmed) it.copy(alpha = 0.4f) else it }
             Box(
                 modifier = GlanceModifier
-                    .size(5.dp)
+                    .size(dot)
                     .background(ColorProvider(dotColor))
-                    .cornerRadius(3.dp),
+                    .cornerRadius(dot / 2),
             ) {}
         }
     }
@@ -471,7 +488,7 @@ private fun weekendColor(day: DayOfWeek): ColorProvider? {
 }
 
 /** 開啟 Google 日曆（或系統預設日曆 App）的某一天。 */
-private fun openDayIntent(date: LocalDate): Intent {
+internal fun openDayIntent(date: LocalDate): Intent {
     val millis = date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val uri = CalendarContract.CONTENT_URI.buildUpon()
         .appendPath("time")

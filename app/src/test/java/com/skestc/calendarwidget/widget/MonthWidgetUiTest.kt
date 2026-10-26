@@ -89,6 +89,22 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun busyDayGrowsThePanelBelow() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 420.dp))
+        val selected = LocalDate.of(2026, 10, 28)
+        val state = (october() as MonthState.Loaded).copy(
+            selected = selected,
+            selectedEvents = (1..10).map { timed(it.toLong(), "行程$it", at(8, date = selected), at(9, date = selected)) },
+        )
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        // 下方區塊最多占約一半高度：420dp 時放 6 筆，再加「+4」。
+        onNode(hasText("行程6")).assertExists()
+        onNode(hasText("行程7")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+4")).assertExists()
+    }
+
+    @Test
     fun selectedDayWithoutEventsSaysSo() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 420.dp))
@@ -111,13 +127,14 @@ class MonthWidgetUiTest {
         val selected = LocalDate.of(2026, 10, 28)
         val state = (october() as MonthState.Loaded).copy(
             selected = selected,
-            selectedEvents = (1..7).map { timed(it.toLong(), "行程$it", at(8 + it, date = selected), at(9 + it, date = selected)) },
+            selectedEvents = (1..15).map { timed(it.toLong(), "行程$it", at(8, date = selected), at(9, date = selected)) },
         )
         provideComposable { WidgetFrame { MonthContent(state) } }
         onNode(hasTextEqualTo("開啟 ›")).assertExists()
-        onNode(hasText("行程6")).assertExists()
-        onNode(hasText("行程7")).assertDoesNotExist()
-        onNode(hasTextEqualTo("+1")).assertExists()
+        // 300dp 高的右側區塊：放得下 11 筆，再加一行「+4」。
+        onNode(hasText("行程11")).assertExists()
+        onNode(hasText("行程12")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+4")).assertExists()
         onNode(hasTextEqualTo("國慶日")).assertExists()
     }
 

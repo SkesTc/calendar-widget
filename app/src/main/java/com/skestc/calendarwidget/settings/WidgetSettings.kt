@@ -28,8 +28,9 @@ data class WidgetSettings(
     val showLunar: Boolean = defaultShowLunar(),
 ) {
     companion object {
-        const val DEFAULT_AGENDA_DAYS = 7
-        val AGENDA_DAY_OPTIONS = listOf(3, 7, 14, 30)
+        /** 行程清單至少顯示一個月（31 天）；選項是 1、2、3 個月。 */
+        const val DEFAULT_AGENDA_DAYS = 31
+        val AGENDA_DAY_OPTIONS = listOf(31, 61, 92)
 
         val KEY_HIDDEN_CALENDARS = stringSetPreferencesKey("hidden_calendars")
         val KEY_AGENDA_DAYS = intPreferencesKey("agenda_days")
@@ -51,7 +52,8 @@ data class WidgetSettings(
             hiddenCalendarIds = prefs[KEY_HIDDEN_CALENDARS].orEmpty()
                 .mapNotNull { it.toLongOrNull() }
                 .toSet(),
-            agendaDays = prefs[KEY_AGENDA_DAYS] ?: DEFAULT_AGENDA_DAYS,
+            // 舊版的 3／7／14 天設定一律升到一個月。
+            agendaDays = (prefs[KEY_AGENDA_DAYS] ?: DEFAULT_AGENDA_DAYS).coerceAtLeast(DEFAULT_AGENDA_DAYS),
             monthOffset = prefs[KEY_MONTH_OFFSET] ?: 0,
             selectedEpochDay = prefs[KEY_SELECTED_DAY],
             refresh = prefs[KEY_REFRESH] ?: 0,

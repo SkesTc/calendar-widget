@@ -307,7 +307,7 @@ private fun ConfigScreen(
                     item {
                         Section(stringResource(R.string.section_days)) {
                             Segmented(
-                                options = WidgetSettings.AGENDA_DAY_OPTIONS.map { it to stringResource(R.string.days_option, it) },
+                                options = WidgetSettings.AGENDA_DAY_OPTIONS.mapIndexed { i, days -> days to stringResource(R.string.months_option, i + 1) },
                                 selected = settings.agendaDays,
                                 onSelect = { v -> settings = settings.copy(agendaDays = v) },
                             )
@@ -351,6 +351,15 @@ private fun ConfigScreen(
                                 )
                             },
                         )
+                    }
+                }
+
+                // 有「＋」按鈕的 widget 才需要選新增行程的 App。
+                if (kind == WidgetKind.AGENDA || kind == WidgetKind.MONTH || kind == WidgetKind.TIMELINE) {
+                    item {
+                        Section(stringResource(R.string.section_editor)) {
+                            EventEditorPicker()
+                        }
                     }
                 }
 

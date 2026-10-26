@@ -32,10 +32,14 @@ class ResponsiveSizesTest {
         assertTrue(WeekWidget().sizeMode is SizeMode.Exact)
     }
 
+    /** 行程清單涵蓋一個月以上，清單很長，也用 Exact。 */
     @Test
-    fun agendaAndNextEventDeclareTheirBreakpoints() {
-        assertTrue("行程清單 2×2", sizes(AgendaWidget()).any { it.width < 180.dp })
-        assertTrue("行程清單完整清單", sizes(AgendaWidget()).any { it.width >= 180.dp })
+    fun agendaUsesExactSizing() {
+        assertTrue(AgendaWidget().sizeMode is SizeMode.Exact)
+    }
+
+    @Test
+    fun nextEventDeclaresItsBreakpoints() {
         assertTrue("下一個行程拉高", sizes(NextEventWidget()).any { it.height >= 100.dp })
         assertTrue("下一個行程 1 格高", sizes(NextEventWidget()).any { it.height < 100.dp })
     }
