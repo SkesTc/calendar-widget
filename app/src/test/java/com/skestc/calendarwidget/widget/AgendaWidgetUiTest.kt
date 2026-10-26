@@ -7,6 +7,7 @@ import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.AgendaFormatter
+import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
 import com.skestc.calendarwidget.widget.WidgetFixtures.at
@@ -32,6 +33,29 @@ class AgendaWidgetUiTest {
     private fun loaded(vararg events: com.skestc.calendarwidget.data.CalendarEvent, now: Long = at(8)): AgendaState {
         val rows = AgendaFormatter(context, WidgetFixtures.zone, Locale.TAIWAN).rows(events.toList(), today, labeler, now)
         return AgendaState.Loaded(today, days = 7, rows = rows, lunarToday = "九月十七")
+    }
+
+    @Test
+    fun timelineLayoutShowsNowLineAndAllDayColumn() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(250.dp, 300.dp))
+        val now = at(10)
+        val state = (
+            loaded(
+                timed(1, "晨會", at(9), at(9, 30)),
+                timed(2, "午餐", at(12), at(13)),
+                allDay(3, "旅行", today.plusDays(1)),
+                now = now,
+            ) as AgendaState.Loaded
+            ).copy(layout = AgendaLayout.TIMELINE, now = now)
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasTextEqualTo("午餐")).assertExists()
+        onNode(hasTextEqualTo("旅行")).assertExists()
+        onNode(hasTextEqualTo("現在")).assertExists()
+        // 全天事件在時間欄顯示「全天」。
+        onNode(hasTextEqualTo("全天")).assertExists()
+        onNode(hasText("今天 ·")).assertExists()
     }
 
     @Test

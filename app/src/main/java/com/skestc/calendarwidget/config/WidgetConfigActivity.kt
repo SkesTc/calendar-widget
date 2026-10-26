@@ -65,6 +65,7 @@ import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
+import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.specFor
@@ -153,6 +154,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetSettings.KEY_CUSTOM_PRIMARY] = settings.appearance.customPrimary.toInt()
                 prefs[WidgetSettings.KEY_CUSTOM_BACKGROUND] = settings.appearance.customBackground.toInt()
                 prefs[WidgetSettings.KEY_SHOW_LUNAR] = settings.showLunar
+                prefs[WidgetSettings.KEY_AGENDA_LAYOUT] = settings.agendaLayout.name
                 prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
             }
             widget.update(this@WidgetConfigActivity, glanceId)
@@ -304,6 +306,18 @@ private fun ConfigScreen(
                 }
 
                 if (kind == WidgetKind.AGENDA) {
+                    item {
+                        Section(stringResource(R.string.section_agenda_layout)) {
+                            Segmented(
+                                options = listOf(
+                                    AgendaLayout.LIST to stringResource(R.string.agenda_layout_list),
+                                    AgendaLayout.TIMELINE to stringResource(R.string.agenda_layout_timeline),
+                                ),
+                                selected = settings.agendaLayout,
+                                onSelect = { v -> settings = settings.copy(agendaLayout = v) },
+                            )
+                        }
+                    }
                     item {
                         Section(stringResource(R.string.section_days)) {
                             Segmented(

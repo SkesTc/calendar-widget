@@ -32,6 +32,27 @@ sealed interface AgendaRow {
     data class Event(val event: CalendarEvent, val timeLabel: String, val past: Boolean = false) : AgendaRow {
         override val id: Long = event.eventId * 31 + event.begin
     }
+
+    /** 時間軸版面裡今天的「現在」橫線。 */
+    data object NowMarker : AgendaRow {
+        override val id: Long = Long.MIN_VALUE
+    }
+
+    companion object {
+        /**
+         * 時間軸版面：在今天的行程之間插入「現在」橫線——放在第一個還沒開始的行程前面，
+         * 今天的行程都已經開始時放在最後。今天沒有非全天的行程就不畫。
+         */
+        fun withNowMarker(rows: List<AgendaRow>, today: LocalDate, now: Long): List<AgendaRow> {
+            val start = rows.indexOfFirst { it is Header && it.date == today }
+            if (start < 0) return rows
+            val end = (start + 1 until rows.size).firstOrNull { rows[it] is Header } ?: rows.size
+            val timed = (start + 1 until end).filter { (rows[it] as? Event)?.event?.allDay == false }
+            if (timed.isEmpty()) return rows
+            val at = timed.firstOrNull { (rows[it] as Event).event.begin > now } ?: (timed.last() + 1)
+            return rows.subList(0, at) + NowMarker + rows.subList(at, rows.size)
+        }
+    }
 }
 
 class AgendaFormatter(

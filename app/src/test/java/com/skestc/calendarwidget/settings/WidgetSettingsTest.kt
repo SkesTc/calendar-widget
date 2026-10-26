@@ -45,6 +45,13 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun agendaLayoutDefaultsToListAndReadsTimeline() {
+        assertEquals(AgendaLayout.LIST, WidgetSettings.from(mutablePreferencesOf()).agendaLayout)
+        val prefs = mutablePreferencesOf(WidgetSettings.KEY_AGENDA_LAYOUT to "TIMELINE")
+        assertEquals(AgendaLayout.TIMELINE, WidgetSettings.from(prefs).agendaLayout)
+    }
+
+    @Test
     fun agendaShowsAtLeastOneMonth() {
         assertEquals(31, WidgetSettings.from(mutablePreferencesOf()).agendaDays)
         // 舊版存的 7 天升到一個月。

@@ -26,6 +26,8 @@ data class WidgetSettings(
     val appearance: Appearance = Appearance(),
     /** 顯示農曆、節氣與傳統節日；預設只在中文介面開啟。 */
     val showLunar: Boolean = defaultShowLunar(),
+    /** 行程清單的版面：一般清單，或像「今日時間軸」那樣有時間欄與「現在」橫線。 */
+    val agendaLayout: AgendaLayout = AgendaLayout.LIST,
 ) {
     companion object {
         /** 行程清單至少顯示一個月（31 天）；選項是 1、2、3 個月。 */
@@ -45,6 +47,7 @@ data class WidgetSettings(
         val KEY_CUSTOM_PRIMARY = intPreferencesKey("custom_primary")
         val KEY_CUSTOM_BACKGROUND = intPreferencesKey("custom_background")
         val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
+        val KEY_AGENDA_LAYOUT = stringPreferencesKey("agenda_layout")
 
         fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
 
@@ -67,7 +70,18 @@ data class WidgetSettings(
                 customBackground = prefs[KEY_CUSTOM_BACKGROUND]?.toArgbLong() ?: CustomTheme.DEFAULT_BACKGROUND,
             ),
             showLunar = prefs[KEY_SHOW_LUNAR] ?: defaultShowLunar(),
+            agendaLayout = AgendaLayout.fromKey(prefs[KEY_AGENDA_LAYOUT]),
         )
+    }
+}
+
+/** 行程清單的版面。 */
+enum class AgendaLayout {
+    LIST,
+    TIMELINE;
+
+    companion object {
+        fun fromKey(key: String?): AgendaLayout = entries.firstOrNull { it.name == key } ?: LIST
     }
 }
 

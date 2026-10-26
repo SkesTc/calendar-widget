@@ -57,6 +57,8 @@ import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
+import com.skestc.calendarwidget.data.EventStatus
+import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.settings.EventEditor
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
@@ -81,6 +83,9 @@ internal sealed interface AgendaState {
         val rows: List<AgendaRow>,
         /** 標題下方的農曆日期（例如「九月十七 · 霜降」），關閉農曆時為 null。 */
         val lunarToday: String?,
+        val layout: AgendaLayout = AgendaLayout.LIST,
+        /** 時間軸版面判斷進行中／已結束、畫「現在」橫線用。 */
+        val now: Long = System.currentTimeMillis(),
     ) : AgendaState
 }
 
@@ -140,6 +145,8 @@ class AgendaWidget : GlanceAppWidget() {
             days = settings.agendaDays,
             rows = AgendaFormatter(context).rows(events, today, labeler),
             lunarToday = labeler?.labelOf(today)?.long,
+            layout = settings.agendaLayout,
+            now = now,
         )
     }
 }
@@ -162,7 +169,10 @@ internal fun AgendaContent(state: AgendaState) {
                 if (LocalSize.current.width < 180.dp) {
                     NextEventOnly(state.rows, state.days)
                 } else {
-                    AgendaList(state.rows, state.days)
+                    when (state.layout) {
+                        AgendaLayout.LIST -> AgendaList(state.rows, state.days)
+                        AgendaLayout.TIMELINE -> AgendaTimeline(state)
+                    }
                 }
             }
         }
@@ -274,9 +284,35 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
             when (val row = rows[index]) {
                 is AgendaRow.Header -> DayHeaderRow(row)
                 is AgendaRow.Event -> EventRow(row.event, row.timeLabel, row.past, segments[index])
+                AgendaRow.NowMarker -> NowMarkerRow()
             }
         }
     }
+}
+
+/** 時間軸版面：每天一組，左側時間欄＋圓點，今天的行程之間有「現在」橫線（同「今日時間軸」）。 */
+@Composable
+private fun AgendaTimeline(state: AgendaState.Loaded) {
+    if (state.rows.isEmpty()) {
+        EmptyState(state.days)
+        return
+    }
+    val rows = AgendaRow.withNowMarker(state.rows, state.today, state.now)
+    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+        items(rows, itemId = { it.id }) { row ->
+            when (row) {
+                is AgendaRow.Header -> DayHeaderRow(row)
+                is AgendaRow.Event -> TimelineEventRow(row.event, statusOf(row, state.now))
+                AgendaRow.NowMarker -> NowMarkerRow()
+            }
+        }
+    }
+}
+
+internal fun statusOf(row: AgendaRow.Event, now: Long): EventStatus = when {
+    row.past -> EventStatus.PAST
+    !row.event.allDay && row.event.begin <= now && now < row.event.end -> EventStatus.NOW
+    else -> EventStatus.FUTURE
 }
 
 /** 同一天連續、未結束的行程連成一組卡片；已結束的行程沒有底色，會把組切開。 */

@@ -55,6 +55,9 @@
     <string name="show_lunar_title">顯示農曆、節氣與傳統節日</string>
     <string name="show_lunar_subtitle">國定假日與補班日來自 Google 日曆的「台灣的節慶假日」</string>
     <string name="section_days">顯示天數</string>
+    <string name="section_agenda_layout">版面</string>
+    <string name="agenda_layout_list">清單</string>
+    <string name="agenda_layout_timeline">時間軸</string>
     <string name="months_option">%1$d 個月</string>
     <string name="section_calendars">顯示的日曆</string>
     <string name="account_calendars_shown">顯示 %1$d／%2$d 個日曆</string>

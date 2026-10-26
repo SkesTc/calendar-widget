@@ -205,7 +205,7 @@ private val TIME_COLUMN = 46.dp
 private val RAIL_COLUMN = 18.dp
 
 @Composable
-private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
+internal fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
     val style = LocalWidgetStyle.current
     val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
     val past = status == EventStatus.PAST
@@ -222,7 +222,9 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = timeFormat.format(Date(event.begin)),
+            // 行程清單的時間軸版面也會傳全天事件進來。
+            text = if (event.allDay) glanceString(R.string.all_day) else timeFormat.format(Date(event.begin)),
+            maxLines = 1,
             modifier = GlanceModifier.width(TIME_COLUMN),
             style = style.text(
                 size = 12,
@@ -266,22 +268,25 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
                 style = style.text(14, textColor, if (current) FontWeight.Bold else FontWeight.Medium),
             )
             val until = timeFormat.format(Date(event.end))
-            val detail = if (current) {
-                glanceString(R.string.in_progress_until, until)
-            } else {
-                "${timeFormat.format(Date(event.begin))} – $until"
+            val detail = when {
+                event.allDay -> null
+                current -> glanceString(R.string.in_progress_until, until)
+                else -> "${timeFormat.format(Date(event.begin))} – $until"
             }
-            Text(
-                text = listOfNotNull(detail, event.location).joinToString(" · "),
-                maxLines = 1,
-                style = style.text(12, textColor),
-            )
+            val line = listOfNotNull(detail, event.location).joinToString(" · ")
+            if (line.isNotEmpty()) {
+                Text(
+                    text = line,
+                    maxLines = 1,
+                    style = style.text(12, textColor),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun NowMarkerRow() {
+internal fun NowMarkerRow() {
     val style = LocalWidgetStyle.current
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(vertical = 4.dp),

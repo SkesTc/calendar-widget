@@ -48,8 +48,6 @@ import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.HolidayKind
-import com.skestc.calendarwidget.lunar.DayLabeler
-import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthLayout
@@ -60,6 +58,8 @@ import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -80,7 +80,17 @@ internal sealed interface MonthState {
         val selectedEvents: List<CalendarEvent> = emptyList(),
         /** 已結束的行程用淡色顯示。 */
         val now: Long = System.currentTimeMillis(),
-    ) : MonthState
+        /** 月曆格子範圍內的所有事件：點日期時直接從這裡挑出當天行程，不必重新查詢。 */
+        val events: List<CalendarEvent> = emptyList(),
+    ) : MonthState {
+        /** 套用使用者點選的日期（不在這個月的格子裡時改選今天或 1 號）。 */
+        fun withSelection(picked: LocalDate?): Loaded {
+            val builder = MonthBuilder()
+            val date = builder.selectedDate(data.month, data.today, picked)
+            if (date == selected) return this
+            return copy(selected = date, selectedEvents = builder.eventsOn(events, date))
+        }
+    }
 }
 
 /** 月曆 widget：有事件的日子會打上日曆顏色的小圓點，可以切換月份；配色依外觀設定。 */
@@ -108,22 +118,31 @@ class MonthWidget : GlanceAppWidget() {
         val initialSettings = WidgetSettings.from(
             getAppWidgetState(context, PreferencesGlanceStateDefinition, id),
         )
-        val initial = load(repository, initialSettings)
+        val initial = MonthCache.get(initialSettings.monthKey()) { load(repository, it) }
 
         provideContent {
             val settings = WidgetSettings.from(currentState<Preferences>())
-            val state = rememberWidgetData(settings, initialSettings, initial) {
-                load(repository, it)
+            // 點日期只改選取，不重新查詢：用已載入的整月事件挑出當天行程，畫面馬上更新。
+            val state = rememberWidgetData(settings.monthKey(), initialSettings.monthKey(), initial) { key ->
+                MonthCache.get(key) { load(repository, it) }
             }
+            val shown = (state as? MonthState.Loaded)
+                ?.withSelection(settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
+                // 快取的資料可能是幾分鐘前載入的：「已結束」以現在時間判斷。
+                ?.copy(now = System.currentTimeMillis())
+                ?: state
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance) {
-                    MonthContent(state)
+                    MonthContent(shown)
                 }
             }
         }
     }
 
-    private suspend fun load(repository: CalendarRepository, settings: WidgetSettings): MonthState {
+    private suspend fun load(repository: CalendarRepository, settings: WidgetSettings): MonthState =
+        withContext(Dispatchers.IO) { loadNow(repository, settings) }
+
+    private suspend fun loadNow(repository: CalendarRepository, settings: WidgetSettings): MonthState {
         if (!repository.hasPermission()) return MonthState.NoPermission
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
@@ -134,13 +153,14 @@ class MonthWidget : GlanceAppWidget() {
         val start = range.start.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
         val end = range.endInclusive.plusDays(2).atStartOfDay(zone).toInstant().toEpochMilli()
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
-        val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
-        val selected = builder.selectedDate(month, today, settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
+        val labeler = if (settings.showLunar) MonthCache.labeler else null
+        val selected = builder.selectedDate(month, today, null)
         return MonthState.Loaded(
             data = builder.build(month, today, events, labeler),
             monthOffset = settings.monthOffset,
             selected = selected,
             selectedEvents = builder.eventsOn(events, selected),
+            events = events,
         )
     }
 }
@@ -499,3 +519,6 @@ internal fun openDayIntent(date: LocalDate): Intent {
         .build()
     return Intent(Intent.ACTION_VIEW, uri)
 }
+
+/** 決定要不要重新查詢的設定：選取的日期不算（點日期只換下方的行程，不必重查）。 */
+internal fun WidgetSettings.monthKey(): WidgetSettings = copy(selectedEpochDay = null)
