@@ -3,7 +3,9 @@ package com.skestc.calendarwidget.settings
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.skestc.calendarwidget.theme.WidgetThemeId
 
 /**
  * 每個 widget 各自的設定，存在 Glance 的 per-widget Preferences 狀態裡。
@@ -16,6 +18,7 @@ data class WidgetSettings(
     val agendaDays: Int = DEFAULT_AGENDA_DAYS,
     val monthOffset: Int = 0,
     val refresh: Long = 0,
+    val appearance: Appearance = Appearance(),
 ) {
     companion object {
         const val DEFAULT_AGENDA_DAYS = 7
@@ -25,6 +28,11 @@ data class WidgetSettings(
         val KEY_AGENDA_DAYS = intPreferencesKey("agenda_days")
         val KEY_MONTH_OFFSET = intPreferencesKey("month_offset")
         val KEY_REFRESH = longPreferencesKey("refresh")
+        val KEY_THEME = stringPreferencesKey("theme")
+        val KEY_BG_OPACITY = intPreferencesKey("bg_opacity")
+        val KEY_CORNER = intPreferencesKey("corner_dp")
+        val KEY_TEXT_SCALE = intPreferencesKey("text_scale_percent")
+        val KEY_FONT = stringPreferencesKey("font")
 
         fun from(prefs: Preferences) = WidgetSettings(
             hiddenCalendarIds = prefs[KEY_HIDDEN_CALENDARS].orEmpty()
@@ -33,6 +41,41 @@ data class WidgetSettings(
             agendaDays = prefs[KEY_AGENDA_DAYS] ?: DEFAULT_AGENDA_DAYS,
             monthOffset = prefs[KEY_MONTH_OFFSET] ?: 0,
             refresh = prefs[KEY_REFRESH] ?: 0,
+            appearance = Appearance(
+                theme = WidgetThemeId.fromKey(prefs[KEY_THEME]),
+                backgroundOpacity = (prefs[KEY_BG_OPACITY] ?: 100).coerceIn(0, 100),
+                cornerDp = prefs[KEY_CORNER] ?: Appearance.DEFAULT_CORNER,
+                textScalePercent = prefs[KEY_TEXT_SCALE] ?: 100,
+                font = FontChoice.fromKey(prefs[KEY_FONT]),
+            ),
         )
+    }
+}
+
+enum class FontChoice(val label: String) {
+    THEME("跟隨主題"),
+    SANS("無襯線"),
+    SERIF("襯線"),
+    MONO("等寬");
+
+    companion object {
+        fun fromKey(key: String?): FontChoice = entries.firstOrNull { it.name == key } ?: THEME
+    }
+}
+
+/** 外觀設定：主題、背景透明度、圓角、文字大小、字型。 */
+data class Appearance(
+    val theme: WidgetThemeId = WidgetThemeId.DYNAMIC,
+    /** 0～100；毛玻璃主題不套用。 */
+    val backgroundOpacity: Int = 100,
+    val cornerDp: Int = DEFAULT_CORNER,
+    val textScalePercent: Int = 100,
+    val font: FontChoice = FontChoice.THEME,
+) {
+    companion object {
+        const val DEFAULT_CORNER = 24
+        val CORNER_OPTIONS = listOf(0, 12, 24, 32)
+        /** 小／中／大／特大。 */
+        val TEXT_SCALE_OPTIONS = listOf(90 to "小", 100 to "中", 115 to "大", 130 to "特大")
     }
 }

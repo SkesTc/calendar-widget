@@ -7,9 +7,7 @@ import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -41,13 +39,15 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
-import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.ProvideWidgetStyle
+import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -62,7 +62,7 @@ private sealed interface MonthState {
     data class Loaded(val data: MonthData, val monthOffset: Int) : MonthState
 }
 
-/** 月曆 widget：有事件的日子會打上日曆顏色的小圓點，可以切換月份。 */
+/** 月曆 widget：有事件的日子會打上日曆顏色的小圓點，可以切換月份；配色依外觀設定。 */
 class MonthWidget : GlanceAppWidget() {
 
     companion object {
@@ -85,7 +85,9 @@ class MonthWidget : GlanceAppWidget() {
                 load(repository, it)
             }
             GlanceTheme {
-                MonthContent(state)
+                ProvideWidgetStyle(settings.appearance) {
+                    MonthContent(state)
+                }
             }
         }
     }
@@ -107,12 +109,12 @@ class MonthWidget : GlanceAppWidget() {
 
 @Composable
 private fun MonthContent(state: MonthState) {
+    val style = LocalWidgetStyle.current
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(GlanceTheme.colors.widgetBackground)
-            .cornerRadius(24.dp)
+            .widgetBackground(style)
             .padding(horizontal = 10.dp, vertical = 10.dp),
     ) {
         when (state) {
@@ -140,6 +142,7 @@ private fun MonthContent(state: MonthState) {
 
 @Composable
 private fun MonthHeader(month: YearMonth, monthOffset: Int) {
+    val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     val title = DateTimeFormatter
         .ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMM"), locale)
@@ -151,11 +154,7 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
         Text(
             text = title,
             modifier = GlanceModifier.defaultWeight(),
-            style = TextStyle(
-                color = GlanceTheme.colors.onSurface,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = style.text(16, style.colors.onSurface, FontWeight.Bold),
         )
         if (monthOffset != 0) {
             NavButton("今", delta = 0)
@@ -171,10 +170,11 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
 
 @Composable
 private fun NavButton(label: String, delta: Int) {
+    val style = LocalWidgetStyle.current
     Box(
         modifier = GlanceModifier
             .size(32.dp)
-            .background(GlanceTheme.colors.secondaryContainer)
+            .background(style.colors.card)
             .cornerRadius(16.dp)
             .clickable(
                 actionRunCallback<ChangeMonthAction>(
@@ -185,17 +185,14 @@ private fun NavButton(label: String, delta: Int) {
     ) {
         Text(
             text = label,
-            style = TextStyle(
-                color = GlanceTheme.colors.onSecondaryContainer,
-                fontSize = if (label == "今") 13.sp else 18.sp,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = style.text(if (label == "今") 13 else 18, style.colors.onCard, FontWeight.Bold),
         )
     }
 }
 
 @Composable
 private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean) {
+    val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
         for (i in 0 until 7) {
@@ -203,11 +200,11 @@ private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean) {
             Text(
                 text = day.getDisplayName(DayTextStyle.NARROW, locale),
                 modifier = GlanceModifier.defaultWeight(),
-                style = TextStyle(
-                    color = weekendColor(day) ?: GlanceTheme.colors.onSurfaceVariant,
-                    fontSize = if (compact) 10.sp else 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center,
+                style = style.text(
+                    size = if (compact) 10 else 11,
+                    color = weekendColor(day) ?: style.colors.onSurfaceVariant,
+                    weight = FontWeight.Medium,
+                    align = TextAlign.Center,
                 ),
             )
         }
@@ -216,14 +213,14 @@ private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean) {
 
 @Composable
 private fun DayCellView(day: DayCell, today: LocalDate, compact: Boolean, modifier: GlanceModifier) {
+    val style = LocalWidgetStyle.current
     val isToday = day.date == today
-    val fontSize: TextUnit = if (compact) 12.sp else 14.sp
     val circle = if (compact) 22.dp else 28.dp
 
     val textColor = when {
-        isToday -> GlanceTheme.colors.onPrimary
-        !day.inMonth -> GlanceTheme.colors.outline
-        else -> weekendColor(day.date.dayOfWeek) ?: GlanceTheme.colors.onSurface
+        isToday -> style.colors.onPrimary
+        !day.inMonth -> style.colors.outline
+        else -> weekendColor(day.date.dayOfWeek) ?: style.colors.onSurface
     }
 
     Column(
@@ -236,7 +233,7 @@ private fun DayCellView(day: DayCell, today: LocalDate, compact: Boolean, modifi
                 .size(circle)
                 .then(
                     if (isToday) {
-                        GlanceModifier.background(GlanceTheme.colors.primary).cornerRadius(circle / 2)
+                        GlanceModifier.background(style.colors.primary).cornerRadius(circle / 2)
                     } else {
                         GlanceModifier
                     },
@@ -245,11 +242,11 @@ private fun DayCellView(day: DayCell, today: LocalDate, compact: Boolean, modifi
         ) {
             Text(
                 text = day.date.dayOfMonth.toString(),
-                style = TextStyle(
+                style = style.text(
+                    size = if (compact) 12 else 14,
                     color = textColor,
-                    fontSize = fontSize,
-                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
-                    textAlign = TextAlign.Center,
+                    weight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                    align = TextAlign.Center,
                 ),
             )
         }
@@ -280,12 +277,15 @@ private fun EventDots(colors: List<Int>, dimmed: Boolean) {
     }
 }
 
-/** 週日用 error 色、週六用 tertiary 色，跟一般紙本月曆一樣。 */
+/** 週日、週六用主題指定的顏色，跟一般紙本月曆一樣。 */
 @Composable
-private fun weekendColor(day: DayOfWeek) = when (day) {
-    DayOfWeek.SUNDAY -> GlanceTheme.colors.error
-    DayOfWeek.SATURDAY -> GlanceTheme.colors.tertiary
-    else -> null
+private fun weekendColor(day: DayOfWeek): ColorProvider? {
+    val colors = LocalWidgetStyle.current.colors
+    return when (day) {
+        DayOfWeek.SUNDAY -> colors.sunday
+        DayOfWeek.SATURDAY -> colors.saturday
+        else -> null
+    }
 }
 
 /** 開啟 Google 日曆（或系統預設日曆 App）的某一天。 */

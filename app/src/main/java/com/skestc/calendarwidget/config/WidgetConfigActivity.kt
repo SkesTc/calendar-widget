@@ -7,10 +7,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,14 +22,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -50,17 +57,23 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.lifecycle.lifecycleScope
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.settings.Appearance
+import com.skestc.calendarwidget.settings.FontChoice
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.DynamicSpec
+import com.skestc.calendarwidget.theme.ThemeSpecs
+import com.skestc.calendarwidget.theme.WidgetThemeId
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidget
 import com.skestc.calendarwidget.widget.MonthWidget
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
 import com.skestc.calendarwidget.widget.WidgetUpdater
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * 新增 widget 時（以及長按 widget →「編輯小工具」時）開啟的設定頁。
- * 每個 widget 的設定分開儲存，例如工作用和家庭用各放一個。
+ * 每個 widget 的設定分開儲存，例如工作用和家庭用各放一個、各用不同主題。
  */
 class WidgetConfigActivity : ComponentActivity() {
 
@@ -89,7 +102,7 @@ class WidgetConfigActivity : ComponentActivity() {
         setContent {
             CalendarWidgetTheme {
                 ConfigScreen(
-                    showAgendaOptions = !isMonth,
+                    isMonth = isMonth,
                     loadSettings = { glanceId -> loadSettings(glanceId) },
                     glanceId = { GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId) },
                     onSave = { glanceId, settings -> save(widget, glanceId, settings) },
@@ -107,6 +120,11 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetSettings.KEY_HIDDEN_CALENDARS] =
                     settings.hiddenCalendarIds.map { it.toString() }.toSet()
                 prefs[WidgetSettings.KEY_AGENDA_DAYS] = settings.agendaDays
+                prefs[WidgetSettings.KEY_THEME] = settings.appearance.theme.name
+                prefs[WidgetSettings.KEY_BG_OPACITY] = settings.appearance.backgroundOpacity
+                prefs[WidgetSettings.KEY_CORNER] = settings.appearance.cornerDp
+                prefs[WidgetSettings.KEY_TEXT_SCALE] = settings.appearance.textScalePercent
+                prefs[WidgetSettings.KEY_FONT] = settings.appearance.font.name
                 prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
             }
             widget.update(this@WidgetConfigActivity, glanceId)
@@ -122,7 +140,7 @@ class WidgetConfigActivity : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ConfigScreen(
-    showAgendaOptions: Boolean,
+    isMonth: Boolean,
     loadSettings: suspend (GlanceId) -> WidgetSettings,
     glanceId: () -> GlanceId,
     onSave: (GlanceId, WidgetSettings) -> Unit,
@@ -132,62 +150,214 @@ private fun ConfigScreen(
     val id = remember { glanceId() }
 
     var calendars by remember { mutableStateOf<List<CalendarInfo>>(emptyList()) }
-    var hidden by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var days by remember { mutableStateOf(WidgetSettings.DEFAULT_AGENDA_DAYS) }
-    var original by remember { mutableStateOf(WidgetSettings()) }
+    var settings by remember { mutableStateOf(WidgetSettings()) }
 
     LaunchedEffect(id) {
-        original = loadSettings(id)
-        hidden = original.hiddenCalendarIds
-        days = original.agendaDays
+        settings = loadSettings(id)
         calendars = repository.calendars()
+    }
+
+    fun updateAppearance(change: (Appearance) -> Appearance) {
+        settings = settings.copy(appearance = change(settings.appearance))
     }
 
     Scaffold(topBar = { TopAppBar(title = { Text("小工具設定") }) }) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(padding),
         ) {
-            if (showAgendaOptions) {
-                Text("顯示天數", style = MaterialTheme.typography.titleMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (option in WidgetSettings.AGENDA_DAY_OPTIONS) {
-                        FilterChip(
-                            selected = days == option,
-                            onClick = { days = option },
-                            label = { Text("$option 天") },
+            WidgetPreview(
+                appearance = settings.appearance,
+                isMonth = isMonth,
+                darkTheme = isSystemInDarkTheme(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            )
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item { Spacer(Modifier.size(4.dp)) }
+
+                item {
+                    Section("主題") {
+                        ThemePicker(
+                            selected = settings.appearance.theme,
+                            onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
                         )
                     }
                 }
-            }
 
-            Text("顯示的日曆", style = MaterialTheme.typography.titleMedium)
-            if (!repository.hasPermission()) {
-                Text("尚未授權讀取日曆，請先開啟 App 完成授權。")
-            }
-            LazyColumn(modifier = Modifier.weight(1f)) {
+                if (settings.appearance.theme.supportsOpacity) {
+                    item {
+                        Section("背景不透明度 ${settings.appearance.backgroundOpacity}%") {
+                            Slider(
+                                value = settings.appearance.backgroundOpacity.toFloat(),
+                                onValueChange = { v ->
+                                    updateAppearance { it.copy(backgroundOpacity = v.roundToInt()) }
+                                },
+                                valueRange = 0f..100f,
+                                steps = 9,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Section("圓角") {
+                        Segmented(
+                            options = Appearance.CORNER_OPTIONS.map { it to if (it == 0) "直角" else "$it" },
+                            selected = settings.appearance.cornerDp,
+                            onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
+                        )
+                    }
+                }
+
+                item {
+                    Section("文字大小") {
+                        Segmented(
+                            options = Appearance.TEXT_SCALE_OPTIONS,
+                            selected = settings.appearance.textScalePercent,
+                            onSelect = { v -> updateAppearance { it.copy(textScalePercent = v) } },
+                        )
+                    }
+                }
+
+                item {
+                    Section("字型") {
+                        Segmented(
+                            options = FontChoice.entries.map { it to it.label },
+                            selected = settings.appearance.font,
+                            onSelect = { v -> updateAppearance { it.copy(font = v) } },
+                        )
+                    }
+                }
+
+                if (!isMonth) {
+                    item {
+                        Section("顯示天數") {
+                            Segmented(
+                                options = WidgetSettings.AGENDA_DAY_OPTIONS.map { it to "$it 天" },
+                                selected = settings.agendaDays,
+                                onSelect = { v -> settings = settings.copy(agendaDays = v) },
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    Section("顯示的日曆") {
+                        if (!repository.hasPermission()) {
+                            Text(
+                                "尚未授權讀取日曆，請先開啟 App 完成授權。",
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
+                    }
+                }
                 items(calendars, key = { it.id }) { calendar ->
+                    val hidden = settings.hiddenCalendarIds
                     CalendarCheckRow(
                         calendar = calendar,
                         checked = calendar.id !in hidden,
                         onToggle = {
-                            hidden = if (calendar.id in hidden) hidden - calendar.id else hidden + calendar.id
+                            settings = settings.copy(
+                                hiddenCalendarIds = if (calendar.id in hidden) hidden - calendar.id else hidden + calendar.id,
+                            )
                         },
                     )
                 }
             }
 
             Button(
-                onClick = { onSave(id, original.copy(hiddenCalendarIds = hidden, agendaDays = days)) },
+                onClick = { onSave(id, settings) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 16.dp),
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             ) {
                 Text("完成")
             }
+        }
+    }
+}
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        content()
+    }
+}
+
+/** 每個主題一顆色票：背景色＋主色圓點，下面是名稱。 */
+@Composable
+private fun ThemePicker(selected: WidgetThemeId, onSelect: (WidgetThemeId) -> Unit) {
+    val context = LocalContext.current
+    val dynamic = remember { DynamicSpec.resolve(context) }
+    val dark = isSystemInDarkTheme()
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+    ) {
+        items(WidgetThemeId.entries) { theme ->
+            val spec = ThemeSpecs.fixed(theme) ?: dynamic
+            val bg = Color(if (dark) spec.background.night else spec.background.day)
+            val primary = Color(if (dark) spec.primary.night else spec.primary.day)
+            val isSelected = theme == selected
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onSelect(theme) },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF8E8E93))
+                        .background(bg)
+                        .border(
+                            width = if (isSelected) 3.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            shape = CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.size(18.dp).clip(CircleShape).background(primary))
+                }
+                Text(
+                    theme.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        options.forEachIndexed { index, (value, label) ->
+            SegmentedButton(
+                selected = value == selected,
+                onClick = { onSelect(value) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                icon = {},
+                label = { Text(label, maxLines = 1) },
+            )
         }
     }
 }
@@ -198,7 +368,7 @@ private fun CalendarCheckRow(calendar: CalendarInfo, checked: Boolean, onToggle:
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(vertical = 4.dp),
+            .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked = checked, onCheckedChange = { onToggle() })

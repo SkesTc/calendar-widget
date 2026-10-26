@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
@@ -24,9 +23,8 @@ import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
-import androidx.glance.currentState
-import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.background
+import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -38,9 +36,9 @@ import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import androidx.glance.layout.width
+import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.MainActivity
 import com.skestc.calendarwidget.data.AgendaFormatter
@@ -48,6 +46,9 @@ import com.skestc.calendarwidget.data.AgendaRow
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.ProvideWidgetStyle
+import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
@@ -59,7 +60,7 @@ private sealed interface AgendaState {
     data class Loaded(val today: LocalDate, val days: Int, val rows: List<AgendaRow>) : AgendaState
 }
 
-/** 行程清單 widget：大字日期 + 依日期分組的事件清單，顏色跟隨 Material You。 */
+/** 行程清單 widget：大字日期 + 依日期分組的事件清單，配色依每個 widget 的外觀設定。 */
 class AgendaWidget : GlanceAppWidget() {
 
     companion object {
@@ -83,7 +84,9 @@ class AgendaWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                AgendaContent(state)
+                ProvideWidgetStyle(settings.appearance) {
+                    AgendaContent(state)
+                }
             }
         }
     }
@@ -106,12 +109,12 @@ class AgendaWidget : GlanceAppWidget() {
 
 @Composable
 private fun AgendaContent(state: AgendaState) {
+    val style = LocalWidgetStyle.current
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .appWidgetBackground()
-            .background(GlanceTheme.colors.widgetBackground)
-            .cornerRadius(24.dp)
+            .widgetBackground(style)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
         when (state) {
@@ -131,6 +134,7 @@ private fun AgendaContent(state: AgendaState) {
 
 @Composable
 private fun DateHeader(today: LocalDate) {
+    val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
@@ -138,25 +142,17 @@ private fun DateHeader(today: LocalDate) {
     ) {
         Text(
             text = today.dayOfMonth.toString(),
-            style = TextStyle(
-                color = GlanceTheme.colors.primary,
-                fontSize = 34.sp,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = style.text(34, style.colors.primary, FontWeight.Bold),
         )
         Spacer(GlanceModifier.width(8.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSurface,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
+                style = style.text(14, style.colors.onSurface, FontWeight.Medium),
             )
             Text(
                 text = DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today),
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+                style = style.text(12, style.colors.onSurfaceVariant),
             )
         }
         AddEventButton()
@@ -165,22 +161,19 @@ private fun DateHeader(today: LocalDate) {
 
 @Composable
 internal fun AddEventButton() {
+    val style = LocalWidgetStyle.current
     val intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
     Box(
         modifier = GlanceModifier
             .size(36.dp)
-            .background(GlanceTheme.colors.primaryContainer)
+            .background(style.colors.primary)
             .cornerRadius(18.dp)
             .clickable(actionStartIntent(intent)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "+",
-            style = TextStyle(
-                color = GlanceTheme.colors.onPrimaryContainer,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-            ),
+            style = style.text(20, style.colors.onPrimary, FontWeight.Bold),
         )
     }
 }
@@ -209,19 +202,17 @@ private fun NextEventOnly(rows: List<AgendaRow>, days: Int) {
 
 @Composable
 private fun DayHeaderRow(label: String) {
+    val style = LocalWidgetStyle.current
     Text(
         text = label,
         modifier = GlanceModifier.padding(top = 6.dp, bottom = 4.dp),
-        style = TextStyle(
-            color = GlanceTheme.colors.primary,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-        ),
+        style = style.text(12, style.colors.primary, FontWeight.Medium),
     )
 }
 
 @Composable
 private fun EventRow(event: CalendarEvent, timeLabel: String) {
+    val style = LocalWidgetStyle.current
     val openEvent = Intent(
         Intent.ACTION_VIEW,
         ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),
@@ -232,8 +223,8 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
         modifier = GlanceModifier
             .fillMaxWidth()
             .padding(bottom = 4.dp)
-            .background(GlanceTheme.colors.secondaryContainer)
-            .cornerRadius(12.dp)
+            .background(style.colors.card)
+            .cornerRadius(style.cardCorner)
             .padding(horizontal = 8.dp, vertical = 6.dp)
             .clickable(actionStartIntent(openEvent)),
         verticalAlignment = Alignment.CenterVertically,
@@ -251,16 +242,12 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
             Text(
                 text = event.title,
                 maxLines = 1,
-                style = TextStyle(
-                    color = GlanceTheme.colors.onSecondaryContainer,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                ),
+                style = style.text(14, style.colors.onCard, FontWeight.Medium),
             )
             Text(
                 text = listOfNotNull(timeLabel, event.location).joinToString(" · "),
                 maxLines = 1,
-                style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 12.sp),
+                style = style.text(12, style.colors.onCard),
             )
         }
     }
@@ -268,27 +255,25 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
 
 @Composable
 private fun EmptyState(days: Int) {
+    val style = LocalWidgetStyle.current
     Box(modifier = GlanceModifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Text(
             text = "接下來 $days 天沒有行程 🎉",
-            style = TextStyle(color = GlanceTheme.colors.onSurfaceVariant, fontSize = 13.sp),
+            style = style.text(13, style.colors.onSurfaceVariant),
         )
     }
 }
 
 @Composable
 internal fun PermissionPrompt() {
+    val style = LocalWidgetStyle.current
     Box(
         modifier = GlanceModifier.fillMaxSize().clickable(actionStartActivity<MainActivity>()),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = "點此授權讀取日曆",
-            style = TextStyle(
-                color = GlanceTheme.colors.primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-            ),
+            style = style.text(14, style.colors.primary, FontWeight.Medium),
         )
     }
 }

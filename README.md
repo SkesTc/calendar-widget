@@ -18,6 +18,14 @@
   - 時區、時間、語言改變，以及開機、App 更新後
 - 修正：widget 正在顯示時資料變動不會重新查詢（改成依設定和 refresh 計數器重新載入）
 
+### P2 美化 ✅
+- **5 種主題**：Material You（跟著桌布取色）、AMOLED 純黑、莫蘭迪、手帳（米色紙張＋襯線字）、毛玻璃（半透明漸層＋亮邊）
+- **外觀設定**（每個 widget 各自設定）：背景不透明度 0～100%、圓角（直角／12／24／32）、文字大小（小／中／大／特大）、字型（跟隨主題／無襯線／襯線／等寬）
+- **即時預覽**：設定頁上方會墊一張示意桌布，即時顯示 widget 的樣子，透明度和毛玻璃效果都看得到
+- **對比度測試**：每個主題在淺色、深色模式下都通過 WCAG 對比度檢查（內文 4.5:1）
+
+> 限制：widget 不支援即時模糊，所以毛玻璃是用半透明漸層模擬的。Material You 主題的背景調成半透明時，換桌布後要等 widget 下次更新（最多 30 分鐘）才會跟上新顏色。
+
 ## 技術棧
 
 | 項目 | 選用 |
@@ -34,7 +42,11 @@
 app/src/main/java/com/skestc/calendarwidget/
 ├── MainActivity.kt                App 首頁（權限、日曆清單、加入 widget）
 ├── config/WidgetConfigActivity.kt 每個 widget 的設定頁
+├── config/WidgetPreview.kt        設定頁的即時預覽
 ├── settings/WidgetSettings.kt     per-widget 設定（存在 Glance 狀態）
+├── theme/
+│   ├── ThemeSpecs.kt              5 套主題配色＋WCAG 對比度計算（純 Kotlin）
+│   └── WidgetStyle.kt             把主題與外觀設定套用到 Glance widget
 ├── data/
 │   ├── CalendarModels.kt          CalendarInfo / CalendarEvent
 │   ├── CalendarRepository.kt      查詢 Calendars 與 Instances 表
@@ -69,6 +81,5 @@ app/src/main/java/com/skestc/calendarwidget/
 
 ## 開發路線圖
 
-- **P2 美化**：主題包（玻璃擬態、AMOLED、莫蘭迪、手帳風）、透明度／圓角／字體設定、設定頁即時預覽
 - **P3 進階**：時間軸 widget、農曆與節氣、台灣國定假日、Google Tasks
 - **P4 上架**：各家桌面（One UI、MIUI、Pixel）相容性測試、Play 上架
