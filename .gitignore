@@ -13,5 +13,3 @@ build/
 # 上架用的簽署金鑰
 *.jks
 *.keystore
-# 固定的 debug 簽署金鑰要進 repo（Google Tasks 的 OAuth 用戶端靠它的 SHA-1 對應）
-!app/debug.keystore

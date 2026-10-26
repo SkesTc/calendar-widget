@@ -64,15 +64,6 @@
 
 > 修改介面文字：編輯 `scripts/gen_strings.py` 後執行 `python3 scripts/gen_strings.py app/src/main/res`。
 
-### Google Tasks 待辦 ✅（需要先在 Google Cloud 設定）
-- 首頁「連結 Google Tasks」：用 Google Identity Services 的 `AuthorizationClient` 取得 `auth/tasks` 權限，不需要在程式裡放 client ID
-- 有網路時每 30 分鐘同步一次，存進本機快取；widget 只讀快取，所以快、離線也能顯示
-- **行程清單**：待辦出現在到期日下方，逾期的併到今天並標「已逾期」；**時間軸**：今天與逾期的待辦列在最上方
-- 在 widget 上勾選就會完成：先從畫面拿掉，再通知 Google；失敗時下次同步會放回來
-- 每個 widget 可以關閉待辦顯示
-- `app/debug.keystore` 是固定的 debug 金鑰（放在 repo），CI 每次建置的 SHA-1 才會一樣
-- 設定步驟：[docs/google-tasks-setup.md](docs/google-tasks-setup.md)
-
 ## 技術棧
 
 | 項目 | 選用 |
@@ -91,7 +82,6 @@ app/src/main/java/com/skestc/calendarwidget/
 ├── config/WidgetConfigActivity.kt 每個 widget 的設定頁
 ├── config/WidgetPreview.kt        設定頁的即時預覽
 ├── settings/WidgetSettings.kt     per-widget 設定（存在 Glance 狀態）
-├── tasks/                         Google Tasks：授權、REST API、快取、背景同步
 ├── theme/
 │   ├── ThemeSpecs.kt              5 套主題配色＋WCAG 對比度計算（純 Kotlin）
 │   └── WidgetStyle.kt             把主題與外觀設定套用到 Glance widget
@@ -142,4 +132,5 @@ app/src/main/java/com/skestc/calendarwidget/
 
 ## 開發路線圖
 
+- **Google Tasks**：需要 Google 登入（OAuth）與 Google Cloud 專案設定
 - **上架**：依 [實機測試清單](docs/device-test-checklist.md) 測試、封閉測試、正式上架

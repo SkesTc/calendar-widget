@@ -8,7 +8,6 @@ import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.TimelineBuilder
-import com.skestc.calendarwidget.tasks.TaskItem
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
 import com.skestc.calendarwidget.widget.WidgetFixtures.at
 import com.skestc.calendarwidget.widget.WidgetFixtures.context
@@ -80,33 +79,6 @@ class TimelineWidgetUiTest {
         onNode(hasText("某紀念日")).assertExists()
         onNode(hasText("某放假日")).assertDoesNotExist()
         onNode(hasTextEqualTo("今天沒有其他排定時間的行程")).assertExists()
-    }
-
-    @Test
-    fun tasksSectionListsTodaysAndOverdueTasks() = runGlanceAppWidgetUnitTest {
-        setContext(context)
-        setAppWidgetSize(DpSize(250.dp, 300.dp))
-        val base = state(at(12), timed(1, "專案討論", at(15), at(16)))
-        val tasks = listOf(
-            TaskItem("t1", "L", "繳電費", today.minusDays(1)),
-            TaskItem("t2", "L", "回覆郵件", today),
-        )
-        provideComposable { WidgetFrame { TimelineContent(base.copy(tasks = tasks)) } }
-        onNode(hasTextEqualTo("待辦（2）")).assertExists()
-        onNode(hasTextEqualTo("繳電費 · 已逾期")).assertExists()
-        onNode(hasTextEqualTo("回覆郵件")).assertExists()
-        onNode(hasTextEqualTo("專案討論")).assertExists()
-    }
-
-    @Test
-    fun onlyTasksStillShowsTheList() = runGlanceAppWidgetUnitTest {
-        setContext(context)
-        setAppWidgetSize(DpSize(250.dp, 300.dp))
-        provideComposable {
-            WidgetFrame { TimelineContent(state(at(8)).copy(tasks = listOf(TaskItem("t", "L", "回覆郵件", today)))) }
-        }
-        onNode(hasTextEqualTo("回覆郵件")).assertExists()
-        onNode(hasText("今天沒有行程")).assertDoesNotExist()
     }
 
     @Test

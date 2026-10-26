@@ -51,9 +51,6 @@ import com.skestc.calendarwidget.data.TimelineItem
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
-import com.skestc.calendarwidget.tasks.TaskFilters
-import com.skestc.calendarwidget.tasks.TaskItem
-import com.skestc.calendarwidget.tasks.TasksRepository
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -67,13 +64,7 @@ import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface TimelineState {
     data object NoPermission : TimelineState
-    data class Loaded(
-        val today: LocalDate,
-        val note: String?,
-        val timeline: Timeline,
-        /** 今天到期與逾期的 Google Tasks 待辦。 */
-        val tasks: List<TaskItem> = emptyList(),
-    ) : TimelineState
+    data class Loaded(val today: LocalDate, val note: String?, val timeline: Timeline) : TimelineState
 }
 
 /**
@@ -129,12 +120,7 @@ class TimelineWidget : GlanceAppWidget() {
         val holidays = timeline.allDay.filter { it.holiday == HolidayKind.DAY_OFF }.map { it.title }
         val lunar = if (settings.showLunar) DayLabeler(IcuLunarSource()).labelOf(today).long else null
         val note = (listOfNotNull(lunar) + holidays).joinToString(" · ").ifEmpty { null }
-        val tasks = if (settings.showTasks) {
-            TaskFilters.dueThrough(TasksRepository(context).cachedTasks(), today)
-        } else {
-            emptyList()
-        }
-        return TimelineState.Loaded(today, note, timeline, tasks)
+        return TimelineState.Loaded(today, note, timeline)
     }
 }
 
@@ -155,16 +141,10 @@ internal fun TimelineContent(state: TimelineState) {
                 Spacer(GlanceModifier.height(6.dp))
                 val allDay = state.timeline.allDay.filter { it.holiday != HolidayKind.DAY_OFF }
                 if (allDay.isNotEmpty()) AllDayStrip(allDay)
-                if (state.timeline.items.isEmpty() && state.tasks.isEmpty()) {
+                if (state.timeline.items.isEmpty()) {
                     TimelineEmpty(hasAllDay = allDay.isNotEmpty())
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-                        if (state.tasks.isNotEmpty()) {
-                            item { TasksHeader(state.tasks.size) }
-                            items(state.tasks) { task ->
-                                TaskRow(task, TaskFilters.isOverdue(task, state.today))
-                            }
-                        }
                         items(state.timeline.items) { item ->
                             when (item) {
                                 is TimelineItem.Event -> TimelineEventRow(item.event, item.status)
@@ -297,16 +277,6 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
             )
         }
     }
-}
-
-@Composable
-private fun TasksHeader(count: Int) {
-    val style = LocalWidgetStyle.current
-    Text(
-        text = glanceString(R.string.tasks_section, count),
-        modifier = GlanceModifier.padding(bottom = 2.dp),
-        style = style.text(12, style.colors.primary, FontWeight.Medium),
-    )
 }
 
 @Composable

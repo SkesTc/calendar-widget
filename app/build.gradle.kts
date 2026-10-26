@@ -21,14 +21,6 @@ android {
     }
 
     signingConfigs {
-        // 固定的 debug 金鑰（進 repo）：CI 每次建置的 SHA-1 才會一樣，
-        // Google Tasks 的 OAuth 用戶端只要登記一次（見 docs/google-tasks-setup.md）。
-        getByName("debug") {
-            storeFile = file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-        }
         if (releaseKeystore != null) {
             create("release") {
                 storeFile = file(releaseKeystore)
@@ -83,7 +75,6 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.play.services.auth)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

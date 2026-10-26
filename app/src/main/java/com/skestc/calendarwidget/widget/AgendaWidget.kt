@@ -49,8 +49,6 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
-import com.skestc.calendarwidget.tasks.TaskFilters
-import com.skestc.calendarwidget.tasks.TasksRepository
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -116,15 +114,10 @@ class AgendaWidget : GlanceAppWidget() {
             hiddenCalendarIds = settings.hiddenCalendarIds,
         )
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
-        val tasks = if (settings.showTasks) {
-            TaskFilters.dueThrough(TasksRepository(context).cachedTasks(), today.plusDays(settings.agendaDays - 1L))
-        } else {
-            emptyList()
-        }
         return AgendaState.Loaded(
             today = today,
             days = settings.agendaDays,
-            rows = AgendaFormatter(context).rows(events, today, labeler, tasks),
+            rows = AgendaFormatter(context).rows(events, today, labeler),
             lunarToday = labeler?.labelOf(today)?.long,
         )
     }
@@ -214,7 +207,6 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
             when (row) {
                 is AgendaRow.Header -> DayHeaderRow(row)
                 is AgendaRow.Event -> EventRow(row.event, row.timeLabel)
-                is AgendaRow.Task -> TaskRow(row.task, row.overdue)
             }
         }
     }

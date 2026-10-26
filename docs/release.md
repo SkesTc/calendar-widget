@@ -54,8 +54,7 @@ export CW_KEYSTORE_PATH=/path/to/upload.jks CW_KEYSTORE_PASSWORD=… CW_KEY_ALIA
    - 應用程式存取權：不需要登入。
    - 內容分級問卷：工具類、沒有使用者互動內容。
    - 目標對象：13 歲以上即可。
-4. **Google Tasks**：把 Play 的「應用程式簽署金鑰」SHA-1 加成 Google Cloud 的 Android OAuth 用戶端，並讓 OAuth 同意畫面通過 Google 驗證，見 [google-tasks-setup.md](google-tasks-setup.md)。
-5. **上傳 mapping.txt**：在該版本的「App Bundle 探索工具」上傳，當機報告才看得到原始的類別與行號。
+4. **上傳 mapping.txt**：在該版本的「App Bundle 探索工具」上傳，當機報告才看得到原始的類別與行號。
 
 ## 5. 測試與上架
 

@@ -3,8 +3,6 @@
 
     <!-- 讀取手機上已同步的 Google 日曆（不需要 OAuth） -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
-    <!-- 只有連結 Google Tasks 時才會連網（同步待辦、勾選完成）；日曆資料不會傳出手機 -->
-    <uses-permission android:name="android.permission.INTERNET" />
     <!-- 開機後重新排好午夜換日的鬧鐘 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
