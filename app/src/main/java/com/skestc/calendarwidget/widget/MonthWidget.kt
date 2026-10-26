@@ -246,6 +246,7 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
     ) {
         Text(
             text = title,
+            maxLines = 1,
             modifier = GlanceModifier.defaultWeight(),
             style = style.text(16, style.colors.onSurface, FontWeight.Bold),
         )
@@ -256,6 +257,8 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
         NavButton("‹", delta = -1)
         Spacer(GlanceModifier.width(4.dp))
         NavButton("›", delta = 1)
+        Spacer(GlanceModifier.width(4.dp))
+        SettingsButton(size = 32.dp)
         Spacer(GlanceModifier.width(4.dp))
         AddEventButton()
     }

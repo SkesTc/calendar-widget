@@ -39,6 +39,8 @@ S = [
  ("editor_default", "System default", "系統預設"),
  ("editor_ask", "Ask every time", "每次詢問"),
  ("editor_chooser_title", "Add event with", "用哪個 App 新增行程"),
+ ("widget_settings", "Widget settings", "小工具設定"),
+ ("editor_change", "Change", "更改"),
  ("long_events_hidden_count", "%1$d hidden", "已隱藏 %1$d 個"),
  ("long_events_description", "Events lasting 3 days or more, or repeating 3 times or more, from a month ago to three months ahead. Hidden events disappear from every widget; every occurrence of a repeating event is hidden together.", "跨 3 天以上、或重複 3 次以上的行程（一個月前到三個月後）。隱藏後所有小工具都不再顯示；重複的行程每一次都會一起隱藏。"),
  ("long_events_none", "No long or repeating events.", "沒有跨很多天或重複的行程。"),

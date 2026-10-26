@@ -49,6 +49,7 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.ui.EventEditorCard
 import com.skestc.calendarwidget.ui.LongEventsCard
 import com.skestc.calendarwidget.ui.UpdateHelpCard
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
@@ -134,6 +135,7 @@ private fun HomeScreen() {
             if (calendars.isNotEmpty() && calendars.none { it.isHoliday }) {
                 HolidayHint()
             }
+            EventEditorCard()
             LongEventsCard()
             UpdateHelpCard()
 

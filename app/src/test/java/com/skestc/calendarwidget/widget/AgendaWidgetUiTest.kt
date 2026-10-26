@@ -3,6 +3,7 @@ package com.skestc.calendarwidget.widget
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.AgendaFormatter
@@ -54,6 +55,8 @@ class AgendaWidgetUiTest {
         onNode(hasText("明天 ·")).assertExists()
         // 大字日期與標題下方的農曆。
         onNode(hasNumber("26")).assertExists()
+        // 「＋」旁的齒輪（小工具設定）。
+        onNode(hasContentDescriptionEqualTo("小工具設定")).assertExists()
         // 頂端日期下方一次，加上「今天」「明天」兩個日期標題各一次。
         onAllNodes(hasText("九月十七")).assertCountEquals(3)
     }

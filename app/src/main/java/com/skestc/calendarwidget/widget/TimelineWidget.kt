@@ -178,7 +178,7 @@ private fun TimelineHeader(today: LocalDate, note: String?) {
                 Text(text = note, maxLines = 1, style = style.text(12, style.colors.onSurfaceVariant))
             }
         }
-        AddEventButton()
+        HeaderActions()
     }
 }
 

@@ -9,7 +9,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
+import android.appwidget.AppWidgetManager
+import android.net.Uri
+import androidx.compose.ui.unit.Dp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
+import androidx.glance.LocalContext
+import androidx.glance.LocalGlanceId
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import com.skestc.calendarwidget.config.WidgetConfigActivity
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
@@ -187,8 +197,49 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
                 style = style.text(12, style.colors.onSurfaceVariant),
             )
         }
-        AddEventButton()
+        HeaderActions()
     }
+}
+
+/** 「＋」旁的齒輪：打開這個 widget 自己的設定頁（主題、日曆、顯示天數…）。 */
+@Composable
+internal fun SettingsButton(size: Dp = 36.dp) {
+    val style = LocalWidgetStyle.current
+    val context = LocalContext.current
+    val glanceId = LocalGlanceId.current
+    // 測試或預覽時沒有真正的 widget id，就只畫按鈕。
+    val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(glanceId) }.getOrNull()
+    val open = appWidgetId?.let {
+        actionStartActivity(
+            Intent(context, WidgetConfigActivity::class.java)
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, it)
+                // 每個 widget 一個 PendingIntent，避免開到別的 widget 的設定。
+                .setData(Uri.parse("calendarwidget://config/$it")),
+        )
+    }
+    Box(
+        modifier = GlanceModifier
+            .size(size)
+            .background(style.colors.card)
+            .cornerRadius(size / 2)
+            .then(if (open != null) GlanceModifier.clickable(open) else GlanceModifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.ic_settings),
+            contentDescription = glanceString(R.string.widget_settings),
+            colorFilter = ColorFilter.tint(style.colors.onCard),
+            modifier = GlanceModifier.size(size * 0.55f),
+        )
+    }
+}
+
+/** 標題列右側的按鈕：齒輪（設定）＋「＋」（新增行程）。 */
+@Composable
+internal fun HeaderActions() {
+    SettingsButton()
+    Spacer(GlanceModifier.width(6.dp))
+    AddEventButton()
 }
 
 @Composable

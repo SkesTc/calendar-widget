@@ -30,6 +30,13 @@ object EventEditor {
         }.apply()
     }
 
+    /** 首頁顯示目前的選擇：「系統預設」「每次詢問」或 App 名稱（App 已移除時視為系統預設）。 */
+    fun choiceLabel(context: Context, apps: List<App> = apps(context)): String = when (val c = choice(context)) {
+        null -> context.getString(R.string.editor_default)
+        ASK -> context.getString(R.string.editor_ask)
+        else -> apps.firstOrNull { it.packageName == c }?.label ?: context.getString(R.string.editor_default)
+    }
+
     fun insertIntent(): Intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
 
     /** 裝置上能新增行程的 App（Google 日曆、三星日曆、Outlook…），依名稱排序。 */
