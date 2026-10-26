@@ -49,6 +49,7 @@ import com.skestc.calendarwidget.data.WeekLayout
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -58,12 +59,16 @@ import java.time.ZoneId
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Date
 import java.util.Locale
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface WeekState {
     data object NoPermission : WeekState
-    data class Loaded(val today: LocalDate, val days: List<WeekDay>) : WeekState
+    data class Loaded(
+        val today: LocalDate,
+        val days: List<WeekDay>,
+        /** 已結束（end ≤ now）的行程用淡色顯示。 */
+        val now: Long = System.currentTimeMillis(),
+    ) : WeekState
 }
 
 /** 一週 widget：從今天起 7 天；扁長時並排成 7 欄、直長時每天一列。假日紅字、可顯示農曆。 */
@@ -85,12 +90,12 @@ class WeekWidget : GlanceAppWidget() {
         val initialSettings = WidgetSettings.from(
             getAppWidgetState(context, PreferencesGlanceStateDefinition, id),
         )
-        val initial = load(repository, initialSettings)
+        val initial = load(context, repository, initialSettings)
 
         provideContent {
             val settings = WidgetSettings.from(currentState<Preferences>())
             val state = rememberWidgetData(settings, initialSettings, initial) {
-                load(repository, it)
+                load(context, repository, it)
             }
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance) {
@@ -100,7 +105,7 @@ class WeekWidget : GlanceAppWidget() {
         }
     }
 
-    private suspend fun load(repository: CalendarRepository, settings: WidgetSettings): WeekState {
+    private suspend fun load(context: Context, repository: CalendarRepository, settings: WidgetSettings): WeekState {
         if (!repository.hasPermission()) return WeekState.NoPermission
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
@@ -109,7 +114,11 @@ class WeekWidget : GlanceAppWidget() {
         val end = today.plusDays(8).atStartOfDay(zone).toInstant().toEpochMilli()
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
-        return WeekState.Loaded(today, WeekBuilder(zone).build(events, today, 7, MAX_PER_DAY, labeler))
+        val now = System.currentTimeMillis()
+        // 下一個行程結束時重畫，讓它變成淡色。
+        events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
+            ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
+        return WeekState.Loaded(today, WeekBuilder(zone).build(events, today, 7, MAX_PER_DAY, labeler), now)
     }
 }
 
@@ -136,6 +145,7 @@ internal fun WeekContent(state: WeekState) {
                         for (day in state.days) {
                             WeekDayColumn(
                                 day = day,
+                                now = state.now,
                                 isToday = day.date == state.today,
                                 visible = visible,
                                 showLabel = showLabel,
@@ -171,7 +181,7 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
                         },
                     )
                     .padding(horizontal = 4.dp, vertical = 2.dp)
-                    .clickable(actionStartIntent(openDay(day.date))),
+                    .clickable(openInCalendar(openDay(day.date))),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(
@@ -204,12 +214,14 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
                     val room = (if (showLabel) lines - 1 else lines).coerceAtLeast(1)
                     val shown = day.events.take(room)
                     for (event in shown) {
+                        // 今天已經結束的行程：色條轉灰、文字用次要色。
+                        val past = !event.allDay && event.end <= state.now
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = GlanceModifier
                                     .width(3.dp)
                                     .height(12.dp)
-                                    .background(ColorProvider(Color(event.color)))
+                                    .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
                                     .cornerRadius(2.dp),
                             ) {}
                             val title = TitleShortener.compact(event.title)
@@ -217,7 +229,7 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
                                 text = if (event.allDay) title else "${timeFormat.format(Date(event.begin))}  $title",
                                 maxLines = 1,
                                 modifier = GlanceModifier.padding(start = 5.dp),
-                                style = style.text(12, style.colors.onSurface),
+                                style = style.text(12, if (past) style.colors.onSurfaceVariant else style.colors.onSurface),
                             )
                         }
                     }
@@ -247,6 +259,7 @@ private fun dayColor(day: WeekDay): ColorProvider {
 @Composable
 private fun WeekDayColumn(
     day: WeekDay,
+    now: Long,
     isToday: Boolean,
     visible: Int,
     showLabel: Boolean,
@@ -256,7 +269,7 @@ private fun WeekDayColumn(
     val dayColor = dayColor(day)
 
     Column(
-        modifier = modifier.padding(horizontal = 1.dp).clickable(actionStartIntent(openDay(day.date))),
+        modifier = modifier.padding(horizontal = 1.dp).clickable(openInCalendar(openDay(day.date))),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -298,7 +311,7 @@ private fun WeekDayColumn(
             )
         }
         val shown = day.events.take(visible)
-        for (event in shown) EventChip(event)
+        for (event in shown) EventChip(event, past = !event.allDay && event.end <= now)
         val hidden = day.more + (day.events.size - shown.size)
         if (hidden > 0) {
             Text(
@@ -311,18 +324,19 @@ private fun WeekDayColumn(
 
 /** 行程色塊：用事件顏色的淡色當底，左右空間很窄所以只放標題。 */
 @Composable
-private fun EventChip(event: CalendarEvent) {
+private fun EventChip(event: CalendarEvent, past: Boolean) {
     val style = LocalWidgetStyle.current
+    val color = if (past) Desaturate.color(event.color) else event.color
     Text(
         text = TitleShortener.compact(event.title),
         maxLines = 1,
         modifier = GlanceModifier
             .fillMaxWidth()
             .padding(top = 2.dp)
-            .background(ColorProvider(Color(event.color).copy(alpha = 0.30f)))
+            .background(ColorProvider(Color(color).copy(alpha = if (past) 0.18f else 0.30f)))
             .cornerRadius(4.dp)
             .padding(horizontal = 2.dp, vertical = 1.dp),
-        style = style.text(9, style.colors.onSurface, FontWeight.Medium),
+        style = style.text(9, if (past) style.colors.onSurfaceVariant else style.colors.onSurface, FontWeight.Medium),
     )
 }
 

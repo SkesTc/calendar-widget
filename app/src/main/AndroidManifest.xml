@@ -22,6 +22,14 @@
             </intent-filter>
         </activity>
 
+        <!-- 從 widget 開啟日曆的透明中繼頁，回來時立刻更新 widget -->
+        <activity
+            android:name=".widget.CalendarLaunchActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.CalendarWidget.Transparent" />
+
         <activity
             android:name=".ui.LongEventsActivity"
             android:exported="false"

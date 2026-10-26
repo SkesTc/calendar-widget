@@ -59,19 +59,27 @@ class CalendarRepository(private val context: Context) {
 
     /**
      * 取得從現在起 [days] 天內、尚未結束的事件，依開始時間排序。
+     * [keepEndedToday] 為 true 時，今天已經結束的行程也保留（畫面上用淡色顯示）。
      */
     suspend fun upcomingEvents(
         days: Int = 7,
         limit: Int = 30,
         hiddenCalendarIds: Set<Long> = emptySet(),
         now: Long = System.currentTimeMillis(),
+        keepEndedToday: Boolean = false,
     ): List<CalendarEvent> {
+        val zone = java.time.ZoneId.systemDefault()
+        val cutoff = if (keepEndedToday) {
+            java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        } else {
+            now
+        }
         // 往前多抓一天，才能拿到「今天」的全天事件（以 UTC 午夜為起點）。
         val rangeStart = now - TimeUnit.DAYS.toMillis(1)
         val rangeEnd = now + TimeUnit.DAYS.toMillis(days.toLong())
         return instances(rangeStart, rangeEnd, hiddenCalendarIds)
             .asSequence()
-            .filter { it.end > now }
+            .filter { it.end > cutoff }
             .take(limit)
             .toList()
     }

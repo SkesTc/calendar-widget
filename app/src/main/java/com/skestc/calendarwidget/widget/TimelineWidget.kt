@@ -59,7 +59,6 @@ import java.time.ZoneId
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Date
 import java.util.Locale
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface TimelineState {
@@ -216,7 +215,7 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
         .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
 
     Row(
-        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp).clickable(actionStartIntent(openEvent)),
+        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp).clickable(openInCalendar(openEvent)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(

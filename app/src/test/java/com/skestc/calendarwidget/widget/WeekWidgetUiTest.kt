@@ -103,4 +103,17 @@ class WeekWidgetUiTest {
         // 星期用簡稱（週一），日期數字單獨一行。
         onNode(hasTextEqualTo("26")).assertExists()
     }
+
+    @Test
+    fun endedEventsStayInTheRowsLayout() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val state = WeekState.Loaded(
+            today,
+            WeekBuilder(WidgetFixtures.zone).build(listOf(timed(1, "早會", at(8), at(9))), today, maxPerDay = 8),
+            now = at(20),
+        )
+        provideComposable { WidgetFrame { WeekContent(state) } }
+        onNode(hasText("早會")).assertExists()
+    }
 }

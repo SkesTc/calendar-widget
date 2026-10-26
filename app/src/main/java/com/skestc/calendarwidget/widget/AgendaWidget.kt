@@ -49,6 +49,7 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -56,7 +57,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface AgendaState {
@@ -108,11 +108,17 @@ class AgendaWidget : GlanceAppWidget() {
     ): AgendaState {
         if (!repository.hasPermission()) return AgendaState.NoPermission
         val today = LocalDate.now()
+        val now = System.currentTimeMillis()
         val events = repository.upcomingEvents(
             days = settings.agendaDays,
             limit = 100,
             hiddenCalendarIds = settings.hiddenCalendarIds,
+            now = now,
+            keepEndedToday = true,
         )
+        // 下一個行程結束時重畫，讓它變成淡色。
+        events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
+            ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
         return AgendaState.Loaded(
             today = today,
@@ -186,7 +192,7 @@ internal fun AddEventButton() {
             .size(36.dp)
             .background(style.colors.primary)
             .cornerRadius(18.dp)
-            .clickable(actionStartIntent(intent)),
+            .clickable(openInCalendar(intent)),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -206,7 +212,7 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
         items(rows, itemId = { it.id }) { row ->
             when (row) {
                 is AgendaRow.Header -> DayHeaderRow(row)
-                is AgendaRow.Event -> EventRow(row.event, row.timeLabel)
+                is AgendaRow.Event -> EventRow(row.event, row.timeLabel, row.past)
             }
         }
     }
@@ -214,8 +220,9 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
 
 @Composable
 private fun NextEventOnly(rows: List<AgendaRow>, days: Int) {
-    val next = rows.firstNotNullOfOrNull { it as? AgendaRow.Event }
-    if (next == null) EmptyState(days) else EventRow(next.event, next.timeLabel)
+    // 2×2 只放得下一筆：跳過今天已經結束的。
+    val next = rows.firstNotNullOfOrNull { (it as? AgendaRow.Event)?.takeIf { row -> !row.past } }
+    if (next == null) EmptyState(days) else EventRow(next.event, next.timeLabel, past = false)
 }
 
 @Composable
@@ -231,7 +238,7 @@ private fun DayHeaderRow(header: AgendaRow.Header) {
 }
 
 @Composable
-private fun EventRow(event: CalendarEvent, timeLabel: String) {
+private fun EventRow(event: CalendarEvent, timeLabel: String, past: Boolean) {
     val style = LocalWidgetStyle.current
     val openEvent = Intent(
         Intent.ACTION_VIEW,
@@ -239,14 +246,15 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
     ).putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
         .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
 
+    // 已結束的行程：拿掉卡片底色、色條改成灰階、文字用次要色，看起來「褪色」但仍讀得到。
+    val textColor = if (past) style.colors.onSurfaceVariant else style.colors.onCard
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
             .padding(bottom = 4.dp)
-            .background(style.colors.card)
-            .cornerRadius(style.cardCorner)
+            .then(if (past) GlanceModifier else GlanceModifier.background(style.colors.card).cornerRadius(style.cardCorner))
             .padding(horizontal = 8.dp, vertical = 6.dp)
-            .clickable(actionStartIntent(openEvent)),
+            .clickable(openInCalendar(openEvent)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // 色條沿用 Google 日曆裡設定的事件／日曆顏色。
@@ -254,7 +262,7 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
             modifier = GlanceModifier
                 .width(4.dp)
                 .height(32.dp)
-                .background(ColorProvider(Color(event.color)))
+                .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
                 .cornerRadius(2.dp),
         ) {}
         Spacer(GlanceModifier.width(8.dp))
@@ -262,12 +270,12 @@ private fun EventRow(event: CalendarEvent, timeLabel: String) {
             Text(
                 text = event.title,
                 maxLines = 1,
-                style = style.text(14, style.colors.onCard, FontWeight.Medium),
+                style = style.text(14, textColor, FontWeight.Medium),
             )
             Text(
                 text = listOfNotNull(timeLabel, event.location).joinToString(" · "),
                 maxLines = 1,
-                style = style.text(12, style.colors.onCard),
+                style = style.text(12, textColor),
             )
         }
     }

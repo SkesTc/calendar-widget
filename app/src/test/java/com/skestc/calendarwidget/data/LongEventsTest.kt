@@ -35,12 +35,13 @@ class LongEventsTest {
         val found = finder.find(events)
         assertEquals(listOf("115學年度第一學期", "跨夜的活動", "三天的露營"), found.map { it.title })
         assertEquals(121, found.first().days)
-        assertEquals(4, found[1].days)
-        assertEquals(3, found[2].days)
+        assertEquals(4, found[1].longestDays)
+        assertEquals(3, found[2].longestDays)
+        assertEquals(1, found.first().occurrences)
     }
 
     @Test
-    fun recurringInstancesCollapseToTheEarliest() {
+    fun recurringInstancesCollapseIntoOneEntry() {
         val d = LocalDate.of(2026, 10, 5)
         val events = listOf(
             allDay(9, "每週考試週", d.plusDays(7), d.plusDays(10)),
@@ -49,6 +50,24 @@ class LongEventsTest {
         val found = finder.find(events)
         assertEquals(1, found.size)
         assertEquals(d, found.single().first)
+        assertEquals(d.plusDays(10), found.single().last)
+        assertEquals(2, found.single().occurrences)
+    }
+
+    @Test
+    fun shortEventsThatRepeatOftenAreIncluded() {
+        // 每天的早自習（各只有 1 小時）重複 5 次 → 列出；只重複 2 次的不列。
+        val morning = (0..4).map {
+            timed(20, "早自習", LocalDateTime.of(2026, 10, 5 + it, 7, 30), LocalDateTime.of(2026, 10, 5 + it, 8, 0))
+        }
+        val twice = (0..1).map {
+            timed(21, "家長會", LocalDateTime.of(2026, 10, 5 + it * 7, 19, 0), LocalDateTime.of(2026, 10, 5 + it * 7, 21, 0))
+        }
+        val found = finder.find(morning + twice)
+        assertEquals(listOf("早自習"), found.map { it.title })
+        assertEquals(5, found.single().occurrences)
+        assertEquals(1, found.single().longestDays)
+        assertEquals(true, found.single().isRecurring)
     }
 
     @Test

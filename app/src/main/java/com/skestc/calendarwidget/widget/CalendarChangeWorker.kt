@@ -37,8 +37,9 @@ class CalendarChangeWorker(
         private fun enqueue(context: Context, policy: ExistingWorkPolicy) {
             val constraints = Constraints.Builder()
                 .addContentUriTrigger(CalendarContract.CONTENT_URI, true)
-                .setTriggerContentUpdateDelay(Duration.ofSeconds(5))
-                .setTriggerContentMaxDelay(Duration.ofMinutes(1))
+                // 盡快反應（日曆 App 一次存檔可能連續寫好幾筆，1 秒內的變動合併成一次）。
+                .setTriggerContentUpdateDelay(Duration.ofSeconds(1))
+                .setTriggerContentMaxDelay(Duration.ofSeconds(10))
                 .build()
             val request = OneTimeWorkRequestBuilder<CalendarChangeWorker>()
                 .setConstraints(constraints)

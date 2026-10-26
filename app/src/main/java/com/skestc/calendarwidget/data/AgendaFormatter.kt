@@ -28,7 +28,8 @@ sealed interface AgendaRow {
         override val id: Long = -date.toEpochDay() - 1
     }
 
-    data class Event(val event: CalendarEvent, val timeLabel: String) : AgendaRow {
+    /** [past]：今天已經結束的行程，畫面上用淡色顯示（不隱藏）。 */
+    data class Event(val event: CalendarEvent, val timeLabel: String, val past: Boolean = false) : AgendaRow {
         override val id: Long = event.eventId * 31 + event.begin
     }
 }
@@ -59,6 +60,7 @@ class AgendaFormatter(
         events: List<CalendarEvent>,
         today: LocalDate = LocalDate.now(zone),
         labeler: DayLabeler? = null,
+        now: Long = System.currentTimeMillis(),
     ): List<AgendaRow> =
         events
             .groupBy { displayDate(it, today) }
@@ -78,7 +80,7 @@ class AgendaFormatter(
                 listOf<AgendaRow>(header) +
                     regular
                         .sortedWith(compareBy({ !it.allDay }, { it.begin }))
-                        .map { AgendaRow.Event(it, timeLabel(it)) }
+                        .map { AgendaRow.Event(it, timeLabel(it), past = !it.allDay && it.end <= now) }
             }
 
     fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {

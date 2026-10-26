@@ -54,7 +54,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * 「長期行程」：列出跨 3 天以上的行程，讓使用者個別在所有 widget 上隱藏。
+ * 「長期行程」：列出跨 3 天以上、或重複 3 次以上的行程，讓使用者個別在所有 widget 上隱藏。
  * 只影響 widget 的顯示，Google 日曆裡的行程不會改變。
  */
 class LongEventsActivity : ComponentActivity() {
@@ -158,15 +158,20 @@ private fun LongEventRow(entry: Entry, onHiddenChange: (Boolean) -> Unit) {
             )
             val event = entry.event
             Text(
-                if (event != null) {
-                    stringResource(
+                when {
+                    event == null -> stringResource(R.string.long_event_out_of_range)
+                    event.isRecurring -> stringResource(
+                        R.string.long_event_recurring,
+                        dateFormat.format(event.first),
+                        dateFormat.format(event.last),
+                        event.occurrences,
+                    )
+                    else -> stringResource(
                         R.string.long_event_range,
                         dateFormat.format(event.first),
                         dateFormat.format(event.last),
                         event.days,
                     )
-                } else {
-                    stringResource(R.string.long_event_out_of_range)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

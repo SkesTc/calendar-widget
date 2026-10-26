@@ -52,6 +52,7 @@ import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
@@ -63,7 +64,6 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface MonthState {
@@ -74,6 +74,8 @@ internal sealed interface MonthState {
         /** 選取的日期與當天行程，顯示在月曆下方（widget 夠高時）。 */
         val selected: LocalDate = data.today,
         val selectedEvents: List<CalendarEvent> = emptyList(),
+        /** 已結束的行程用淡色顯示。 */
+        val now: Long = System.currentTimeMillis(),
     ) : MonthState
 }
 
@@ -170,6 +172,7 @@ internal fun MonthContent(state: MonthState) {
                         DayPanel(
                             date = state.selected,
                             events = state.selectedEvents,
+                            now = state.now,
                             maxEvents = 6,
                             modifier = GlanceModifier.width(200.dp).fillMaxHeight(),
                         )
@@ -180,6 +183,7 @@ internal fun MonthContent(state: MonthState) {
                         DayPanel(
                             date = state.selected,
                             events = state.selectedEvents,
+                            now = state.now,
                             maxEvents = 3,
                             modifier = GlanceModifier.fillMaxWidth().padding(top = 6.dp),
                         )
@@ -315,7 +319,7 @@ private fun DayCellView(
             if (selectInWidget) {
                 actionRunCallback<SelectDayAction>(actionParametersOf(SelectDayAction.EpochDayKey to day.date.toEpochDay()))
             } else {
-                actionStartIntent(openDayIntent(day.date))
+                openInCalendar(openDayIntent(day.date))
             },
         ),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -394,7 +398,7 @@ private fun EventDots(colors: List<Int>, dimmed: Boolean) {
 
 /** 選取那天的日期與行程（下方或右側）；點行程開啟該事件、點標題開啟那一天。 */
 @Composable
-private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, maxEvents: Int, modifier: GlanceModifier) {
+private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, now: Long, maxEvents: Int, modifier: GlanceModifier) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     val title = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(date)
@@ -405,7 +409,7 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, maxEvents: In
             .padding(horizontal = 10.dp, vertical = 6.dp),
     ) {
         Row(
-            modifier = GlanceModifier.fillMaxWidth().clickable(actionStartIntent(openDayIntent(date))),
+            modifier = GlanceModifier.fillMaxWidth().clickable(openInCalendar(openDayIntent(date))),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
@@ -423,24 +427,29 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, maxEvents: In
         }
         val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
         for (event in events.take(maxEvents)) {
+            // 已結束的行程：圓點轉灰、文字用次要色。
+            val past = !event.allDay && event.end <= now
             val openEvent = Intent(
                 Intent.ACTION_VIEW,
                 ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),
             ).putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
                 .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
             Row(
-                modifier = GlanceModifier.fillMaxWidth().padding(top = 2.dp).clickable(actionStartIntent(openEvent)),
+                modifier = GlanceModifier.fillMaxWidth().padding(top = 2.dp).clickable(openInCalendar(openEvent)),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = GlanceModifier.size(6.dp).background(ColorProvider(Color(event.color))).cornerRadius(3.dp),
+                    modifier = GlanceModifier
+                        .size(6.dp)
+                        .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
+                        .cornerRadius(3.dp),
                 ) {}
                 Text(
                     text = (if (event.allDay) glanceString(R.string.all_day) else timeFormat.format(Date(event.begin))) +
                         "  " + event.title,
                     maxLines = 1,
                     modifier = GlanceModifier.padding(start = 6.dp),
-                    style = style.text(12, style.colors.onCard),
+                    style = style.text(12, if (past) style.colors.onSurfaceVariant else style.colors.onCard),
                 )
             }
         }

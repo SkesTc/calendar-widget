@@ -26,12 +26,13 @@
     <string name="holiday_hint_title">Show public holidays</string>
     <string name="holiday_hint_body">In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.</string>
     <string name="long_events_title">Long events</string>
-    <string name="long_events_card_body">Hide multi-day events (like a whole term) that fill up your widgets. Google Calendar isn’t changed.</string>
+    <string name="long_events_card_body">Hide multi-day or frequently repeating events (like a whole term or a daily routine) that fill up your widgets. Google Calendar isn’t changed.</string>
     <string name="long_events_manage">Manage</string>
     <string name="long_events_manage_link">Hide long events…</string>
     <string name="long_events_hidden_count">%1$d hidden</string>
-    <string name="long_events_description">Events lasting 3 days or more, from a month ago to three months ahead. Hidden events disappear from every widget; recurring events are hidden together.</string>
-    <string name="long_events_none">No events lasting 3 days or more.</string>
+    <string name="long_events_description">Events lasting 3 days or more, or repeating 3 times or more, from a month ago to three months ahead. Hidden events disappear from every widget; every occurrence of a repeating event is hidden together.</string>
+    <string name="long_events_none">No long or repeating events.</string>
+    <string name="long_event_recurring">%1$s – %2$s · repeats %3$d times</string>
     <string name="long_event_range">%1$s – %2$s · %3$d days</string>
     <string name="long_event_out_of_range">Hidden · not in the current range</string>
     <string name="long_event_hide">Hide</string>
@@ -49,6 +50,7 @@
     <string name="section_days">Days to show</string>
     <string name="days_option">%1$d days</string>
     <string name="section_calendars">Calendars</string>
+    <string name="account_calendars_shown">%1$d of %2$d calendars shown</string>
     <string name="config_no_permission">Calendar access hasn’t been allowed yet. Open the app to allow it first.</string>
     <string name="done">Done</string>
     <string name="theme_dynamic">Material You</string>

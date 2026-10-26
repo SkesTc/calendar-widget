@@ -27,8 +27,9 @@ class AgendaWidgetUiTest {
     @Before
     fun setUp() = WidgetFixtures.useTaiwanDefaults()
 
-    private fun loaded(vararg events: com.skestc.calendarwidget.data.CalendarEvent): AgendaState {
-        val rows = AgendaFormatter(context, WidgetFixtures.zone, Locale.TAIWAN).rows(events.toList(), today, labeler)
+    /** 固定「現在」是早上 8 點，結果不受 CI 執行時間影響。 */
+    private fun loaded(vararg events: com.skestc.calendarwidget.data.CalendarEvent, now: Long = at(8)): AgendaState {
+        val rows = AgendaFormatter(context, WidgetFixtures.zone, Locale.TAIWAN).rows(events.toList(), today, labeler, now)
         return AgendaState.Loaded(today, days = 7, rows = rows, lunarToday = "九月十七")
     }
 
@@ -68,6 +69,33 @@ class AgendaWidgetUiTest {
         }
         onNode(hasText("光復節")).assertExists()
         onNode(hasTextEqualTo("光復節")).assertDoesNotExist()
+    }
+
+    @Test
+    fun eventsThatEndedTodayStayVisible() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
+        provideComposable {
+            WidgetFrame {
+                AgendaContent(loaded(timed(1, "晨會", at(9), at(10)), timed(2, "午餐", at(12), at(13)), now = at(15)))
+            }
+        }
+        // 已結束的行程用淡色顯示，但不隱藏。
+        onNode(hasTextEqualTo("晨會")).assertExists()
+        onNode(hasTextEqualTo("午餐")).assertExists()
+    }
+
+    @Test
+    fun smallSizeSkipsEventsThatAlreadyEnded() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(110.dp, 110.dp))
+        provideComposable {
+            WidgetFrame {
+                AgendaContent(loaded(timed(1, "晨會", at(9), at(10)), timed(2, "午餐", at(12), at(13)), now = at(11)))
+            }
+        }
+        onNode(hasTextEqualTo("午餐")).assertExists()
+        onNode(hasTextEqualTo("晨會")).assertDoesNotExist()
     }
 
     @Test

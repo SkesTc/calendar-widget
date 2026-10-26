@@ -52,7 +52,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface NextEventState {
@@ -143,7 +142,7 @@ private fun NextEventRow(next: NextEvent, today: LocalDate) {
         .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
 
     Row(
-        modifier = GlanceModifier.fillMaxSize().clickable(actionStartIntent(openEvent)),
+        modifier = GlanceModifier.fillMaxSize().clickable(openInCalendar(openEvent)),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -203,7 +202,7 @@ private fun NoUpcoming() {
         CalendarContract.CONTENT_URI.buildUpon().appendPath("time").appendPath(System.currentTimeMillis().toString()).build(),
     )
     Box(
-        modifier = GlanceModifier.fillMaxSize().clickable(actionStartIntent(openCalendar)),
+        modifier = GlanceModifier.fillMaxSize().clickable(openInCalendar(openCalendar)),
         contentAlignment = Alignment.CenterStart,
     ) {
         Text(

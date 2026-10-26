@@ -38,6 +38,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -50,6 +51,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
 import androidx.glance.appwidget.GlanceAppWidget
@@ -323,17 +325,33 @@ private fun ConfigScreen(
                         }
                     }
                 }
-                items(calendars, key = { it.id }) { calendar ->
-                    val hidden = settings.hiddenCalendarIds
-                    CalendarCheckRow(
-                        calendar = calendar,
-                        checked = calendar.id !in hidden,
-                        onToggle = {
-                            settings = settings.copy(
-                                hiddenCalendarIds = if (calendar.id in hidden) hidden - calendar.id else hidden + calendar.id,
-                            )
-                        },
-                    )
+                // 依帳號分組：帳號那一列可以一次顯示／隱藏該帳號的所有日曆。
+                for ((account, accountCalendars) in calendars.groupBy { it.accountName }) {
+                    item(key = "account:$account") {
+                        val ids = accountCalendars.map { it.id }.toSet()
+                        AccountCheckRow(
+                            account = account,
+                            shownCount = ids.count { it !in settings.hiddenCalendarIds },
+                            total = ids.size,
+                            onToggle = { showAll ->
+                                settings = settings.copy(
+                                    hiddenCalendarIds = if (showAll) settings.hiddenCalendarIds - ids else settings.hiddenCalendarIds + ids,
+                                )
+                            },
+                        )
+                    }
+                    items(accountCalendars, key = { it.id }) { calendar ->
+                        val hidden = settings.hiddenCalendarIds
+                        CalendarCheckRow(
+                            calendar = calendar,
+                            checked = calendar.id !in hidden,
+                            onToggle = {
+                                settings = settings.copy(
+                                    hiddenCalendarIds = if (calendar.id in hidden) hidden - calendar.id else hidden + calendar.id,
+                                )
+                            },
+                        )
+                    }
                 }
 
                 item {
@@ -437,13 +455,43 @@ private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect:
     }
 }
 
+/** 帳號那一列：全部顯示時打勾、全部隱藏時空白、部分顯示時顯示「—」。 */
+@Composable
+private fun AccountCheckRow(account: String, shownCount: Int, total: Int, onToggle: (showAll: Boolean) -> Unit) {
+    val state = when (shownCount) {
+        total -> ToggleableState.On
+        0 -> ToggleableState.Off
+        else -> ToggleableState.Indeterminate
+    }
+    // 部分顯示時按一下改成全部顯示。
+    val showAll = state != ToggleableState.On
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(showAll) }
+            .padding(start = 4.dp, end = 16.dp, top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TriStateCheckbox(state = state, onClick = { onToggle(showAll) })
+        Column(Modifier.weight(1f)) {
+            Text(account, style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.account_calendars_shown, shownCount, total),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @Composable
 private fun CalendarCheckRow(calendar: CalendarInfo, checked: Boolean, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onToggle)
-            .padding(horizontal = 4.dp),
+            // 縮排在帳號底下。
+            .padding(start = 28.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked = checked, onCheckedChange = { onToggle() })
@@ -454,14 +502,7 @@ private fun CalendarCheckRow(calendar: CalendarInfo, checked: Boolean, onToggle:
                 .background(Color(calendar.color)),
         )
         Spacer(Modifier.width(12.dp))
-        Column {
-            Text(calendar.displayName, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                calendar.accountName,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
+        Text(calendar.displayName, style = MaterialTheme.typography.bodyLarge)
     }
 }
 
