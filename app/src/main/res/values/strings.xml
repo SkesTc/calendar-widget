@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">行事曆小工具</string>
+    <string name="widget_name">行程清單</string>
+    <string name="widget_description">顯示 Google 日曆接下來的行程</string>
+</resources>
