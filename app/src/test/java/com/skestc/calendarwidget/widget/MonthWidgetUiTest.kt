@@ -21,7 +21,7 @@ import java.time.YearMonth
 import java.util.Locale
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], qualifiers = "zh-rTW")
 class MonthWidgetUiTest {
 
     @Before
@@ -48,8 +48,11 @@ class MonthWidgetUiTest {
         onNode(hasTextEqualTo("今")).assertDoesNotExist()
         onNode(hasTextEqualTo("國慶日")).assertExists()
         onNode(hasTextEqualTo("補班")).assertExists()
-        // 假農曆每天都是十七；10 月格子共 35 天，其中 2 天顯示假日名稱。
-        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(33)
+        // 節氣是真的天文計算：2026/10/8 寒露、10/23 霜降，會取代農曆小字。
+        onNode(hasTextEqualTo("寒露")).assertExists()
+        onNode(hasTextEqualTo("霜降")).assertExists()
+        // 假農曆每天都是十七；10 月格子共 35 天，扣掉 2 個假日與 2 個節氣。
+        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(31)
     }
 
     @Test
