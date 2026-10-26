@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
 import androidx.glance.GlanceTheme
 import androidx.glance.ImageProvider
@@ -47,6 +48,9 @@ class WidgetStyle(
     private val textScale: Float,
     private val fontFamily: FontFamily?,
 ) {
+    /** 大號數字用圓潤粗體（[ExpressiveText]）；選了襯線／等寬字型時不用。 */
+    val roundedNumerals: Boolean get() = fontFamily == null || fontFamily == FontFamily.SansSerif
+
     /** 事件卡片的圓角：跟著外框，但不超過 12dp。 */
     val cardCorner: Dp get() = minOf(corner / 2, 12.dp)
 
@@ -114,12 +118,49 @@ fun specFor(appearance: Appearance): ThemeSpec? = when (appearance.theme) {
 fun GlanceModifier.widgetBackground(style: WidgetStyle): GlanceModifier {
     val image = style.colors.backgroundImage
     val color = style.colors.background
+    // Android 12 以前 cornerRadius 無效，改用染色的圓角圖。
+    val legacyRounded = Build.VERSION.SDK_INT < Build.VERSION_CODES.S && style.corner > 0.dp
     val withBackground = when {
         image != null -> background(image)
+        color != null && legacyRounded ->
+            background(ImageProvider(R.drawable.widget_bg_rounded), colorFilter = ColorFilter.tint(color))
         color != null -> background(color)
         else -> this
     }
     return withBackground.cornerRadius(style.corner)
+}
+
+/** 卡片在同一組連續卡片中的位置，決定上下圓角（M3 Expressive 分段清單）。 */
+enum class Segment {
+    SINGLE, TOP, MIDDLE, BOTTOM;
+
+    companion object {
+        fun of(hasPrevious: Boolean, hasNext: Boolean): Segment = when {
+            hasPrevious && hasNext -> MIDDLE
+            hasPrevious -> BOTTOM
+            hasNext -> TOP
+            else -> SINGLE
+        }
+    }
+}
+
+/**
+ * 事件卡片底色。相連的卡片外側大圓角、內側小圓角，看起來像一組；
+ * 使用者把圓角設成 0 時維持直角色塊。
+ */
+fun GlanceModifier.cardBackground(
+    style: WidgetStyle,
+    segment: Segment = Segment.SINGLE,
+    color: ColorProvider = style.colors.card,
+): GlanceModifier {
+    if (style.cardCorner <= 0.dp) return background(color)
+    val shape = when (segment) {
+        Segment.SINGLE -> R.drawable.seg_single
+        Segment.TOP -> R.drawable.seg_top
+        Segment.MIDDLE -> R.drawable.seg_middle
+        Segment.BOTTOM -> R.drawable.seg_bottom
+    }
+    return background(ImageProvider(shape), colorFilter = ColorFilter.tint(color))
 }
 
 private fun DayNight.provider(alpha: Float = 1f): ColorProvider = DayNightColorProvider(

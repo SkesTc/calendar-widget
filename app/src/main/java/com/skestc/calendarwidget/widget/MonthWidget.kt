@@ -54,6 +54,7 @@ import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.DayOfWeek
@@ -404,9 +405,8 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, now: Long, ma
     val title = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(date)
     Column(
         modifier = modifier
-            .background(style.colors.card)
-            .cornerRadius(style.cardCorner)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .cardBackground(style)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = GlanceModifier.fillMaxWidth().clickable(openInCalendar(openDayIntent(date))),

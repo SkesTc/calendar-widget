@@ -54,8 +54,8 @@ class WeekWidgetUiTest {
         // 太矮時不顯示農曆／假日小字。
         onNode(hasTextEqualTo("某假日")).assertDoesNotExist()
         // 7 天：26 日到 11/1。
-        onNode(hasTextEqualTo("26")).assertExists()
-        onNode(hasTextEqualTo("1")).assertExists()
+        onNode(hasNumber("26")).assertExists()
+        onNode(hasNumber("1")).assertExists()
     }
 
     @Test
@@ -101,7 +101,7 @@ class WeekWidgetUiTest {
         onNode(hasText("115學年度")).assertDoesNotExist()
         onNode(hasTextEqualTo("某假日")).assertExists()
         // 星期用簡稱（週一），日期數字單獨一行。
-        onNode(hasTextEqualTo("26")).assertExists()
+        onNode(hasNumber("26")).assertExists()
     }
 
     @Test

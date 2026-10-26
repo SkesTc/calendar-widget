@@ -51,7 +51,9 @@ import com.skestc.calendarwidget.data.TimelineItem
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.ExpressiveText
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.LocalDate
@@ -131,7 +133,7 @@ internal fun TimelineContent(state: TimelineState) {
             .fillMaxSize()
             .appWidgetBackground()
             .widgetBackground(style)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(16.dp),
     ) {
         when (state) {
             TimelineState.NoPermission -> PermissionPrompt()
@@ -162,6 +164,8 @@ internal fun TimelineContent(state: TimelineState) {
 private fun TimelineHeader(today: LocalDate, note: String?) {
     val style = LocalWidgetStyle.current
     Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        ExpressiveText(text = today.dayOfMonth.toString(), size = 34, color = style.colors.primary)
+        Spacer(GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = glanceString(
@@ -191,9 +195,8 @@ private fun AllDayStrip(events: List<CalendarEvent>) {
         modifier = GlanceModifier
             .fillMaxWidth()
             .padding(bottom = 6.dp)
-            .background(style.colors.card)
-            .cornerRadius(style.cardCorner)
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+            .cardBackground(style)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         style = style.text(12, style.colors.onCard, FontWeight.Medium),
     )
 }
@@ -251,9 +254,8 @@ private fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
                         GlanceModifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     } else {
                         GlanceModifier
-                            .background(style.colors.card)
-                            .cornerRadius(style.cardCorner)
-                            .padding(horizontal = 8.dp, vertical = 6.dp)
+                            .cardBackground(style)
+                            .padding(horizontal = 10.dp, vertical = 8.dp)
                     },
                 ),
         ) {

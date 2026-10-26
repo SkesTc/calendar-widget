@@ -98,6 +98,15 @@
 - **新增行程後立刻更新**：從 widget 開啟日曆（`+`、點行程、點日期）改經過透明的 `CalendarLaunchActivity`，回到桌面時馬上更新所有 widget；背景的內容變更觸發也縮短到 1～10 秒
 - **今天已結束的行程淡化顯示**：行程清單、一週、月曆的當天行程不再把已結束的拿掉，而是色條轉灰、文字改次要色；行程結束時自動重畫
 
+### UI 改版：M3 Expressive ✅（參考 GitHub 專案）
+- 參考 [nsh07/Tomato](https://github.com/nsh07/Tomato)（Glance widget 的版面層次）與 [PixelPlayerHQ/PixelPlayer](https://github.com/PixelPlayerHQ/PixelPlayer)（M3 Expressive 風格）；只參考設計，沒有複製程式碼
+- 大號日期改用圓潤粗體數字（Google Sans Flex 子集，ROND 100、等寬數字），以點陣圖繪製後依主題染色；選襯線／等寬字型時維持原字型
+- 同一天連續的行程卡片連成一組：外側大圓角、內側小圓角（分段清單）
+- 外框內距統一 16dp，日期標題加粗；Android 12 以前也有圓角外框
+- 升級 Jetpack Glance 1.2.0
+
+字型授權：`app/src/main/assets/fonts/` 內的 Google Sans Flex 子集採 SIL Open Font License 1.1，全文見同目錄的 `OFL.txt`。
+
 ## 技術棧
 
 | 項目 | 選用 |

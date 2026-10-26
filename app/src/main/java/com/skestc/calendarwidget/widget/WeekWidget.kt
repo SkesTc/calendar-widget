@@ -51,6 +51,8 @@ import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.ExpressiveText
+import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.DayOfWeek
@@ -175,7 +177,7 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
                     .then(
                         // 今天整列用卡片色標示。
                         if (isToday) {
-                            GlanceModifier.background(style.colors.card).cornerRadius(style.cardCorner)
+                            GlanceModifier.cardBackground(style)
                         } else {
                             GlanceModifier
                         },
@@ -192,9 +194,10 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
                         text = day.date.dayOfWeek.getDisplayName(DayTextStyle.SHORT, Locale.getDefault()),
                         style = style.text(10, color, FontWeight.Medium, TextAlign.Center),
                     )
-                    Text(
+                    ExpressiveText(
                         text = day.date.dayOfMonth.toString(),
-                        style = style.text(17, if (isToday) style.colors.primary else color, FontWeight.Bold, TextAlign.Center),
+                        size = 18,
+                        color = if (isToday) style.colors.primary else color,
                     )
                 }
                 Column(modifier = GlanceModifier.defaultWeight().padding(start = 6.dp)) {

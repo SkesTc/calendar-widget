@@ -115,7 +115,7 @@ internal fun NextEventContent(state: NextEventState) {
             .fillMaxSize()
             .appWidgetBackground()
             .widgetBackground(style)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.CenterStart,
     ) {
         when (state) {

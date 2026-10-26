@@ -51,7 +51,10 @@ import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
+import com.skestc.calendarwidget.theme.ExpressiveText
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
+import com.skestc.calendarwidget.theme.Segment
+import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.widgetBackground
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -137,7 +140,7 @@ internal fun AgendaContent(state: AgendaState) {
             .fillMaxSize()
             .appWidgetBackground()
             .widgetBackground(style)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(16.dp),
     ) {
         when (state) {
             AgendaState.NoPermission -> PermissionPrompt()
@@ -162,15 +165,16 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
+        ExpressiveText(
             text = today.dayOfMonth.toString(),
-            style = style.text(34, style.colors.primary, FontWeight.Bold),
+            size = 40,
+            color = style.colors.primary,
         )
-        Spacer(GlanceModifier.width(8.dp))
+        Spacer(GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
-                style = style.text(14, style.colors.onSurface, FontWeight.Medium),
+                style = style.text(16, style.colors.onSurface, FontWeight.Bold),
             )
             Text(
                 text = listOfNotNull(DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today), lunar)
@@ -208,14 +212,21 @@ private fun AgendaList(rows: List<AgendaRow>, days: Int) {
         EmptyState(days)
         return
     }
+    val segments = segmentsOf(rows)
     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
-        items(rows, itemId = { it.id }) { row ->
-            when (row) {
+        items(rows.indices.toList(), itemId = { rows[it].id }) { index ->
+            when (val row = rows[index]) {
                 is AgendaRow.Header -> DayHeaderRow(row)
-                is AgendaRow.Event -> EventRow(row.event, row.timeLabel, row.past)
+                is AgendaRow.Event -> EventRow(row.event, row.timeLabel, row.past, segments[index])
             }
         }
     }
+}
+
+/** 同一天連續、未結束的行程連成一組卡片；已結束的行程沒有底色，會把組切開。 */
+internal fun segmentsOf(rows: List<AgendaRow>): List<Segment> {
+    fun card(i: Int) = (rows.getOrNull(i) as? AgendaRow.Event)?.past == false
+    return rows.indices.map { Segment.of(hasPrevious = card(it - 1), hasNext = card(it + 1)) }
 }
 
 @Composable
@@ -232,13 +243,18 @@ private fun DayHeaderRow(header: AgendaRow.Header) {
     Text(
         text = listOfNotNull(header.label, header.note).joinToString(" · "),
         maxLines = 1,
-        modifier = GlanceModifier.padding(top = 6.dp, bottom = 4.dp),
-        style = style.text(12, color, FontWeight.Medium),
+        modifier = GlanceModifier.padding(start = 4.dp, top = 6.dp, bottom = 6.dp),
+        style = style.text(12, color, FontWeight.Bold),
     )
 }
 
 @Composable
-private fun EventRow(event: CalendarEvent, timeLabel: String, past: Boolean) {
+private fun EventRow(
+    event: CalendarEvent,
+    timeLabel: String,
+    past: Boolean,
+    segment: Segment = Segment.SINGLE,
+) {
     val style = LocalWidgetStyle.current
     val openEvent = Intent(
         Intent.ACTION_VIEW,
@@ -251,9 +267,9 @@ private fun EventRow(event: CalendarEvent, timeLabel: String, past: Boolean) {
     Row(
         modifier = GlanceModifier
             .fillMaxWidth()
-            .padding(bottom = 4.dp)
-            .then(if (past) GlanceModifier else GlanceModifier.background(style.colors.card).cornerRadius(style.cardCorner))
-            .padding(horizontal = 8.dp, vertical = 6.dp)
+            .padding(bottom = if (segment == Segment.TOP || segment == Segment.MIDDLE) 2.dp else 6.dp)
+            .then(if (past) GlanceModifier else GlanceModifier.cardBackground(style, segment))
+            .padding(horizontal = 10.dp, vertical = 8.dp)
             .clickable(openInCalendar(openEvent)),
         verticalAlignment = Alignment.CenterVertically,
     ) {

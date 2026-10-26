@@ -53,7 +53,7 @@ class AgendaWidgetUiTest {
         onNode(hasText("今天 ·")).assertExists()
         onNode(hasText("明天 ·")).assertExists()
         // 大字日期與標題下方的農曆。
-        onNode(hasTextEqualTo("26")).assertExists()
+        onNode(hasNumber("26")).assertExists()
         // 頂端日期下方一次，加上「今天」「明天」兩個日期標題各一次。
         onAllNodes(hasText("九月十七")).assertCountEquals(3)
     }
