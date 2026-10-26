@@ -86,11 +86,22 @@ fun ProvideWidgetStyle(appearance: Appearance, content: @Composable () -> Unit) 
     }
     val style = WidgetStyle(
         colors = colors,
-        corner = appearance.cornerDp.dp,
+        corner = resolveCornerDp(context, appearance.cornerDp).dp,
         textScale = appearance.textScalePercent / 100f,
         fontFamily = fontFamily,
     )
     CompositionLocalProvider(LocalWidgetStyle provides style, content = content)
+}
+
+/**
+ * 「跟隨系統」時讀 Android 12+ 的 system_app_widget_background_radius
+ * （Pixel、One UI 等各家的值不同），讓 widget 和桌面上其他小工具一樣圓；舊版用 16dp。
+ */
+fun resolveCornerDp(context: Context, cornerDp: Int): Float {
+    if (cornerDp != Appearance.SYSTEM_CORNER) return cornerDp.toFloat()
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return 16f
+    val res = context.resources
+    return res.getDimension(android.R.dimen.system_app_widget_background_radius) / res.displayMetrics.density
 }
 
 /** widget 外框背景：毛玻璃用圖片，其他用顏色，再套上圓角。 */

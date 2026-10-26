@@ -33,6 +33,15 @@
   - 節氣用太陽視黃經計算（Meeus 低精度公式，以東八區判定日期）
 - **台灣國定假日與補班**：讀取 Google 日曆的「台灣的節慶假日」（需要先在 Google 日曆訂閱）。放假日用紅字，補班日標「補班」，紀念日只標名稱。每年政府公布的放假日與補班日由 Google 更新，不必改 App
 
+### P4 上架準備 ✅（實機測試待進行）
+- **符合 Play 規定**：`targetSdk 36`、R8 縮減與資源縮減、上傳金鑰簽署（從環境變數讀取，不放進 repo）
+- **CI**：單元測試、Android Lint、未簽署的 release 建置（確認 R8 正常）；推送 `v*` tag 時用 repo secrets 產生已簽署的 AAB
+- **桌面相容性**
+  - 圓角預設「跟隨系統」（讀 Android 12+ 的 `system_app_widget_background_radius`），和 Pixel、One UI 等桌面上其他小工具一致
+  - 小工具清單裡的預覽畫面（`previewLayout`），跟著桌布動態取色
+  - App 首頁「小工具沒有自動更新？」依手機品牌（小米、Samsung、OPPO、vivo、華為…）顯示省電設定步驟
+- **上架文件**（[docs/](docs/)）：[發佈流程](docs/release.md)、[實機測試清單](docs/device-test-checklist.md)、[商店資訊與資料安全性](docs/play-listing.md)、[隱私權政策](docs/privacy-policy.md)、[圖示與主題圖片](docs/play-assets/)
+
 ## 技術棧
 
 | 項目 | 選用 |
@@ -41,7 +50,7 @@
 | Widget | Jetpack Glance 1.1 |
 | App UI | Jetpack Compose ＋ Material 3 |
 | 背景更新 | WorkManager |
-| 最低版本 | Android 8.0（API 26），targetSdk 35 |
+| 最低版本 | Android 8.0（API 26），targetSdk 36 |
 
 ## 專案結構
 
@@ -75,7 +84,9 @@ app/src/main/java/com/skestc/calendarwidget/
 │   ├── CalendarChangeWorker.kt    日曆有變動就更新
 │   ├── DayChangeScheduler.kt      午夜換日、時間軸的行程邊界
 │   └── TimeChangeReceiver.kt      時區／時間／開機
-└── ui/theme/Theme.kt              Material You 主題
+└── ui/
+    ├── DeviceTips.kt / UpdateHelp.kt  各品牌的背景執行設定說明
+    └── theme/Theme.kt             Material You 主題
 ```
 
 ## 建置
@@ -97,4 +108,4 @@ app/src/main/java/com/skestc/calendarwidget/
 ## 開發路線圖
 
 - **Google Tasks**：需要 Google 登入（OAuth）與 Google Cloud 專案設定
-- **P4 上架**：各家桌面（One UI、MIUI、Pixel）相容性測試、Play 上架
+- **上架**：依 [實機測試清單](docs/device-test-checklist.md) 測試、封閉測試、正式上架

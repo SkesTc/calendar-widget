@@ -222,7 +222,7 @@ private fun ConfigScreen(
                 item {
                     Section("圓角") {
                         Segmented(
-                            options = Appearance.CORNER_OPTIONS.map { it to if (it == 0) "直角" else "$it" },
+                            options = Appearance.CORNER_OPTIONS,
                             selected = settings.appearance.cornerDp,
                             onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
                         )

@@ -39,6 +39,7 @@ import com.skestc.calendarwidget.settings.FontChoice
 import com.skestc.calendarwidget.theme.DayNight
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.ThemeSpecs
+import com.skestc.calendarwidget.theme.resolveCornerDp
 import com.skestc.calendarwidget.theme.WidgetThemeId
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -104,7 +105,8 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
             textAlign = align ?: TextAlign.Unspecified,
         )
 
-    val shape = RoundedCornerShape(appearance.cornerDp.dp)
+    val cornerDp = resolveCornerDp(context, appearance.cornerDp)
+    val shape = RoundedCornerShape(cornerDp.dp)
     val widgetModifier = if (appearance.theme == WidgetThemeId.GLASS) {
         // 與 res/drawable(-night)/widget_glass_bg.xml 相同的漸層與亮邊。
         val (start, end, stroke) = if (darkTheme) {
@@ -141,9 +143,9 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
                 .padding(12.dp),
         ) {
             when (kind) {
-                WidgetKind.AGENDA -> AgendaPreview(palette, appearance, ::text)
-                WidgetKind.MONTH -> MonthPreview(palette, appearance, ::text)
-                WidgetKind.TIMELINE -> TimelinePreview(palette, appearance, ::text)
+                WidgetKind.AGENDA -> AgendaPreview(palette, cornerDp, ::text)
+                WidgetKind.MONTH -> MonthPreview(palette, ::text)
+                WidgetKind.TIMELINE -> TimelinePreview(palette, cornerDp, ::text)
             }
         }
     }
@@ -152,10 +154,10 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
 private typealias TextStyler = (Int, Color, FontWeight, TextAlign?) -> TextStyle
 
 @Composable
-private fun AgendaPreview(palette: PreviewPalette, appearance: Appearance, text: TextStyler) {
+private fun AgendaPreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler) {
     val today = LocalDate.now()
     val locale = Locale.getDefault()
-    val cardShape = RoundedCornerShape(min((appearance.cornerDp / 2).dp, 12.dp))
+    val cardShape = RoundedCornerShape(min((cornerDp / 2).dp, 12.dp))
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(today.dayOfMonth.toString(), style = text(34, palette.primary, FontWeight.Bold, null))
@@ -208,7 +210,7 @@ private fun AgendaPreview(palette: PreviewPalette, appearance: Appearance, text:
 }
 
 @Composable
-private fun MonthPreview(palette: PreviewPalette, appearance: Appearance, text: TextStyler) {
+private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
     val locale = Locale.getDefault()
     val today = LocalDate.now()
     val month = YearMonth.from(today)
@@ -297,8 +299,8 @@ private fun MonthPreview(palette: PreviewPalette, appearance: Appearance, text: 
 }
 
 @Composable
-private fun TimelinePreview(palette: PreviewPalette, appearance: Appearance, text: TextStyler) {
-    val cardShape = RoundedCornerShape(min((appearance.cornerDp / 2).dp, 12.dp))
+private fun TimelinePreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler) {
+    val cardShape = RoundedCornerShape(min((cornerDp / 2).dp, 12.dp))
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text("今天", style = text(16, palette.onSurface, FontWeight.Bold, null))
         Spacer(Modifier.height(2.dp))

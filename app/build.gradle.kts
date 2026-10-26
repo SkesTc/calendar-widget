@@ -4,23 +4,48 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+// 上架用的簽署金鑰不放進 repo：本機或 CI 用環境變數提供（見 docs/release.md）。
+val releaseKeystore: String? = providers.environmentVariable("CW_KEYSTORE_PATH").orNull
+
 android {
     namespace = "com.skestc.calendarwidget"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.skestc.calendarwidget"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        // Google Play 規定新 App 與更新要以最新一版之前一年內的 API 為目標。
+        targetSdk = 36
+        versionCode = providers.environmentVariable("CW_VERSION_CODE").orNull?.toInt() ?: 1
+        versionName = "1.0.0"
+    }
+
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = providers.environmentVariable("CW_KEYSTORE_PASSWORD").get()
+                keyAlias = providers.environmentVariable("CW_KEY_ALIAS").get()
+                keyPassword = providers.environmentVariable("CW_KEY_PASSWORD").get()
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // 沒有提供金鑰時產生未簽署的版本（CI 用來檢查 R8 是否正常）。
+            signingConfig = signingConfigs.findByName("release")
         }
+    }
+
+    lint {
+        abortOnError = true
+        checkDependencies = false
+        // 套件新版本提醒交給人工判斷，不讓 CI 失敗。
+        disable += setOf("GradleDependency", "AndroidGradlePluginVersion", "NewerVersionAvailable")
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.ui.UpdateHelpCard
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
@@ -146,6 +147,7 @@ private fun HomeScreen() {
             if (calendars.isNotEmpty() && calendars.none { it.isHoliday }) {
                 HolidayHint()
             }
+            UpdateHelpCard()
 
             Text("已同步的日曆", style = MaterialTheme.typography.titleMedium)
             if (calendars.isEmpty()) {

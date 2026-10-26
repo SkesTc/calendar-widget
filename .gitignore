@@ -9,3 +9,7 @@ build/
 .cxx
 *.apk
 *.aab
+
+# 上架用的簽署金鑰
+*.jks
+*.keystore

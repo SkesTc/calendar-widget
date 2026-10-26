@@ -73,13 +73,15 @@ data class Appearance(
     val theme: WidgetThemeId = WidgetThemeId.DYNAMIC,
     /** 0～100；毛玻璃主題不套用。 */
     val backgroundOpacity: Int = 100,
+    /** [SYSTEM_CORNER] 表示跟隨系統（Android 12+ 的 system_app_widget_background_radius）。 */
     val cornerDp: Int = DEFAULT_CORNER,
     val textScalePercent: Int = 100,
     val font: FontChoice = FontChoice.THEME,
 ) {
     companion object {
-        const val DEFAULT_CORNER = 24
-        val CORNER_OPTIONS = listOf(0, 12, 24, 32)
+        const val SYSTEM_CORNER = -1
+        const val DEFAULT_CORNER = SYSTEM_CORNER
+        val CORNER_OPTIONS = listOf(SYSTEM_CORNER to "系統", 0 to "直角", 12 to "小", 24 to "中", 32 to "大")
         /** 小／中／大／特大。 */
         val TEXT_SCALE_OPTIONS = listOf(90 to "小", 100 to "中", 115 to "大", 130 to "特大")
     }

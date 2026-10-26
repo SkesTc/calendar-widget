@@ -3,6 +3,7 @@
     android:configure="com.skestc.calendarwidget.config.WidgetConfigActivity"
     android:description="@string/widget_description"
     android:initialLayout="@layout/glance_default_loading_layout"
+    android:previewLayout="@layout/preview_agenda"
     android:minWidth="180dp"
     android:minHeight="110dp"
     android:minResizeWidth="110dp"
