@@ -1,6 +1,7 @@
 package com.skestc.calendarwidget
 
 import android.Manifest
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,6 +27,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,12 +45,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.ui.UpdateHelpCard
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.NextEventWidgetReceiver
+import com.skestc.calendarwidget.widget.WeekWidgetReceiver
 import com.skestc.calendarwidget.widget.TimelineWidgetReceiver
 import com.skestc.calendarwidget.widget.WidgetUpdater
 import kotlinx.coroutines.launch
@@ -103,47 +108,27 @@ private fun HomeScreen() {
             }
 
             Text("加入桌面小工具", style = MaterialTheme.typography.titleMedium)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = {
-                        scope.launch {
-                            GlanceAppWidgetManager(context)
-                                .requestPinGlanceAppWidget(AgendaWidgetReceiver::class.java)
+            val pinOptions = listOf(
+                "行程清單" to AgendaWidgetReceiver::class.java,
+                "月曆" to MonthWidgetReceiver::class.java,
+                "時間軸" to TimelineWidgetReceiver::class.java,
+                "下一個行程" to NextEventWidgetReceiver::class.java,
+                "一週" to WeekWidgetReceiver::class.java,
+            )
+            for (row in pinOptions.chunked(3)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((label, receiver) in row) {
+                        OutlinedButton(
+                            onClick = { scope.launch { requestPin(context, receiver) } },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text(label, maxLines = 1)
                         }
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("行程清單", maxLines = 1)
-                }
-                Button(
-                    onClick = {
-                        scope.launch {
-                            GlanceAppWidgetManager(context)
-                                .requestPinGlanceAppWidget(MonthWidgetReceiver::class.java)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("月曆", maxLines = 1)
-                }
-                Button(
-                    onClick = {
-                        scope.launch {
-                            GlanceAppWidgetManager(context)
-                                .requestPinGlanceAppWidget(TimelineWidgetReceiver::class.java)
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("時間軸", maxLines = 1)
+                    }
+                    // 最後一列不滿三個時補空位，按鈕寬度才會一致。
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
-            Text(
-                "長按桌面上的小工具 →「編輯小工具」可以選擇要顯示哪些日曆。",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-
             if (calendars.isNotEmpty() && calendars.none { it.isHoliday }) {
                 HolidayHint()
             }
@@ -204,5 +189,16 @@ private fun HolidayHint() {
                 style = MaterialTheme.typography.bodySmall,
             )
         }
+    }
+}
+
+/** 請桌面加入指定的 widget（Android 8+ 支援的桌面才會跳出確認視窗）。 */
+private suspend fun requestPin(context: Context, receiver: Class<out GlanceAppWidgetReceiver>) {
+    when (receiver) {
+        AgendaWidgetReceiver::class.java -> GlanceAppWidgetManager(context).requestPinGlanceAppWidget(AgendaWidgetReceiver::class.java)
+        MonthWidgetReceiver::class.java -> GlanceAppWidgetManager(context).requestPinGlanceAppWidget(MonthWidgetReceiver::class.java)
+        TimelineWidgetReceiver::class.java -> GlanceAppWidgetManager(context).requestPinGlanceAppWidget(TimelineWidgetReceiver::class.java)
+        NextEventWidgetReceiver::class.java -> GlanceAppWidgetManager(context).requestPinGlanceAppWidget(NextEventWidgetReceiver::class.java)
+        WeekWidgetReceiver::class.java -> GlanceAppWidgetManager(context).requestPinGlanceAppWidget(WeekWidgetReceiver::class.java)
     }
 }

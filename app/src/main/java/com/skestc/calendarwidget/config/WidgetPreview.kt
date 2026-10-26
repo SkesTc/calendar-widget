@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -50,7 +51,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 
-enum class WidgetKind { AGENDA, MONTH, TIMELINE }
+enum class WidgetKind { AGENDA, MONTH, TIMELINE, NEXT, WEEK }
 
 private class PreviewPalette(
     val background: Color,
@@ -139,13 +140,22 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
         Box(
             modifier = widgetModifier
                 .fillMaxWidth()
-                .height(if (kind == WidgetKind.MONTH) 260.dp else 190.dp)
+                .height(
+                    when (kind) {
+                        WidgetKind.MONTH -> 260.dp
+                        WidgetKind.NEXT -> 64.dp
+                        WidgetKind.WEEK -> 150.dp
+                        else -> 190.dp
+                    },
+                )
                 .padding(12.dp),
         ) {
             when (kind) {
                 WidgetKind.AGENDA -> AgendaPreview(palette, cornerDp, ::text)
                 WidgetKind.MONTH -> MonthPreview(palette, ::text)
                 WidgetKind.TIMELINE -> TimelinePreview(palette, cornerDp, ::text)
+                WidgetKind.NEXT -> NextPreview(palette, ::text)
+                WidgetKind.WEEK -> WeekPreview(palette, ::text)
             }
         }
     }
@@ -348,6 +358,75 @@ private fun TimelinePreviewRow(
             val color = if (past) palette.outline else palette.onCard
             Text(title, style = text(14, color, FontWeight.Medium, null))
             Text(detail, style = text(12, color, FontWeight.Normal, null))
+        }
+    }
+}
+
+@Composable
+private fun NextPreview(palette: PreviewPalette, text: TextStyler) {
+    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.width(4.dp).fillMaxHeight().clip(RoundedCornerShape(2.dp)).background(Color(0xFF4285F4)))
+        Spacer(Modifier.width(10.dp))
+        Column {
+            Text("今天 14:00", style = text(11, palette.onSurfaceVariant, FontWeight.Bold, null))
+            Text("專案討論", maxLines = 1, style = text(15, palette.onSurface, FontWeight.Bold, null))
+        }
+    }
+}
+
+@Composable
+private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
+    val today = LocalDate.now()
+    val locale = Locale.getDefault()
+    val samples = mapOf(
+        0 to listOf("晨會" to Color(0xFF4285F4)),
+        1 to listOf("牙醫" to Color(0xFFE67C73)),
+        3 to listOf("讀書會" to Color(0xFF0B8043), "健身" to Color(0xFF8E24AA)),
+        4 to listOf("聚餐" to Color(0xFFE67C73)),
+        6 to listOf("爬山" to Color(0xFF0B8043)),
+    )
+    Row(Modifier.fillMaxSize()) {
+        for (offset in 0 until 7) {
+            val date = today.plusDays(offset.toLong())
+            val dayColor = when (date.dayOfWeek) {
+                DayOfWeek.SUNDAY -> palette.sunday
+                DayOfWeek.SATURDAY -> palette.saturday
+                else -> palette.onSurface
+            }
+            Column(
+                Modifier.weight(1f).padding(horizontal = 1.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    date.dayOfWeek.getDisplayName(DayTextStyle.NARROW, locale),
+                    style = text(10, dayColor, FontWeight.Medium, TextAlign.Center),
+                )
+                Box(
+                    Modifier
+                        .size(24.dp)
+                        .clip(CircleShape)
+                        .background(if (offset == 0) palette.primary else Color.Transparent),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        date.dayOfMonth.toString(),
+                        style = text(13, if (offset == 0) palette.onPrimary else dayColor, FontWeight.Bold, TextAlign.Center),
+                    )
+                }
+                for ((title, color) in samples[offset].orEmpty()) {
+                    Text(
+                        title,
+                        maxLines = 1,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(color.copy(alpha = 0.3f))
+                            .padding(horizontal = 2.dp, vertical = 1.dp),
+                        style = text(9, palette.onSurface, FontWeight.Medium, null),
+                    )
+                }
+            }
         }
     }
 }

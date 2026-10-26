@@ -42,6 +42,10 @@
   - App 首頁「小工具沒有自動更新？」依手機品牌（小米、Samsung、OPPO、vivo、華為…）顯示省電設定步驟
 - **上架文件**（[docs/](docs/)）：[發佈流程](docs/release.md)、[實機測試清單](docs/device-test-checklist.md)、[商店資訊與資料安全性](docs/play-listing.md)、[隱私權政策](docs/privacy-policy.md)、[圖示與主題圖片](docs/play-assets/)
 
+### 更多 widget 樣式 ✅
+- **下一個行程**（2×1 起）：只顯示進行中或下一個行程（「進行中 · 到 15:00」「明天 09:00」），適合放在時鐘或搜尋列旁；行程開始或結束時自動換下一個。拉高時多顯示地點
+- **一週**（4×2）：從今天起 7 天並排，每天的行程用事件顏色的淡色塊列出，放不下的顯示「+2」；假日紅字、可顯示農曆，依高度自動調整每天顯示幾筆
+
 ## 技術棧
 
 | 項目 | 選用 |
@@ -69,6 +73,7 @@ app/src/main/java/com/skestc/calendarwidget/
 │   ├── AgendaFormatter.kt         清單分組與日期／時間格式
 │   ├── MonthBuilder.kt            把事件攤到月曆格子上
 │   ├── TimelineBuilder.kt         時間軸：狀態、現在位置、空檔
+│   ├── WeekBuilder.kt             一週 widget 的每日行程；「下一個行程」的挑選
 │   └── Holidays.kt                辨識節慶假日日曆與放假／補班／紀念日
 ├── lunar/
 │   ├── Lunar.kt                   農曆名稱、傳統節日、格子小字的優先順序
@@ -78,6 +83,8 @@ app/src/main/java/com/skestc/calendarwidget/
 │   ├── AgendaWidget.kt            行程清單 widget
 │   ├── MonthWidget.kt             月曆 widget
 │   ├── TimelineWidget.kt          今日時間軸 widget
+│   ├── NextEventWidget.kt         下一個行程 widget
+│   ├── WeekWidget.kt              一週 widget
 │   ├── ChangeMonthAction.kt       切換月份
 │   ├── WidgetData.kt              依 key 重新載入資料
 │   ├── WidgetUpdater.kt           更新全部 widget、管理背景排程

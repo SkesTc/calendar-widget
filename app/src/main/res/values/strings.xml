@@ -6,4 +6,8 @@
     <string name="month_widget_description">整個月的月曆，有行程的日子會標上彩色圓點</string>
     <string name="timeline_widget_name">今日時間軸</string>
     <string name="timeline_widget_description">今天的行程依時間排列，標出現在的位置和空檔</string>
+    <string name="next_widget_name">下一個行程</string>
+    <string name="next_widget_description">極簡小卡，只顯示進行中或下一個行程</string>
+    <string name="week_widget_name">一週</string>
+    <string name="week_widget_description">從今天起 7 天並排，每天的行程一目了然</string>
 </resources>

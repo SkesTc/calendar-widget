@@ -68,6 +68,10 @@ import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidget
 import com.skestc.calendarwidget.widget.MonthWidget
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.NextEventWidget
+import com.skestc.calendarwidget.widget.NextEventWidgetReceiver
+import com.skestc.calendarwidget.widget.WeekWidget
+import com.skestc.calendarwidget.widget.WeekWidgetReceiver
 import com.skestc.calendarwidget.widget.TimelineWidget
 import com.skestc.calendarwidget.widget.TimelineWidgetReceiver
 import com.skestc.calendarwidget.widget.WidgetUpdater
@@ -101,12 +105,16 @@ class WidgetConfigActivity : ComponentActivity() {
         val kind = when (providerClass) {
             MonthWidgetReceiver::class.java.name -> WidgetKind.MONTH
             TimelineWidgetReceiver::class.java.name -> WidgetKind.TIMELINE
+            NextEventWidgetReceiver::class.java.name -> WidgetKind.NEXT
+            WeekWidgetReceiver::class.java.name -> WidgetKind.WEEK
             else -> WidgetKind.AGENDA
         }
         val widget: GlanceAppWidget = when (kind) {
             WidgetKind.AGENDA -> AgendaWidget()
             WidgetKind.MONTH -> MonthWidget()
             WidgetKind.TIMELINE -> TimelineWidget()
+            WidgetKind.NEXT -> NextEventWidget()
+            WidgetKind.WEEK -> WeekWidget()
         }
 
         enableEdgeToEdge()
@@ -249,7 +257,8 @@ private fun ConfigScreen(
                     }
                 }
 
-                item {
+                // 「下一個行程」沒有日期格子，不顯示農曆。
+                if (kind != WidgetKind.NEXT) item {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

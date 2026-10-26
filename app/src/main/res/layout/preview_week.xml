@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小工具挑選畫面的預覽（Android 12+ 的 previewLayout），只是示意畫面。 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/preview_widget_bg"
+    android:orientation="horizontal"
+    android:paddingStart="6dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="一"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:background="@drawable/preview_today_bg"
+            android:gravity="center"
+            android:text="26"
+            android:textColor="@color/preview_on_primary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#4285F4"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="晨會"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="二"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="27"
+            android:textColor="@color/preview_on_surface"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#E67C73"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="牙醫"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="三"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="28"
+            android:textColor="@color/preview_on_surface"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="四"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="29"
+            android:textColor="@color/preview_on_surface"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#0B8043"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="讀書會"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#8E24AA"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="健身"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="五"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="30"
+            android:textColor="@color/preview_on_surface"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#E67C73"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="聚餐"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="六"
+            android:textColor="@color/preview_variant"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="31"
+            android:textColor="@color/preview_on_surface"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_marginStart="1dp"
+        android:layout_marginEnd="1dp"
+        android:layout_weight="1"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="日"
+            android:textColor="@color/preview_sunday"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@color/preview_sunday"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:background="#0B8043"
+            android:maxLines="1"
+            android:paddingStart="2dp"
+            android:text="爬山"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp" />
+    </LinearLayout>
+</LinearLayout>
