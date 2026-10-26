@@ -48,6 +48,14 @@ class StringsTest {
         assertEquals("背景不透明度 60%", contextFor(Locale.TAIWAN).getString(R.string.section_opacity, 60))
     }
 
+    /** 繁體放在 b+zh+Hant：只放 values-zh 時，台灣手機會被判成簡體而顯示英文。 */
+    @Test
+    fun allChineseLocalesGetChinese() {
+        assertEquals("行事曆小工具", contextFor(Locale.forLanguageTag("zh-Hant-TW")).getString(R.string.app_name))
+        assertEquals("行事曆小工具", contextFor(Locale.forLanguageTag("zh-HK")).getString(R.string.app_name))
+        assertEquals("行事曆小工具", contextFor(Locale.SIMPLIFIED_CHINESE).getString(R.string.app_name))
+    }
+
     @Test
     fun lunarIsOnByDefaultOnlyForChinese() {
         val original = Locale.getDefault()

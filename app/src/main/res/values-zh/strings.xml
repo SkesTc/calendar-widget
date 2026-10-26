@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 繁體中文（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->
+<!-- 中文的備援（簡體中文語系也顯示繁體中文，而不是英文）（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->
 <resources>
     <string name="app_name">行事曆小工具</string>
     <string name="widget_name">行程清單</string>

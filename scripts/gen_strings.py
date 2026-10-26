@@ -148,5 +148,11 @@ def write(path, idx, comment):
     open(path, 'w', encoding='utf-8').write('\n'.join(out))
 
 write(f'{RES}/values/strings.xml', 0, '英文（預設語系）')
-write(f'{RES}/values-zh/strings.xml', 1, '繁體中文')
+# Android 7+ 比對語系時會補上文字系統：只寫 values-zh 會被當成簡體（zh-Hans），
+# 台灣（zh-TW → zh-Hant）反而對不到而顯示英文。所以繁體要放在 b+zh+Hant；
+# values-zh 留一份同樣的內容，讓簡體中文的手機也看到中文而不是英文。
+import os
+os.makedirs(f'{RES}/values-b+zh+Hant', exist_ok=True)
+write(f'{RES}/values-b+zh+Hant/strings.xml', 1, '繁體中文（台灣、香港等 zh-Hant 語系）')
+write(f'{RES}/values-zh/strings.xml', 1, '中文的備援（簡體中文語系也顯示繁體中文，而不是英文）')
 print(len(S), 'strings,', len(ARRAYS), 'arrays')
