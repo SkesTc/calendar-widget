@@ -36,7 +36,7 @@ S = [
  ("long_events_manage_link", "Hide long events…", "隱藏長期行程…"),
  ("section_editor", "“+” opens", "「＋」新增行程使用"),
  ("editor_hint", "Shared by all widgets", "所有小工具共用"),
- ("editor_default", "System default", "系統預設"),
+ ("editor_default", "Google Calendar, else system default", "Google 日曆（沒有時用系統預設）"),
  ("editor_ask", "Ask every time", "每次詢問"),
  ("editor_chooser_title", "Add event with", "用哪個 App 新增行程"),
  ("widget_settings", "Widget settings", "小工具設定"),

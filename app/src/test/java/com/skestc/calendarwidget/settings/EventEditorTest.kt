@@ -16,10 +16,13 @@ class EventEditorTest {
     private val target = EventEditor.insertIntent()
 
     @Test
-    fun defaultOpensTheTargetAsIs() {
+    fun defaultPrefersGoogleCalendarThenTheSystem() {
         val intents = EventEditor.launchIntents(null, target, "t")
-        assertEquals(1, intents.size)
-        assertNull(intents[0].`package`)
+        assertEquals(EventEditor.GOOGLE_CALENDAR, intents[0].`package`)
+        assertEquals(Intent.ACTION_INSERT, intents[0].action)
+        assertEquals(EventEditor.GOOGLE_CALENDAR, intents[1].`package`)
+        assertEquals("vnd.android.cursor.item/event", intents[1].type)
+        assertNull(intents.last().`package`)
     }
 
     @Test
@@ -34,7 +37,8 @@ class EventEditorTest {
         val intents = EventEditor.launchIntents("com.example.cal", target, "t")
         assertEquals("com.example.cal", intents[0].`package`)
         assertEquals(Intent.ACTION_INSERT, intents[0].action)
-        assertNull(intents[1].`package`)
+        assertEquals("com.example.cal", intents[1].`package`)
+        assertNull(intents.last().`package`)
     }
 
     @Test

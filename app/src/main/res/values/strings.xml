@@ -31,7 +31,7 @@
     <string name="long_events_manage_link">Hide long events…</string>
     <string name="section_editor">“+” opens</string>
     <string name="editor_hint">Shared by all widgets</string>
-    <string name="editor_default">System default</string>
+    <string name="editor_default">Google Calendar, else system default</string>
     <string name="editor_ask">Ask every time</string>
     <string name="editor_chooser_title">Add event with</string>
     <string name="widget_settings">Widget settings</string>

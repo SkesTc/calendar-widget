@@ -17,6 +17,7 @@ object EventEditor {
     private const val PREFS = "event_editor"
     private const val KEY_CHOICE = "choice"
     private const val EVENT_DIR_TYPE = "vnd.android.cursor.dir/event"
+    private const val EVENT_ITEM_TYPE = "vnd.android.cursor.item/event"
 
     data class App(val packageName: String, val label: String)
 
@@ -45,10 +46,16 @@ object EventEditor {
         val queries = listOf(
             insertIntent(),
             Intent(Intent.ACTION_INSERT).setType(EVENT_DIR_TYPE),
+            Intent(Intent.ACTION_INSERT).setType(EVENT_ITEM_TYPE),
         )
-        return queries
+        val found = queries
             .flatMap { pm.queryIntentActivities(it, PackageManager.MATCH_DEFAULT_ONLY) }
             .map { it.activityInfo.packageName to it.loadLabel(pm).toString() }
+        // Google 日曆不一定會被上面的查詢找到（各版本宣告的類型不同），有安裝就一定列出來。
+        val google = runCatching {
+            GOOGLE_CALENDAR to pm.getApplicationLabel(pm.getApplicationInfo(GOOGLE_CALENDAR, 0)).toString()
+        }.getOrNull()
+        return (listOfNotNull(google) + found)
             .filter { (pkg, _) -> pkg != context.packageName }
             .distinctBy { it.first }
             .map { (pkg, label) -> App(pkg, label) }
@@ -62,9 +69,18 @@ object EventEditor {
         chooserTitle = context.getString(R.string.editor_chooser_title),
     )
 
+    /**
+     * 預設：有 Google 日曆就用它（跟點日期一樣），否則交給系統。
+     * 指定 App 時先用標準的新增 Intent，不接受的話再試「單筆事件」類型，最後才退回系統預設。
+     */
     internal fun launchIntents(choice: String?, target: Intent, chooserTitle: String): List<Intent> = when (choice) {
-        null -> listOf(target)
+        null -> forPackage(GOOGLE_CALENDAR, target) + target
         ASK -> listOf(Intent.createChooser(target, chooserTitle), target)
-        else -> listOf(Intent(target).setPackage(choice), target)
+        else -> forPackage(choice, target) + target
     }
+
+    private fun forPackage(pkg: String, target: Intent): List<Intent> = listOf(
+        Intent(target).setPackage(pkg),
+        Intent(Intent.ACTION_INSERT).setType(EVENT_ITEM_TYPE).setPackage(pkg),
+    )
 }
