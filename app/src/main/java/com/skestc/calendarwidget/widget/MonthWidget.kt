@@ -7,7 +7,6 @@ import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
@@ -82,23 +81,21 @@ internal sealed interface MonthState {
 class MonthWidget : GlanceAppWidget() {
 
     companion object {
-        // Responsive 模式下 LocalSize 只會是下面其中一個尺寸（不是 widget 的實際大小），
-        // 所以版面上每個依大小切換的門檻都要在這裡列出來，否則實機上永遠不會觸發。
-        private val COMPACT = DpSize(180.dp, 180.dp)
-        private val REGULAR = DpSize(250.dp, 200.dp)
-        /** 顯示農曆／假日小字。 */
-        private val LABELED = DpSize(250.dp, 260.dp)
-        /** 下方加上選取日期的行程。 */
-        private val WITH_PANEL = DpSize(250.dp, 380.dp)
+        /** 顯示農曆／假日小字的最小高度。 */
+        val LABELS_MIN_HEIGHT = 260.dp
+        /** 下方加上選取日期行程的最小高度。 */
+        val PANEL_MIN_HEIGHT = 380.dp
         /** 平板、摺疊機展開：行程改放在月曆右邊。 */
-        private val WIDE = DpSize(480.dp, 260.dp)
-
-        val WIDE_MIN_WIDTH = WIDE.width
-        val LABELS_MIN_HEIGHT = LABELED.height
-        val PANEL_MIN_HEIGHT = WITH_PANEL.height
+        val WIDE_MIN_WIDTH = 480.dp
     }
 
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, REGULAR, LABELED, WITH_PANEL, WIDE))
+    /**
+     * 月曆的版面最大（約 40 格，每格有數字、小字、圓點和點擊動作），用 Exact：
+     * 只依 widget 的實際大小畫（Android 12+ 直向、橫向各一份），改大小時 Glance 會自動重畫。
+     * Responsive 會把每個宣告尺寸的版面一次全部送給桌面，月曆可能超過 Binder 的 1MB 上限而無法更新；
+     * 而且 LocalSize 會是宣告的尺寸而不是實際大小，版面門檻很容易對不上。
+     */
+    override val sizeMode: SizeMode = SizeMode.Exact
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val repository = CalendarRepository(context)

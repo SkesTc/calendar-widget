@@ -12,6 +12,7 @@ import org.robolectric.annotation.Config
 /**
  * SizeMode.Responsive 只會用宣告過的尺寸畫版面（LocalSize 不是 widget 的實際大小），
  * 所以版面裡每個依大小切換的門檻，都必須有一個剛好達到門檻的尺寸，否則實機上永遠看不到。
+ * 月曆改用 Exact（依實際大小畫），不受這個限制。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -19,14 +20,10 @@ class ResponsiveSizesTest {
 
     private fun sizes(widget: GlanceAppWidget) = (widget.sizeMode as SizeMode.Responsive).sizes
 
+    /** 月曆版面最大，用 Exact 依實際大小畫，避免一次送出多份版面超過 Binder 上限。 */
     @Test
-    fun monthDeclaresEveryLayoutBreakpoint() {
-        val sizes = sizes(MonthWidget())
-        assertTrue("農曆小字", sizes.any { it.width in 250.dp..<MonthWidget.WIDE_MIN_WIDTH && it.height >= MonthWidget.LABELS_MIN_HEIGHT && it.height < MonthWidget.PANEL_MIN_HEIGHT })
-        assertTrue("下方行程", sizes.any { it.width in 250.dp..<MonthWidget.WIDE_MIN_WIDTH && it.height >= MonthWidget.PANEL_MIN_HEIGHT })
-        assertTrue("寬版", sizes.any { it.width >= MonthWidget.WIDE_MIN_WIDTH })
-        assertTrue("精簡", sizes.any { it.width < 250.dp })
-        assertTrue("沒有小字的一般大小", sizes.any { it.width >= 250.dp && it.height < MonthWidget.LABELS_MIN_HEIGHT })
+    fun monthUsesExactSizing() {
+        assertTrue(MonthWidget().sizeMode is SizeMode.Exact)
     }
 
     @Test
