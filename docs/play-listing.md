@@ -29,9 +29,13 @@
 • 顯示農曆日期、二十四節氣與春節、端午、中秋等傳統節日
 • 訂閱 Google 日曆的「台灣的節慶假日」後，放假日標成紅字、補班日標上「補班」
 
+✅ Google Tasks 待辦（選用）
+• 連結後，有到期日的待辦會出現在行程清單與時間軸，直接在桌面勾選完成
+
 🔒 重視隱私
 • 直接讀取手機上已同步的 Google 日曆，不需要另外登入
-• 不連網、不收集任何資料、沒有廣告
+• 日曆資料不會離開手機；待辦只在手機與 Google 之間同步
+• 不收集任何資料、沒有廣告
 
 使用前請確認手機的「設定 → 帳戶 → Google → 帳戶同步」已開啟日曆同步。
 
@@ -44,11 +48,16 @@
 
 | 問題 | 回答 | 說明 |
 |---|---|---|
-| 是否收集或分享任何必要的使用者資料類型？ | **否** | 日曆資料只在手機上讀取與顯示，不會傳出裝置 |
-| 是否對傳輸中的資料加密？ | 不適用 | 沒有傳輸資料 |
-| 使用者能否要求刪除資料？ | 不適用 | 沒有收集資料；解除安裝即刪除所有設定 |
+| 是否收集或分享任何必要的使用者資料類型？ | **是（收集，不分享）** | 見下方 |
+| 收集的資料類型 | 「應用程式活動 → 其他使用者產生的內容」（Google Tasks 待辦） | 只有連結 Google Tasks 時；用途「應用程式功能」；選用 |
+| 是否對傳輸中的資料加密？ | **是** | 只透過 HTTPS 與 Google Tasks API 通訊 |
+| 使用者能否要求刪除資料？ | **是** | 「取消連結」會清除手機上的快取；解除安裝即全部刪除 |
 
-> Play 的「收集」指的是把資料傳出裝置。本 App 的 manifest 沒有要求網路權限（上架前可以在 Android Studio 的 Merged Manifest 再確認一次），所以填「不收集」。
+> 日曆資料只在手機上讀取，不會傳出裝置，不需要申報。
+> Google Tasks 的資料雖然只在手機與 Google 之間傳輸（不經過開發者的伺服器），但勾選完成會把資料送出裝置，
+> 保守起見申報為「收集」。送審前請再對照 Play Console 當下的說明確認。
+>
+> 另外，App 使用 Google 使用者資料（Tasks 範圍），OAuth 同意畫面發布前需通過 Google 驗證，見 [google-tasks-setup.md](google-tasks-setup.md)。
 
 ## 權限說明（審查時可能會被問）
 
@@ -56,6 +65,7 @@
 |---|---|
 | `READ_CALENDAR` | 讀取手機上已同步的日曆行程，顯示在桌面小工具 |
 | `RECEIVE_BOOT_COMPLETED` | 重新開機後重新排定午夜換日的更新 |
+| `INTERNET` | 只用於與 Google Tasks 同步待辦（選用功能） |
 
 ---
 
@@ -89,9 +99,13 @@ Put your Google Calendar on your home screen and see your day at a glance.
 • Adjust background opacity, corners, text size and font
 • Live preview while you tweak, and separate settings for every widget
 
+✅ Google Tasks (optional)
+• Connect to see tasks with due dates in the Agenda and Timeline widgets and tick them off from your home screen
+
 🔒 Private by design
 • Reads the calendars already synced to your phone — no extra sign-in
-• No internet access, no data collection, no ads
+• Calendar data never leaves your phone; tasks sync only between your phone and Google
+• No ads, no analytics
 
 Also shows public holidays when you subscribe to a holiday calendar in Google Calendar, and optional Chinese lunar dates and solar terms.
 

@@ -63,6 +63,7 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.tasks.TasksRepository
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.ThemeSpecs
 import com.skestc.calendarwidget.theme.WidgetThemeId
@@ -147,6 +148,7 @@ class WidgetConfigActivity : ComponentActivity() {
                 prefs[WidgetSettings.KEY_TEXT_SCALE] = settings.appearance.textScalePercent
                 prefs[WidgetSettings.KEY_FONT] = settings.appearance.font.name
                 prefs[WidgetSettings.KEY_SHOW_LUNAR] = settings.showLunar
+                prefs[WidgetSettings.KEY_SHOW_TASKS] = settings.showTasks
                 prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
             }
             widget.update(this@WidgetConfigActivity, glanceId)
@@ -280,6 +282,29 @@ private fun ConfigScreen(
                             checked = settings.showLunar,
                             onCheckedChange = { settings = settings.copy(showLunar = it) },
                         )
+                    }
+                }
+
+                // 待辦只顯示在行程清單與時間軸，而且要先在首頁連結 Google Tasks。
+                if ((kind == WidgetKind.AGENDA || kind == WidgetKind.TIMELINE) && TasksRepository(context).isConnected) {
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { settings = settings.copy(showTasks = !settings.showTasks) }
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                stringResource(R.string.show_tasks_title),
+                                style = MaterialTheme.typography.titleSmall,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Switch(
+                                checked = settings.showTasks,
+                                onCheckedChange = { settings = settings.copy(showTasks = it) },
+                            )
+                        }
                     }
                 }
 

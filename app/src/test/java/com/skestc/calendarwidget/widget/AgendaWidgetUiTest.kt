@@ -7,6 +7,7 @@ import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.HolidayKind
+import com.skestc.calendarwidget.tasks.TaskItem
 import com.skestc.calendarwidget.widget.WidgetFixtures.allDay
 import com.skestc.calendarwidget.widget.WidgetFixtures.at
 import com.skestc.calendarwidget.widget.WidgetFixtures.context
@@ -68,6 +69,24 @@ class AgendaWidgetUiTest {
         }
         onNode(hasText("光復節")).assertExists()
         onNode(hasTextEqualTo("光復節")).assertDoesNotExist()
+    }
+
+    @Test
+    fun tasksAppearUnderTheirDueDateAndOverdueOnesUnderToday() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(250.dp, 300.dp))
+        val tasks = listOf(
+            TaskItem("t1", "L", "繳電費", today.minusDays(2)),
+            TaskItem("t2", "L", "買牛奶", today.plusDays(3)),
+        )
+        val rows = AgendaFormatter(context, WidgetFixtures.zone, Locale.TAIWAN).rows(emptyList(), today, null, tasks)
+        provideComposable {
+            WidgetFrame { AgendaContent(AgendaState.Loaded(today, days = 7, rows = rows, lunarToday = null)) }
+        }
+        onNode(hasTextEqualTo("繳電費 · 已逾期")).assertExists()
+        onNode(hasTextEqualTo("買牛奶")).assertExists()
+        // 只有待辦的日子也要有日期標題。
+        onNode(hasText("今天 ·")).assertExists()
     }
 
     @Test

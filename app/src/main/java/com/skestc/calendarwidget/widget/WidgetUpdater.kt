@@ -7,6 +7,8 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.updateAppWidgetState
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.tasks.TasksRepository
+import com.skestc.calendarwidget.tasks.TasksSyncWorker
 
 /** 所有 widget 共用的更新與背景排程。 */
 object WidgetUpdater {
@@ -50,9 +52,11 @@ object WidgetUpdater {
         if (hasAnyWidget(context)) {
             CalendarChangeWorker.schedule(context)
             DayChangeScheduler.schedule(context)
+            if (TasksRepository(context).isConnected) TasksSyncWorker.schedulePeriodic(context)
         } else {
             CalendarChangeWorker.cancel(context)
             DayChangeScheduler.cancel(context)
+            TasksSyncWorker.cancel(context)
         }
     }
 }

@@ -23,6 +23,8 @@ data class WidgetSettings(
     val appearance: Appearance = Appearance(),
     /** 顯示農曆、節氣與傳統節日；預設只在中文介面開啟。 */
     val showLunar: Boolean = defaultShowLunar(),
+    /** 已連結 Google Tasks 時，在行程清單與時間軸顯示待辦。 */
+    val showTasks: Boolean = true,
 ) {
     companion object {
         const val DEFAULT_AGENDA_DAYS = 7
@@ -38,6 +40,7 @@ data class WidgetSettings(
         val KEY_TEXT_SCALE = intPreferencesKey("text_scale_percent")
         val KEY_FONT = stringPreferencesKey("font")
         val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
+        val KEY_SHOW_TASKS = booleanPreferencesKey("show_tasks")
 
         fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
 
@@ -56,6 +59,7 @@ data class WidgetSettings(
                 font = FontChoice.fromKey(prefs[KEY_FONT]),
             ),
             showLunar = prefs[KEY_SHOW_LUNAR] ?: defaultShowLunar(),
+            showTasks = prefs[KEY_SHOW_TASKS] ?: true,
         )
     }
 }

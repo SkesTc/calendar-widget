@@ -4,6 +4,8 @@ import android.content.Context
 import android.text.format.DateFormat
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.lunar.DayLabeler
+import com.skestc.calendarwidget.tasks.TaskFilters
+import com.skestc.calendarwidget.tasks.TaskItem
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -30,6 +32,12 @@ sealed interface AgendaRow {
 
     data class Event(val event: CalendarEvent, val timeLabel: String) : AgendaRow {
         override val id: Long = event.eventId * 31 + event.begin
+    }
+
+    /** Google Tasks 的待辦；逾期的會併到今天，[overdue] 為 true。 */
+    data class Task(val task: TaskItem, val overdue: Boolean) : AgendaRow {
+        // 落在很小的負數區間，不會和事件（正數）或日期標題（接近 0 的負數）撞號。
+        override val id: Long = Long.MIN_VALUE / 2 + (task.id.hashCode().toLong() and 0xFFFFFFFFL)
     }
 }
 
@@ -59,27 +67,31 @@ class AgendaFormatter(
         events: List<CalendarEvent>,
         today: LocalDate = LocalDate.now(zone),
         labeler: DayLabeler? = null,
-    ): List<AgendaRow> =
-        events
-            .groupBy { displayDate(it, today) }
-            .toSortedMap()
-            .flatMap { (date, dayEvents) ->
-                val (holidays, regular) = dayEvents.partition { it.holiday != null }
-                val note = listOfNotNull(labeler?.labelOf(date)?.long)
-                    .plus(holidays.map { it.title })
-                    .joinToString(" · ")
-                    .ifEmpty { null }
-                val header = AgendaRow.Header(
-                    date = date,
-                    label = dayLabel(date, today),
-                    note = note,
-                    dayOff = holidays.any { it.holiday == HolidayKind.DAY_OFF },
-                )
-                listOf<AgendaRow>(header) +
-                    regular
-                        .sortedWith(compareBy({ !it.allDay }, { it.begin }))
-                        .map { AgendaRow.Event(it, timeLabel(it)) }
-            }
+        tasks: List<TaskItem> = emptyList(),
+    ): List<AgendaRow> {
+        val eventsByDate = events.groupBy { displayDate(it, today) }
+        val tasksByDate = tasks.groupBy { TaskFilters.displayDate(it, today) }
+        val dates = (eventsByDate.keys + tasksByDate.keys.filterNotNull()).toSortedSet()
+        return dates.flatMap { date ->
+            val dayEvents = eventsByDate[date].orEmpty()
+            val (holidays, regular) = dayEvents.partition { it.holiday != null }
+            val note = listOfNotNull(labeler?.labelOf(date)?.long)
+                .plus(holidays.map { it.title })
+                .joinToString(" · ")
+                .ifEmpty { null }
+            val header = AgendaRow.Header(
+                date = date,
+                label = dayLabel(date, today),
+                note = note,
+                dayOff = holidays.any { it.holiday == HolidayKind.DAY_OFF },
+            )
+            listOf<AgendaRow>(header) +
+                regular
+                    .sortedWith(compareBy({ !it.allDay }, { it.begin }))
+                    .map { AgendaRow.Event(it, timeLabel(it)) } +
+                tasksByDate[date].orEmpty().map { AgendaRow.Task(it, TaskFilters.isOverdue(it, today)) }
+        }
+    }
 
     fun dayLabel(date: LocalDate, today: LocalDate): String = when (date) {
         today -> context.getString(R.string.today_prefix, headerFormat.format(date))
