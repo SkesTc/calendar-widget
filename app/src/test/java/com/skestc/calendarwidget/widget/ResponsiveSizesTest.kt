@@ -12,7 +12,7 @@ import org.robolectric.annotation.Config
 /**
  * SizeMode.Responsive 只會用宣告過的尺寸畫版面（LocalSize 不是 widget 的實際大小），
  * 所以版面裡每個依大小切換的門檻，都必須有一個剛好達到門檻的尺寸，否則實機上永遠看不到。
- * 月曆改用 Exact（依實際大小畫），不受這個限制。
+ * 月曆與一週改用 Exact（依實際大小畫），不受這個限制。
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -26,12 +26,10 @@ class ResponsiveSizesTest {
         assertTrue(MonthWidget().sizeMode is SizeMode.Exact)
     }
 
+    /** 一週依實際大小決定欄位或每天一列，以及每天顯示幾筆（WeekLayout），也用 Exact。 */
     @Test
-    fun weekDeclaresTwoThreeAndFourEventsPerDay() {
-        val heights = sizes(WeekWidget()).map { it.height }
-        assertTrue("每天 2 筆", heights.any { it < 140.dp })
-        assertTrue("每天 3 筆", heights.any { it >= 140.dp && it < 200.dp })
-        assertTrue("每天 4 筆", heights.any { it >= 200.dp })
+    fun weekUsesExactSizing() {
+        assertTrue(WeekWidget().sizeMode is SizeMode.Exact)
     }
 
     @Test

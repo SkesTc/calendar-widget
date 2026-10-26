@@ -3,6 +3,7 @@ package com.skestc.calendarwidget.widget
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.WeekBuilder
@@ -44,7 +45,7 @@ class WeekWidgetUiTest {
     @Test
     fun shortWidgetShowsTwoPerDayAndOverflow() = runGlanceAppWidgetUnitTest {
         setContext(context)
-        setAppWidgetSize(DpSize(300.dp, 120.dp))
+        setAppWidgetSize(DpSize(300.dp, 110.dp))
         provideComposable { WidgetFrame { WeekContent(week()) } }
         onNode(hasTextEqualTo("早會")).assertExists()
         onNode(hasTextEqualTo("午餐")).assertExists()
@@ -66,5 +67,40 @@ class WeekWidgetUiTest {
         onNode(hasTextEqualTo("+2")).assertDoesNotExist()
         onNode(hasTextEqualTo("某假日")).assertExists()
         onAllNodes(hasTextEqualTo("十七")).assertCountEquals(6)
+    }
+
+    @Test
+    fun tallWidgetSwitchesToOneRowPerDayWithReadableTitles() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val tomorrow = today.plusDays(1)
+        val state = WeekState.Loaded(
+            today,
+            WeekBuilder(WidgetFixtures.zone).build(
+                listOf(
+                    timed(1, "早會", at(8), at(9)),
+                    timed(2, "午餐", at(12), at(13)),
+                    timed(3, "健身", at(18), at(19)),
+                    timed(4, "讀書", at(21), at(22)),
+                    allDay(5, "115學年度校慶", tomorrow),
+                    allDay(6, "某假日", today.plusDays(3), HolidayKind.DAY_OFF),
+                ),
+                today,
+                maxPerDay = 8,
+                labeler = labeler,
+            ),
+        )
+        provideComposable { WidgetFrame { WeekContent(state) } }
+        // 420dp → 每列 3 行：今天顯示 3 筆，第 4 筆變成 +1。
+        onNode(hasText("早會")).assertExists()
+        onNode(hasText("健身")).assertExists()
+        onNode(hasText("讀書")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+1")).assertExists()
+        // 學校行事曆的年度前綴被拿掉，看得出是什麼行程。
+        onNode(hasTextEqualTo("校慶")).assertExists()
+        onNode(hasText("115學年度")).assertDoesNotExist()
+        onNode(hasTextEqualTo("某假日")).assertExists()
+        // 星期用簡稱（週一），日期數字單獨一行。
+        onNode(hasTextEqualTo("26")).assertExists()
     }
 }
