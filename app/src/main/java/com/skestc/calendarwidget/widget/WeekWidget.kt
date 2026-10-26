@@ -53,7 +53,8 @@ import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
-private sealed interface WeekState {
+// internal：讓 UI 測試可以直接畫出各種狀態。
+internal sealed interface WeekState {
     data object NoPermission : WeekState
     data class Loaded(val today: LocalDate, val days: List<WeekDay>) : WeekState
 }
@@ -105,7 +106,7 @@ class WeekWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun WeekContent(state: WeekState) {
+internal fun WeekContent(state: WeekState) {
     val style = LocalWidgetStyle.current
     Box(
         modifier = GlanceModifier

@@ -61,7 +61,8 @@ import java.util.Date
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
-private sealed interface TimelineState {
+// internal：讓 UI 測試可以直接畫出各種狀態。
+internal sealed interface TimelineState {
     data object NoPermission : TimelineState
     data class Loaded(val today: LocalDate, val note: String?, val timeline: Timeline) : TimelineState
 }
@@ -124,7 +125,7 @@ class TimelineWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun TimelineContent(state: TimelineState) {
+internal fun TimelineContent(state: TimelineState) {
     val style = LocalWidgetStyle.current
     Column(
         modifier = GlanceModifier

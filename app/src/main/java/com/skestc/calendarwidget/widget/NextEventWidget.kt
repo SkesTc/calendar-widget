@@ -53,7 +53,8 @@ import java.util.Date
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
-private sealed interface NextEventState {
+// internal：讓 UI 測試可以直接畫出各種狀態。
+internal sealed interface NextEventState {
     data object NoPermission : NextEventState
     data class Loaded(val today: LocalDate, val next: NextEvent?) : NextEventState
 }
@@ -107,7 +108,7 @@ class NextEventWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun NextEventContent(state: NextEventState) {
+internal fun NextEventContent(state: NextEventState) {
     val style = LocalWidgetStyle.current
     Box(
         modifier = GlanceModifier

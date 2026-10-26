@@ -41,6 +41,11 @@ android {
         }
     }
 
+    testOptions {
+        // Robolectric 的 widget UI 測試需要讀 App 的資源。
+        unitTests.isIncludeAndroidResources = true
+    }
+
     lint {
         abortOnError = true
         checkDependencies = false
@@ -72,4 +77,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.glance.appwidget.testing)
 }

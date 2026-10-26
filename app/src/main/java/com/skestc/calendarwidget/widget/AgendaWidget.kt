@@ -57,7 +57,8 @@ import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
-private sealed interface AgendaState {
+// internal：讓 UI 測試可以直接畫出各種狀態。
+internal sealed interface AgendaState {
     data object NoPermission : AgendaState
     data class Loaded(
         val today: LocalDate,
@@ -122,7 +123,7 @@ class AgendaWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun AgendaContent(state: AgendaState) {
+internal fun AgendaContent(state: AgendaState) {
     val style = LocalWidgetStyle.current
     Column(
         modifier = GlanceModifier

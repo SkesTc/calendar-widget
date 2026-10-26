@@ -60,7 +60,8 @@ import java.time.format.TextStyle as DayTextStyle
 import java.util.Locale
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 
-private sealed interface MonthState {
+// internal：讓 UI 測試可以直接畫出各種狀態。
+internal sealed interface MonthState {
     data object NoPermission : MonthState
     data class Loaded(val data: MonthData, val monthOffset: Int) : MonthState
 }
@@ -112,7 +113,7 @@ class MonthWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun MonthContent(state: MonthState) {
+internal fun MonthContent(state: MonthState) {
     val style = LocalWidgetStyle.current
     Column(
         modifier = GlanceModifier
