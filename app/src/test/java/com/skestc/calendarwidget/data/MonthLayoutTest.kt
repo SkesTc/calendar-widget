@@ -40,3 +40,39 @@ class MonthLayoutTest {
         assertTrue(MonthLayout.eventsThatFit(200f, 30, 1.3f) < MonthLayout.eventsThatFit(200f, 30, 1f))
     }
 }
+
+class MonthHeaderFitTest {
+    private val year = MonthLayout.textWidthDp("2026年10月", 16f)
+    private val month = MonthLayout.textWidthDp("10月", 16f)
+
+    @Test
+    fun wideHeaderShowsYearAndSeparateButtons() {
+        assertEquals(MonthLayout.HeaderFit(showYear = true, separateButtons = true), MonthLayout.headerFit(400f, year, month))
+    }
+
+    @Test
+    fun mediumHeaderDropsTheYearBeforeAnyButton() {
+        assertEquals(MonthLayout.HeaderFit(showYear = false, separateButtons = true), MonthLayout.headerFit(300f, year, month))
+    }
+
+    @Test
+    fun narrowHeaderMergesSearchAndSettingsIntoMenu() {
+        assertEquals(MonthLayout.HeaderFit(showYear = false, separateButtons = false), MonthLayout.headerFit(220f, year, month))
+    }
+
+    @Test
+    fun largerTextNeedsMoreRoom() {
+        val bigYear = MonthLayout.textWidthDp("2026年10月", 16f * 1.5f)
+        val bigMonth = MonthLayout.textWidthDp("10月", 16f * 1.5f)
+        val normal = MonthLayout.headerFit(300f, year, month)
+        val big = MonthLayout.headerFit(300f, bigYear, bigMonth)
+        assertTrue(big.separateButtons <= normal.separateButtons)
+        assertTrue(!big.showYear)
+    }
+
+    @Test
+    fun textWidthCountsCjkWiderThanDigits() {
+        assertEquals(16f, MonthLayout.textWidthDp("月", 16f), 0.01f)
+        assertEquals(9.6f, MonthLayout.textWidthDp("1", 16f), 0.01f)
+    }
+}

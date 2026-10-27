@@ -49,6 +49,13 @@
             android:theme="@style/Theme.CalendarWidget.Transparent" />
 
         <activity
+            android:name=".ui.WidgetMenuActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.CalendarWidget.Transparent" />
+
+        <activity
             android:name=".ui.SearchActivity"
             android:exported="false"
             android:label="@string/search_title"

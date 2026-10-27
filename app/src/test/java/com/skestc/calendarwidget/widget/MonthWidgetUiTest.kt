@@ -51,8 +51,9 @@ class MonthWidgetUiTest {
         onNode(hasContentDescriptionEqualTo("下個月")).assertExists()
         // 300dp 寬：標題列放得下搜尋按鈕。
         onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
-        // 在本月時不顯示「今」。
-        onNode(hasTextEqualTo("今")).assertDoesNotExist()
+        // 300dp：標題只寫月份，把空間讓給按鈕。
+        onNode(hasTextEqualTo("10月")).assertExists()
+        onNode(hasContentDescriptionEqualTo("小工具設定")).assertExists()
         onNode(hasTextEqualTo("國慶日")).assertExists()
         onNode(hasTextEqualTo("補班")).assertExists()
         // 節氣是真的天文計算：2026/10/8 寒露、10/23 霜降，會取代農曆小字。
@@ -156,9 +157,11 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(260.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october()) } }
-        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
-        // 窄的時候標題只寫月份。
-        onNode(hasTextEqualTo("10月")).assertExists()
+        // 放不下搜尋與設定兩顆：合併成「⋯」，其他按鈕不會被擠出畫面。
+        onNode(hasContentDescriptionEqualTo("更多")).assertExists()
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertDoesNotExist()
+        onNode(hasContentDescriptionEqualTo("下個月")).assertExists()
+        onNode(hasContentDescriptionEqualTo("新增行程")).assertExists()
     }
 
     @Test
@@ -166,6 +169,8 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october(monthOffset = 1)) } }
-        onNode(hasTextEqualTo("今")).assertExists()
+        // 不在本月時沒有額外的「今」按鈕，點標題就回到本月。
+        onNode(hasTextEqualTo("今")).assertDoesNotExist()
+        onNode(hasTextEqualTo("10月")).assertExists()
     }
 }

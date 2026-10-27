@@ -9,8 +9,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.Preferences
 import androidx.glance.GlanceId
-import android.appwidget.AppWidgetManager
-import android.net.Uri
 import androidx.compose.ui.unit.Dp
 import androidx.glance.ColorFilter
 import androidx.glance.GlanceModifier
@@ -19,8 +17,8 @@ import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalGlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import com.skestc.calendarwidget.config.WidgetConfigActivity
 import com.skestc.calendarwidget.ui.SearchActivity
+import com.skestc.calendarwidget.ui.WidgetMenuActivity
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
@@ -228,17 +226,7 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
 internal fun SettingsButton(size: Dp = 36.dp) {
     val style = LocalWidgetStyle.current
     val context = LocalContext.current
-    val glanceId = LocalGlanceId.current
-    // 測試或預覽時沒有真正的 widget id，就只畫按鈕。
-    val appWidgetId = runCatching { GlanceAppWidgetManager(context).getAppWidgetId(glanceId) }.getOrNull()
-    val open = appWidgetId?.let {
-        actionStartIntent(
-            Intent(context, WidgetConfigActivity::class.java)
-                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, it)
-                // 每個 widget 一個 PendingIntent，避免開到別的 widget 的設定。
-                .setData(Uri.parse("calendarwidget://config/$it")),
-        )
-    }
+    val open = appWidgetIdOrNull()?.let { actionStartIntent(WidgetMenuActivity.settingsIntent(context, it)) }
     Box(
         modifier = GlanceModifier
             .size(size)
@@ -252,6 +240,37 @@ internal fun SettingsButton(size: Dp = 36.dp) {
             contentDescription = glanceString(R.string.widget_settings),
             colorFilter = ColorFilter.tint(style.colors.onCard),
             modifier = GlanceModifier.size(size * 0.55f),
+        )
+    }
+}
+
+/** 測試或預覽時沒有真正的 widget id，回傳 null（按鈕照畫，只是沒有動作）。 */
+@Composable
+internal fun appWidgetIdOrNull(): Int? {
+    val context = LocalContext.current
+    val glanceId = LocalGlanceId.current
+    return runCatching { GlanceAppWidgetManager(context).getAppWidgetId(glanceId) }.getOrNull()
+}
+
+/** 「⋯」：太窄放不下搜尋與設定兩顆按鈕時，合併成一顆，點了跳出小選單。 */
+@Composable
+internal fun MoreButton(size: Dp = 36.dp) {
+    val style = LocalWidgetStyle.current
+    val context = LocalContext.current
+    val open = appWidgetIdOrNull()?.let { actionStartIntent(WidgetMenuActivity.intentFor(context, it)) }
+    Box(
+        modifier = GlanceModifier
+            .size(size)
+            .background(style.colors.card)
+            .cornerRadius(size / 2)
+            .then(if (open != null) GlanceModifier.clickable(open) else GlanceModifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.ic_more_horiz),
+            contentDescription = glanceString(R.string.more_actions),
+            colorFilter = ColorFilter.tint(style.colors.onCard),
+            modifier = GlanceModifier.size(size * 0.6f),
         )
     }
 }
@@ -286,14 +305,19 @@ internal fun HeaderActions() {
         AddEventButton(32.dp)
         return
     }
-    val compact = width < 250.dp
-    val size = if (compact) 32.dp else 36.dp
-    val gap = if (compact) 4.dp else 6.dp
-    SearchButton(size)
-    Spacer(GlanceModifier.width(gap))
-    SettingsButton(size)
-    Spacer(GlanceModifier.width(gap))
-    AddEventButton(size)
+    // 標題左邊還有大號日期與星期：約 4 格寬（280dp）以上才分開放搜尋、設定，
+    // 否則合併成「⋯」，避免按鈕被擠出畫面（桌面回報的寬度不一定準，抓寬鬆一點）。
+    if (width >= 280.dp) {
+        SearchButton(36.dp)
+        Spacer(GlanceModifier.width(6.dp))
+        SettingsButton(36.dp)
+        Spacer(GlanceModifier.width(6.dp))
+        AddEventButton(36.dp)
+    } else {
+        MoreButton(32.dp)
+        Spacer(GlanceModifier.width(4.dp))
+        AddEventButton(32.dp)
+    }
 }
 
 @Composable

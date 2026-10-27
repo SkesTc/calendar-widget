@@ -30,4 +30,44 @@ object MonthLayout {
         if (eventCount <= all) return eventCount
         return floor((panelHeightDp - CHROME - MORE) / line).toInt().coerceAtLeast(1)
     }
+
+    /** 月曆標題列：要顯示哪些按鈕、標題要不要寫年份。 */
+    data class HeaderFit(val showYear: Boolean, val separateButtons: Boolean)
+
+    // 標題列的固定寬度（dp）：左右箭頭、「＋」、搜尋、設定、「⋯」與間距，加上外框與標題列的內距。
+    private const val NAV = 30f
+    private const val ADD = 34f
+    private const val ACTION = 30f
+    private const val GAP = 4f
+    private const val PADDING = 24f
+    /**
+     * 桌面回報的 widget 大小不一定準（各家桌面、橫直向不同），只用 88% 來算，
+     * 寧可少放一顆按鈕，也不要讓按鈕被擠出畫面。
+     */
+    private const val SAFETY = 0.88f
+
+    /**
+     * 依寬度決定標題列：放得下「搜尋」「設定」兩顆就分開放（優先保留），
+     * 否則合併成一顆「⋯」選單；年份放得下才寫。[yearTitleDp]、[monthTitleDp] 是兩種標題的估計寬度。
+     */
+    fun headerFit(widthDp: Float, yearTitleDp: Float, monthTitleDp: Float): HeaderFit {
+        val available = widthDp * SAFETY - PADDING
+        val base = NAV * 2 + ADD + GAP * 3
+        val separate = base + (ACTION + GAP) * 2
+        return when {
+            available >= separate + yearTitleDp -> HeaderFit(showYear = true, separateButtons = true)
+            available >= separate + monthTitleDp -> HeaderFit(showYear = false, separateButtons = true)
+            available >= base + ACTION + GAP + yearTitleDp -> HeaderFit(showYear = true, separateButtons = false)
+            else -> HeaderFit(showYear = false, separateButtons = false)
+        }
+    }
+
+    /** 粗估文字寬度（dp）：中日韓文字約一個字高，英數約 0.6，空白 0.3。[sizeSp] 已含文字縮放。 */
+    fun textWidthDp(text: String, sizeSp: Float): Float = text.sumOf { c ->
+        when {
+            c.isWhitespace() -> 0.3
+            c.code >= 0x2E80 -> 1.0
+            else -> 0.6
+        }
+    }.toFloat() * sizeSp
 }
