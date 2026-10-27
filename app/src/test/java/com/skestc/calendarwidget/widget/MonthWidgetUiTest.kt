@@ -49,6 +49,8 @@ class MonthWidgetUiTest {
         onNode(hasText("10月")).assertExists()
         onNode(hasContentDescriptionEqualTo("上個月")).assertExists()
         onNode(hasContentDescriptionEqualTo("下個月")).assertExists()
+        // 300dp 寬：標題列放得下搜尋按鈕。
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
         // 在本月時不顯示「今」。
         onNode(hasTextEqualTo("今")).assertDoesNotExist()
         onNode(hasTextEqualTo("國慶日")).assertExists()

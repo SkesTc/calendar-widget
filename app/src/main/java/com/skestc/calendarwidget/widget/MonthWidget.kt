@@ -107,6 +107,8 @@ class MonthWidget : GlanceAppWidget() {
         val PANEL_MIN_HEIGHT = 340.dp
         /** 平板、摺疊機展開：行程改放在月曆右邊。 */
         val WIDE_MIN_WIDTH = 480.dp
+        /** 標題列多放一顆搜尋按鈕的最小寬度。 */
+        val SEARCH_MIN_WIDTH = 300.dp
     }
 
     /**
@@ -282,6 +284,11 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
         Spacer(GlanceModifier.width(4.dp))
         NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1)
         Spacer(GlanceModifier.width(4.dp))
+        // 月曆標題列按鈕多，約 4 格寬（300dp）以上才放得下搜尋。
+        if (LocalSize.current.width >= MonthWidget.SEARCH_MIN_WIDTH) {
+            SearchButton(size = 32.dp)
+            Spacer(GlanceModifier.width(4.dp))
+        }
         SettingsButton(size = 32.dp)
         Spacer(GlanceModifier.width(4.dp))
         AddEventButton()

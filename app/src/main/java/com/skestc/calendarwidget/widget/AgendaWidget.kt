@@ -267,27 +267,33 @@ internal fun SearchButton(size: Dp = 36.dp) {
     }
 }
 
-/** 標題列右側的按鈕：搜尋（夠寬時）、齒輪（設定）、「＋」（新增行程）。 */
+/** 標題列右側的按鈕：搜尋、齒輪（設定）、「＋」（新增行程）；寬度不到 4 格時按鈕縮小一點。 */
 @Composable
 internal fun HeaderActions() {
-    // 夠寬時多一顆搜尋；窄的 widget 放不下三顆按鈕。
-    if (LocalSize.current.width >= 250.dp) {
-        SearchButton()
-        Spacer(GlanceModifier.width(6.dp))
+    val width = LocalSize.current.width
+    // 2×2 只放得下「＋」；搜尋與設定改從 App 或長按小工具進入。
+    if (width < 180.dp) {
+        AddEventButton(32.dp)
+        return
     }
-    SettingsButton()
-    Spacer(GlanceModifier.width(6.dp))
-    AddEventButton()
+    val compact = width < 250.dp
+    val size = if (compact) 32.dp else 36.dp
+    val gap = if (compact) 4.dp else 6.dp
+    SearchButton(size)
+    Spacer(GlanceModifier.width(gap))
+    SettingsButton(size)
+    Spacer(GlanceModifier.width(gap))
+    AddEventButton(size)
 }
 
 @Composable
-internal fun AddEventButton() {
+internal fun AddEventButton(size: Dp = 36.dp) {
     val style = LocalWidgetStyle.current
     Box(
         modifier = GlanceModifier
-            .size(36.dp)
+            .size(size)
             .background(style.colors.primary)
-            .cornerRadius(18.dp)
+            .cornerRadius(size / 2)
             // 依設定開啟指定 App 的新增行程畫面（或每次詢問）。
             .clickable(openInCalendar(EventEditor.insertIntent(), editor = true)),
         contentAlignment = Alignment.Center,
@@ -297,7 +303,7 @@ internal fun AddEventButton() {
             provider = ImageProvider(R.drawable.ic_add),
             contentDescription = glanceString(R.string.add_event),
             colorFilter = ColorFilter.tint(style.colors.onPrimary),
-            modifier = GlanceModifier.size(22.dp),
+            modifier = GlanceModifier.size(size * 0.6f),
         )
     }
 }
