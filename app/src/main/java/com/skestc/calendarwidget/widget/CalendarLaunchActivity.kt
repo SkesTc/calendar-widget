@@ -43,10 +43,12 @@ class CalendarLaunchActivity : ComponentActivity() {
             return
         }
         val preferred = intent.getStringExtra(EXTRA_PACKAGE)
+        // 備用目標：例如「編輯」不被接受時改成「檢視」。
+        val targets = listOfNotNull(target, intentExtra(intent, EXTRA_FALLBACK))
         val attempts = when {
             intent.getBooleanExtra(EXTRA_EDITOR, false) -> EventEditor.launchIntents(this, target)
-            preferred != null -> listOf(Intent(target).setPackage(preferred), target)
-            else -> listOf(target)
+            preferred != null -> targets.map { Intent(it).setPackage(preferred) } + targets
+            else -> targets
         }
         // 指定的 App 沒裝（或不接受這個動作）時，退回下一個（系統預設）。
         val wanted = attempts.firstNotNullOfOrNull { it.`package` }
@@ -97,27 +99,37 @@ class CalendarLaunchActivity : ComponentActivity() {
         private const val EXTRA_TARGET = "target"
         private const val EXTRA_PACKAGE = "package"
         private const val EXTRA_EDITOR = "editor"
+        private const val EXTRA_FALLBACK = "fallback"
 
         /**
          * [preferredPackage]：優先用這個 App 開（例如 Google 日曆），沒裝時用系統預設。
          * [editor]：新增行程，依使用者在設定選的 App（[EventEditor]）開啟。
          */
-        fun intentFor(context: Context, target: Intent, preferredPackage: String? = null, editor: Boolean = false): Intent {
+        fun intentFor(
+            context: Context,
+            target: Intent,
+            preferredPackage: String? = null,
+            editor: Boolean = false,
+            fallback: Intent? = null,
+        ): Intent {
             val key = target.toUri(Intent.URI_INTENT_SCHEME) + "|" + preferredPackage + "|" + editor
             return Intent(context, CalendarLaunchActivity::class.java)
                 .putExtra(EXTRA_TARGET, target)
                 .putExtra(EXTRA_PACKAGE, preferredPackage)
                 .putExtra(EXTRA_EDITOR, editor)
+                .putExtra(EXTRA_FALLBACK, fallback)
                 // PendingIntent 比對不看 extras；用 data 區分不同的目標，避免點到別的行程。
                 .setData(Uri.parse("calendarwidget://open/" + key.hashCode()))
         }
 
-        private fun targetOf(intent: Intent): Intent? =
+        private fun targetOf(intent: Intent): Intent? = intentExtra(intent, EXTRA_TARGET)
+
+        private fun intentExtra(intent: Intent, name: String): Intent? =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                intent.getParcelableExtra(EXTRA_TARGET, Intent::class.java)
+                intent.getParcelableExtra(name, Intent::class.java)
             } else {
                 @Suppress("DEPRECATION")
-                intent.getParcelableExtra(EXTRA_TARGET)
+                intent.getParcelableExtra(name)
             }
     }
 }

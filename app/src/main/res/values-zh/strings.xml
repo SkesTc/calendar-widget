@@ -38,7 +38,7 @@
     <string name="add_event">新增行程</string>
     <string name="search_title">搜尋行程</string>
     <string name="search_hint">輸入關鍵字</string>
-    <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。</string>
+    <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。</string>
     <string name="search_none">找不到符合「%1$s」的行程</string>
     <string name="search_upcoming">即將到來（%1$d）</string>
     <string name="search_past">過去（%1$d）</string>

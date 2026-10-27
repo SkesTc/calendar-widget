@@ -38,7 +38,7 @@
     <string name="add_event">Add event</string>
     <string name="search_title">Search events</string>
     <string name="search_hint">Keyword</string>
-    <string name="search_intro">Search titles, locations and notes from a year ago to two years ahead.</string>
+    <string name="search_intro">Search titles, locations and notes from a year ago to two years ahead. Tap a result to edit it.</string>
     <string name="search_none">No events match “%1$s”</string>
     <string name="search_upcoming">Upcoming (%1$d)</string>
     <string name="search_past">Past (%1$d)</string>

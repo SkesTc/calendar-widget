@@ -35,8 +35,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -47,6 +49,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -57,6 +60,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
@@ -94,10 +99,20 @@ private fun SearchScreen(onBack: () -> Unit) {
     var keyword by remember { mutableStateOf("") }
     var results by remember { mutableStateOf<SearchResults?>(null) }
     var searching by remember { mutableStateOf(false) }
+    // 編輯完回到搜尋畫面時重新查一次，結果才會反映剛才的修改。
+    var resumes by remember { mutableIntStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) resumes++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     LaunchedEffect(Unit) { focus.requestFocus() }
     // 停止輸入 300 毫秒後才查詢，邊打字邊更新但不會每個字都查一次。
-    LaunchedEffect(keyword) {
+    LaunchedEffect(keyword, resumes) {
         if (keyword.isBlank()) {
             results = null
             searching = false
@@ -206,14 +221,18 @@ private fun ResultRow(event: CalendarEvent, keyword: String, past: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                // 跟 widget 一樣：優先用 Google 日曆開啟行程，沒有時用系統預設。
-                val target = Intent(
-                    Intent.ACTION_VIEW,
-                    ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),
-                ).putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
+                // 直接打開編輯畫面（優先用 Google 日曆）；日曆 App 不支援「編輯」時改成開啟檢視畫面。
+                val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId)
+                fun withTimes(action: String) = Intent(action, uri)
+                    .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
                     .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
                 context.startActivity(
-                    CalendarLaunchActivity.intentFor(context, target, preferredPackage = EventEditor.GOOGLE_CALENDAR),
+                    CalendarLaunchActivity.intentFor(
+                        context,
+                        target = withTimes(Intent.ACTION_EDIT),
+                        preferredPackage = EventEditor.GOOGLE_CALENDAR,
+                        fallback = withTimes(Intent.ACTION_VIEW),
+                    ),
                 )
             }
             .padding(horizontal = 24.dp, vertical = 10.dp),
