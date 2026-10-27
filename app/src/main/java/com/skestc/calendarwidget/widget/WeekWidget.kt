@@ -26,6 +26,7 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
@@ -60,6 +61,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.TextStyle as DayTextStyle
 import java.util.Date
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 // internal：讓 UI 測試可以直接畫出各種狀態。
@@ -138,24 +140,85 @@ internal fun WeekContent(state: WeekState) {
             WeekState.NoPermission -> PermissionPrompt()
             is WeekState.Loaded -> {
                 val size = LocalSize.current
-                if (WeekLayout.useRows(size.width.value, size.height.value)) {
-                    WeekRows(state, WeekLayout.linesPerRow(size.height.value))
+                if (size.height >= HEADER_MIN_HEIGHT) {
+                    // 夠高：上方標題列（日期範圍＋搜尋、設定、新增），下方放一週。
+                    Column(modifier = GlanceModifier.fillMaxSize()) {
+                        WeekHeader(state)
+                        WeekBody(state, size.width.value, size.height.value - HEADER_HEIGHT.value)
+                    }
                 } else {
-                    val showLabel = size.height >= 140.dp
-                    val visible = WeekLayout.chipsPerColumn(size.height.value, showLabel)
+                    // 4×2 這種扁長的：按鈕直排在右側，不佔用行程的高度。
                     Row(modifier = GlanceModifier.fillMaxSize()) {
-                        for (day in state.days) {
-                            WeekDayColumn(
-                                day = day,
-                                now = state.now,
-                                isToday = day.date == state.today,
-                                visible = visible,
-                                showLabel = showLabel,
-                                modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
-                            )
+                        Box(modifier = GlanceModifier.defaultWeight().fillMaxHeight()) {
+                            WeekBody(state, size.width.value - RAIL_WIDTH.value, size.height.value)
+                        }
+                        Spacer(GlanceModifier.width(4.dp))
+                        Column(
+                            modifier = GlanceModifier.fillMaxHeight(),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            SearchButton(RAIL_BUTTON)
+                            Spacer(GlanceModifier.height(4.dp))
+                            SettingsButton(RAIL_BUTTON)
+                            Spacer(GlanceModifier.height(4.dp))
+                            AddEventButton(RAIL_BUTTON)
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+private val HEADER_MIN_HEIGHT = 140.dp
+/** 標題列（含下方間距）佔的高度：版面計算要扣掉。 */
+private val HEADER_HEIGHT = 34.dp
+private val RAIL_BUTTON = 26.dp
+private val RAIL_WIDTH = 30.dp
+
+/** 標題列：這 7 天的日期範圍，右側是搜尋、設定、新增行程。 */
+@Composable
+private fun WeekHeader(state: WeekState.Loaded) {
+    val style = LocalWidgetStyle.current
+    val locale = Locale.getDefault()
+    val format = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale)
+    val range = "${format.format(state.days.first().date)} – ${format.format(state.days.last().date)}"
+    Row(
+        modifier = GlanceModifier.fillMaxWidth().height(HEADER_HEIGHT).padding(start = 4.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = range,
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+            style = style.text(14, style.colors.onSurface, FontWeight.Bold),
+        )
+        SearchButton(30.dp)
+        Spacer(GlanceModifier.width(4.dp))
+        SettingsButton(30.dp)
+        Spacer(GlanceModifier.width(4.dp))
+        AddEventButton(30.dp)
+    }
+}
+
+/** 依可用的寬高選版面：直長時每天一列，扁長時 7 欄並排。 */
+@Composable
+private fun WeekBody(state: WeekState.Loaded, widthDp: Float, heightDp: Float) {
+    if (WeekLayout.useRows(widthDp, heightDp)) {
+        WeekRows(state, WeekLayout.linesPerRow(heightDp))
+    } else {
+        val showLabel = heightDp >= 140f
+        val visible = WeekLayout.chipsPerColumn(heightDp, showLabel)
+        Row(modifier = GlanceModifier.fillMaxSize()) {
+            for (day in state.days) {
+                WeekDayColumn(
+                    day = day,
+                    now = state.now,
+                    isToday = day.date == state.today,
+                    visible = visible,
+                    showLabel = showLabel,
+                    modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+                )
             }
         }
     }

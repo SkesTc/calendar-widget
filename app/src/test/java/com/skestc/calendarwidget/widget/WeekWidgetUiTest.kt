@@ -3,6 +3,7 @@ package com.skestc.calendarwidget.widget
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
+import androidx.glance.testing.unit.hasContentDescriptionEqualTo
 import androidx.glance.testing.unit.hasText
 import androidx.glance.testing.unit.hasTextEqualTo
 import com.skestc.calendarwidget.data.HolidayKind
@@ -56,6 +57,8 @@ class WeekWidgetUiTest {
         // 7 天：26 日到 11/1。
         onNode(hasNumber("26")).assertExists()
         onNode(hasNumber("1")).assertExists()
+        // 扁長的版面：搜尋等按鈕直排在右側。
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
     }
 
     @Test
@@ -67,12 +70,15 @@ class WeekWidgetUiTest {
         onNode(hasTextEqualTo("+2")).assertDoesNotExist()
         onNode(hasTextEqualTo("某假日")).assertExists()
         onAllNodes(hasTextEqualTo("十七")).assertCountEquals(6)
+        // 夠高時上方有標題列：日期範圍與搜尋按鈕。
+        onNode(hasText("10月26日 –")).assertExists()
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
     }
 
     @Test
     fun tallWidgetSwitchesToOneRowPerDayWithReadableTitles() = runGlanceAppWidgetUnitTest {
         setContext(context)
-        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        setAppWidgetSize(DpSize(320.dp, 460.dp))
         val tomorrow = today.plusDays(1)
         val state = WeekState.Loaded(
             today,
@@ -91,7 +97,7 @@ class WeekWidgetUiTest {
             ),
         )
         provideComposable { WidgetFrame { WeekContent(state) } }
-        // 420dp → 每列 3 行：今天顯示 3 筆，第 4 筆變成 +1。
+        // 460dp 扣掉標題列 → 每列 3 行：今天顯示 3 筆，第 4 筆變成 +1。
         onNode(hasText("早會")).assertExists()
         onNode(hasText("健身")).assertExists()
         onNode(hasText("讀書")).assertDoesNotExist()
