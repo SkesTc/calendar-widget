@@ -20,6 +20,7 @@ import androidx.glance.LocalContext
 import androidx.glance.LocalGlanceId
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.skestc.calendarwidget.config.WidgetConfigActivity
+import com.skestc.calendarwidget.ui.SearchActivity
 import androidx.glance.GlanceTheme
 import androidx.glance.LocalSize
 import androidx.glance.action.actionStartActivity
@@ -245,9 +246,35 @@ internal fun SettingsButton(size: Dp = 36.dp) {
     }
 }
 
-/** 標題列右側的按鈕：齒輪（設定）＋「＋」（新增行程）。 */
+/** 放大鏡：打開 App 的行程搜尋。 */
+@Composable
+internal fun SearchButton(size: Dp = 36.dp) {
+    val style = LocalWidgetStyle.current
+    Box(
+        modifier = GlanceModifier
+            .size(size)
+            .background(style.colors.card)
+            .cornerRadius(size / 2)
+            .clickable(actionStartActivity<SearchActivity>()),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.ic_search),
+            contentDescription = glanceString(R.string.search_title),
+            colorFilter = ColorFilter.tint(style.colors.onCard),
+            modifier = GlanceModifier.size(size * 0.55f),
+        )
+    }
+}
+
+/** 標題列右側的按鈕：搜尋（夠寬時）、齒輪（設定）、「＋」（新增行程）。 */
 @Composable
 internal fun HeaderActions() {
+    // 夠寬時多一顆搜尋；窄的 widget 放不下三顆按鈕。
+    if (LocalSize.current.width >= 250.dp) {
+        SearchButton()
+        Spacer(GlanceModifier.width(6.dp))
+    }
     SettingsButton()
     Spacer(GlanceModifier.width(6.dp))
     AddEventButton()

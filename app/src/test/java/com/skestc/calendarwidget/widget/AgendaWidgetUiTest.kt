@@ -81,6 +81,8 @@ class AgendaWidgetUiTest {
         onNode(hasNumber("26")).assertExists()
         // 「＋」旁的齒輪（小工具設定）。
         onNode(hasContentDescriptionEqualTo("小工具設定")).assertExists()
+        // 250dp 寬時放得下搜尋按鈕。
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
         // 頂端日期下方一次，加上「今天」「明天」兩個日期標題各一次。
         onAllNodes(hasText("九月十七")).assertCountEquals(3)
     }

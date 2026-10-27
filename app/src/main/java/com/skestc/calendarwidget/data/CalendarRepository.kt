@@ -109,7 +109,33 @@ class CalendarRepository(private val context: Context) {
             ContentUris.appendId(it, start)
             ContentUris.appendId(it, end)
         }.build()
+        val hiddenEventIds = if (includeHiddenEvents) emptySet() else HiddenEvents(context).ids()
 
+        var selection = "${CalendarContract.Instances.VISIBLE} = 1"
+        if (hiddenCalendarIds.isNotEmpty()) {
+            // ID 都是 Long，直接組進 SQL 不會有注入問題。
+            selection += " AND ${CalendarContract.Instances.CALENDAR_ID} NOT IN " +
+                hiddenCalendarIds.joinToString(",", "(", ")")
+        }
+        // 使用者在「長期行程」隱藏的事件，所有 widget 都不顯示。
+        query(uri, selection).filter { it.eventId !in hiddenEventIds }
+    }
+
+    /**
+     * 用關鍵字搜尋行程（標題、地點、說明），範圍是 [start, end)。
+     * 用系統的 Instances 搜尋網址，重複行程已展開；搜尋不受各 widget 的隱藏設定影響。
+     */
+    suspend fun search(keyword: String, start: Long, end: Long): List<CalendarEvent> = withContext(Dispatchers.IO) {
+        if (!hasPermission() || keyword.isBlank()) return@withContext emptyList()
+        val uri = CalendarContract.Instances.CONTENT_SEARCH_URI.buildUpon().also {
+            ContentUris.appendId(it, start)
+            ContentUris.appendId(it, end)
+            it.appendPath(keyword.trim())
+        }.build()
+        query(uri, "${CalendarContract.Instances.VISIBLE} = 1")
+    }
+
+    private fun query(uri: android.net.Uri, selection: String): List<CalendarEvent> {
         val projection = arrayOf(
             CalendarContract.Instances.EVENT_ID,
             CalendarContract.Instances.TITLE,
@@ -123,16 +149,8 @@ class CalendarRepository(private val context: Context) {
             CalendarContract.Instances.DESCRIPTION,
         )
         val holidayCalendarIds = holidayCalendarIds()
-        val hiddenEventIds = if (includeHiddenEvents) emptySet() else HiddenEvents(context).ids()
 
-        var selection = "${CalendarContract.Instances.VISIBLE} = 1"
-        if (hiddenCalendarIds.isNotEmpty()) {
-            // ID 都是 Long，直接組進 SQL 不會有注入問題。
-            selection += " AND ${CalendarContract.Instances.CALENDAR_ID} NOT IN " +
-                hiddenCalendarIds.joinToString(",", "(", ")")
-        }
-
-        context.contentResolver.query(
+        return context.contentResolver.query(
             uri,
             projection,
             selection,
@@ -141,8 +159,6 @@ class CalendarRepository(private val context: Context) {
         )?.use { c ->
             buildList {
                 while (c.moveToNext()) {
-                    // 使用者在「長期行程」隱藏的事件，所有 widget 都不顯示。
-                    if (c.getLong(0) in hiddenEventIds) continue
                     val title = c.getString(1)?.takeIf { it.isNotBlank() } ?: context.getString(R.string.untitled)
                     val calendarId = c.getLong(8)
                     add(

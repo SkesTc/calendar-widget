@@ -49,6 +49,11 @@ import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
+import android.content.Intent
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.res.painterResource
+import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.EventEditorCard
 import com.skestc.calendarwidget.ui.LongEventsCard
 import com.skestc.calendarwidget.ui.UpdateHelpCard
@@ -94,7 +99,20 @@ private fun HomeScreen() {
         }
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.app_name)) },
+                actions = {
+                    if (granted) {
+                        IconButton(onClick = { context.startActivity(Intent(context, SearchActivity::class.java)) }) {
+                            Icon(painterResource(R.drawable.ic_search), contentDescription = stringResource(R.string.search_title))
+                        }
+                    }
+                },
+            )
+        },
+    ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()

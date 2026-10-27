@@ -36,6 +36,15 @@
     <string name="editor_chooser_title">Add event with</string>
     <string name="widget_settings">Widget settings</string>
     <string name="add_event">Add event</string>
+    <string name="search_title">Search events</string>
+    <string name="search_hint">Keyword</string>
+    <string name="search_intro">Search titles, locations and notes from a year ago to two years ahead.</string>
+    <string name="search_none">No events match “%1$s”</string>
+    <string name="search_upcoming">Upcoming (%1$d)</string>
+    <string name="search_past">Past (%1$d)</string>
+    <string name="back">Back</string>
+    <string name="google_calendar">Google Calendar</string>
+    <string name="editor_fallback">%1$s couldn\'t open this, so the default calendar app was used</string>
     <string name="previous_month">Previous month</string>
     <string name="next_month">Next month</string>
     <string name="editor_change">Change</string>

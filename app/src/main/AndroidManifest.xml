@@ -49,6 +49,12 @@
             android:theme="@style/Theme.CalendarWidget.Transparent" />
 
         <activity
+            android:name=".ui.SearchActivity"
+            android:exported="false"
+            android:label="@string/search_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".ui.LongEventsActivity"
             android:exported="false"
             android:label="@string/long_events_title" />

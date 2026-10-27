@@ -36,6 +36,15 @@
     <string name="editor_chooser_title">用哪個 App 新增行程</string>
     <string name="widget_settings">小工具設定</string>
     <string name="add_event">新增行程</string>
+    <string name="search_title">搜尋行程</string>
+    <string name="search_hint">輸入關鍵字</string>
+    <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。</string>
+    <string name="search_none">找不到符合「%1$s」的行程</string>
+    <string name="search_upcoming">即將到來（%1$d）</string>
+    <string name="search_past">過去（%1$d）</string>
+    <string name="back">返回</string>
+    <string name="google_calendar">Google 日曆</string>
+    <string name="editor_fallback">%1$s 無法開啟，已改用系統預設的日曆 App</string>
     <string name="previous_month">上個月</string>
     <string name="next_month">下個月</string>
     <string name="editor_change">更改</string>
