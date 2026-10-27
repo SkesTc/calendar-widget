@@ -59,6 +59,8 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.EventStatus
+import com.skestc.calendarwidget.data.WeekBuilder
+import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.settings.EventEditor
 import com.skestc.calendarwidget.settings.WidgetSettings
@@ -87,6 +89,8 @@ internal sealed interface AgendaState {
         val layout: AgendaLayout = AgendaLayout.LIST,
         /** 時間軸版面判斷進行中／已結束、畫「現在」橫線用。 */
         val now: Long = System.currentTimeMillis(),
+        /** 「每日」版面：每天一列（前 7 天一定列出，之後只列有行程或假日的日子）。 */
+        val dayRows: List<WeekDay> = emptyList(),
     ) : AgendaState
 }
 
@@ -148,6 +152,11 @@ class AgendaWidget : GlanceAppWidget() {
             lunarToday = labeler?.labelOf(today)?.long,
             layout = settings.agendaLayout,
             now = now,
+            dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
+                dayRowsOf(events, today, settings.agendaDays, labeler)
+            } else {
+                emptyList()
+            },
         )
     }
 }
@@ -173,6 +182,7 @@ internal fun AgendaContent(state: AgendaState) {
                     when (state.layout) {
                         AgendaLayout.LIST -> AgendaList(state.rows, state.days)
                         AgendaLayout.TIMELINE -> AgendaTimeline(state)
+                        AgendaLayout.DAYS -> AgendaDays(state)
                     }
                 }
             }
@@ -344,6 +354,32 @@ private fun AgendaTimeline(state: AgendaState.Loaded) {
         }
     }
 }
+
+@Composable
+private fun AgendaDays(state: AgendaState.Loaded) {
+    if (state.dayRows.isEmpty()) {
+        EmptyState(state.days)
+        return
+    }
+    LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
+        items(state.dayRows, itemId = { it.date.toEpochDay() }) { day ->
+            WeekDayRow(
+                day = day,
+                isToday = day.date == state.today,
+                now = state.now,
+                lines = DAY_ROW_MAX_EVENTS,
+                modifier = GlanceModifier.padding(vertical = 4.dp),
+            )
+        }
+    }
+}
+
+private const val DAY_ROW_MAX_EVENTS = 20
+
+/** 「每日」版面的資料：前 7 天每天都列（空的日子顯示農曆），之後只留有行程或假日的日子。 */
+internal fun dayRowsOf(events: List<CalendarEvent>, today: LocalDate, days: Int, labeler: DayLabeler?): List<WeekDay> =
+    WeekBuilder().build(events, today, days, DAY_ROW_MAX_EVENTS, labeler)
+        .filterIndexed { index, day -> index < 7 || day.events.isNotEmpty() || day.holiday != null }
 
 internal fun statusOf(row: AgendaRow.Event, now: Long): EventStatus = when {
     row.past -> EventStatus.PAST

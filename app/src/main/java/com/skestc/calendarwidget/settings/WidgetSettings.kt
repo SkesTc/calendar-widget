@@ -78,7 +78,9 @@ data class WidgetSettings(
 /** 行程清單的版面。 */
 enum class AgendaLayout {
     LIST,
-    TIMELINE;
+    TIMELINE,
+    /** 每天一列（像一週小工具）：左邊星期與大號日期，右邊農曆與行程。 */
+    DAYS;
 
     companion object {
         fun fromKey(key: String?): AgendaLayout = entries.firstOrNull { it.name == key } ?: LIST

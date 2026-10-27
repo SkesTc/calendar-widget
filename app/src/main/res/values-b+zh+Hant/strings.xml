@@ -70,6 +70,7 @@
     <string name="section_agenda_layout">版面</string>
     <string name="agenda_layout_list">清單</string>
     <string name="agenda_layout_timeline">時間軸</string>
+    <string name="agenda_layout_days">每日</string>
     <string name="months_option">%1$d 個月</string>
     <string name="section_calendars">顯示的日曆</string>
     <string name="account_calendars_shown">顯示 %1$d／%2$d 個日曆</string>

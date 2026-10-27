@@ -15,6 +15,7 @@ import com.skestc.calendarwidget.widget.WidgetFixtures.context
 import com.skestc.calendarwidget.widget.WidgetFixtures.labeler
 import com.skestc.calendarwidget.widget.WidgetFixtures.timed
 import com.skestc.calendarwidget.widget.WidgetFixtures.today
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +34,35 @@ class AgendaWidgetUiTest {
     private fun loaded(vararg events: com.skestc.calendarwidget.data.CalendarEvent, now: Long = at(8)): AgendaState {
         val rows = AgendaFormatter(context, WidgetFixtures.zone, Locale.TAIWAN).rows(events.toList(), today, labeler, now)
         return AgendaState.Loaded(today, days = 7, rows = rows, lunarToday = "九月十七")
+    }
+
+    @Test
+    fun daysLayoutListsEachDayWithLunarAndEvents() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 400.dp))
+        val events = listOf(
+            timed(1, "晨會", at(9), at(10)),
+            timed(2, "牙醫", at(15, date = today.plusDays(2)), at(16, date = today.plusDays(2))),
+            timed(3, "遠足", at(8, date = today.plusDays(20)), at(12, date = today.plusDays(20))),
+        )
+        val state = AgendaState.Loaded(
+            today, days = 31, rows = emptyList(), lunarToday = null,
+            layout = AgendaLayout.DAYS, now = at(8),
+            dayRows = dayRowsOf(events, today, 31, labeler),
+        )
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasText("晨會")).assertExists()
+        onNode(hasText("牙醫")).assertExists()
+        onNode(hasText("遠足")).assertExists()
+        // 前 7 天沒有行程的日子也列出來，顯示農曆。
+        onNode(hasNumber("27")).assertExists()
+    }
+
+    @Test
+    fun daysLayoutSkipsEmptyDaysAfterTheFirstWeek() {
+        val rows = dayRowsOf(listOf(timed(3, "遠足", at(8, date = today.plusDays(20)), at(9, date = today.plusDays(20)))), today, 31, null)
+        assertEquals(8, rows.size)
+        assertEquals(today.plusDays(20), rows.last().date)
     }
 
     @Test

@@ -77,6 +77,7 @@ S = [
  ("section_agenda_layout", "Layout", "版面"),
  ("agenda_layout_list", "List", "清單"),
  ("agenda_layout_timeline", "Timeline", "時間軸"),
+ ("agenda_layout_days", "Days", "每日"),
  ("months_option", "%1$d mo", "%1$d 個月"),
  ("section_calendars", "Calendars", "顯示的日曆"),
  ("account_calendars_shown", "%1$d of %2$d calendars shown", "顯示 %1$d／%2$d 個日曆"),

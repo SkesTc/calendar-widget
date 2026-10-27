@@ -70,6 +70,7 @@
     <string name="section_agenda_layout">Layout</string>
     <string name="agenda_layout_list">List</string>
     <string name="agenda_layout_timeline">Timeline</string>
+    <string name="agenda_layout_days">Days</string>
     <string name="months_option">%1$d mo</string>
     <string name="section_calendars">Calendars</string>
     <string name="account_calendars_shown">%1$d of %2$d calendars shown</string>

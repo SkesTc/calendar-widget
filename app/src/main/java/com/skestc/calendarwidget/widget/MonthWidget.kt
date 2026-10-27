@@ -107,8 +107,10 @@ class MonthWidget : GlanceAppWidget() {
         val PANEL_MIN_HEIGHT = 340.dp
         /** 平板、摺疊機展開：行程改放在月曆右邊。 */
         val WIDE_MIN_WIDTH = 480.dp
-        /** 標題列多放一顆搜尋按鈕的最小寬度。 */
-        val SEARCH_MIN_WIDTH = 300.dp
+        /** 標題列放得下搜尋按鈕的最小寬度（約 3 格）。 */
+        val SEARCH_MIN_WIDTH = 250.dp
+        /** 標題列按鈕用一般大小、標題寫年份的寬度。 */
+        val ROOMY_HEADER_WIDTH = 320.dp
     }
 
     /**
@@ -263,8 +265,10 @@ private fun ColumnScope.MonthGrid(state: MonthState.Loaded, compact: Boolean, sh
 private fun MonthHeader(month: YearMonth, monthOffset: Int) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
+    // 窄的時候只寫月份（「10月」），把空間讓給按鈕。
+    val skeleton = if (LocalSize.current.width < MonthWidget.ROOMY_HEADER_WIDTH) "MMMM" else "yMMMM"
     val title = DateTimeFormatter
-        .ofPattern(DateFormat.getBestDateTimePattern(locale, "yMMMM"), locale)
+        .ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
         .format(month)
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(start = 4.dp, bottom = 4.dp),
@@ -276,29 +280,32 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
             modifier = GlanceModifier.defaultWeight(),
             style = style.text(16, style.colors.onSurface, FontWeight.Bold),
         )
+        // 標題列按鈕多：不夠寬時按鈕縮小、間距變窄，標題只寫月份，才放得下搜尋。
+        val width = LocalSize.current.width
+        val button = if (width < MonthWidget.ROOMY_HEADER_WIDTH) 28.dp else 32.dp
+        val gap = if (width < MonthWidget.ROOMY_HEADER_WIDTH) 2.dp else 4.dp
         if (monthOffset != 0) {
-            NavButton(glanceString(R.string.back_to_this_month), delta = 0)
-            Spacer(GlanceModifier.width(4.dp))
+            NavButton(glanceString(R.string.back_to_this_month), delta = 0, size = button)
+            Spacer(GlanceModifier.width(gap))
         }
-        NavIconButton(R.drawable.ic_chevron_left, glanceString(R.string.previous_month), delta = -1)
-        Spacer(GlanceModifier.width(4.dp))
-        NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1)
-        Spacer(GlanceModifier.width(4.dp))
-        // 月曆標題列按鈕多，約 4 格寬（300dp）以上才放得下搜尋。
-        if (LocalSize.current.width >= MonthWidget.SEARCH_MIN_WIDTH) {
-            SearchButton(size = 32.dp)
-            Spacer(GlanceModifier.width(4.dp))
+        NavIconButton(R.drawable.ic_chevron_left, glanceString(R.string.previous_month), delta = -1, size = button)
+        Spacer(GlanceModifier.width(gap))
+        NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1, size = button)
+        Spacer(GlanceModifier.width(gap))
+        if (width >= MonthWidget.SEARCH_MIN_WIDTH) {
+            SearchButton(size = button)
+            Spacer(GlanceModifier.width(gap))
         }
-        SettingsButton(size = 32.dp)
-        Spacer(GlanceModifier.width(4.dp))
-        AddEventButton()
+        SettingsButton(size = button)
+        Spacer(GlanceModifier.width(gap))
+        AddEventButton(button + 4.dp)
     }
 }
 
-private fun navModifier(style: WidgetStyle, delta: Int) = GlanceModifier
-    .size(32.dp)
+private fun navModifier(style: WidgetStyle, delta: Int, size: Dp) = GlanceModifier
+    .size(size)
     .background(style.colors.card)
-    .cornerRadius(16.dp)
+    .cornerRadius(size / 2)
     .clickable(
         actionRunCallback<ChangeMonthAction>(
             actionParametersOf(ChangeMonthAction.DeltaKey to delta),
@@ -307,23 +314,23 @@ private fun navModifier(style: WidgetStyle, delta: Int) = GlanceModifier
 
 /** 「今」：回到本月。 */
 @Composable
-private fun NavButton(label: String, delta: Int) {
+private fun NavButton(label: String, delta: Int, size: Dp) {
     val style = LocalWidgetStyle.current
-    Box(modifier = navModifier(style, delta), contentAlignment = Alignment.Center) {
+    Box(modifier = navModifier(style, delta, size), contentAlignment = Alignment.Center) {
         Text(text = label, style = style.text(13, style.colors.onCard, FontWeight.Bold))
     }
 }
 
 /** 上個月／下個月：向量箭頭，在圓圈裡置中（「‹」「›」文字會因字型留白而偏移）。 */
 @Composable
-private fun NavIconButton(icon: Int, description: String, delta: Int) {
+private fun NavIconButton(icon: Int, description: String, delta: Int, size: Dp) {
     val style = LocalWidgetStyle.current
-    Box(modifier = navModifier(style, delta), contentAlignment = Alignment.Center) {
+    Box(modifier = navModifier(style, delta, size), contentAlignment = Alignment.Center) {
         Image(
             provider = ImageProvider(icon),
             contentDescription = description,
             colorFilter = ColorFilter.tint(style.colors.onCard),
-            modifier = GlanceModifier.size(22.dp),
+            modifier = GlanceModifier.size(size * 0.7f),
         )
     }
 }

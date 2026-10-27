@@ -312,6 +312,7 @@ private fun ConfigScreen(
                                 options = listOf(
                                     AgendaLayout.LIST to stringResource(R.string.agenda_layout_list),
                                     AgendaLayout.TIMELINE to stringResource(R.string.agenda_layout_timeline),
+                                    AgendaLayout.DAYS to stringResource(R.string.agenda_layout_days),
                                 ),
                                 selected = settings.agendaLayout,
                                 onSelect = { v -> settings = settings.copy(agendaLayout = v) },

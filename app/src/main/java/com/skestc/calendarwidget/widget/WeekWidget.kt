@@ -227,83 +227,87 @@ private fun WeekBody(state: WeekState.Loaded, widthDp: Float, heightDp: Float) {
 /** 直長版面：每天一列，左邊日期、右邊整行寬度的行程（時間＋標題）。 */
 @Composable
 private fun WeekRows(state: WeekState.Loaded, lines: Int) {
-    val style = LocalWidgetStyle.current
-    val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
     Column(modifier = GlanceModifier.fillMaxSize()) {
         for (day in state.days) {
-            val isToday = day.date == state.today
-            val color = dayColor(day)
-            Row(
-                modifier = GlanceModifier
-                    .fillMaxWidth()
-                    .defaultWeight()
-                    .then(
-                        // 今天整列用卡片色標示。
-                        if (isToday) {
-                            GlanceModifier.cardBackground(style)
-                        } else {
-                            GlanceModifier
-                        },
-                    )
-                    .padding(horizontal = 4.dp, vertical = 2.dp)
-                    .clickable(openInCalendar(openDay(day.date))),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = GlanceModifier.width(44.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
+            WeekDayRow(day, isToday = day.date == state.today, now = state.now, lines = lines, modifier = GlanceModifier.defaultWeight())
+        }
+    }
+}
+
+/** 一天一列：左邊星期與日期，右邊農曆／假日與最多 [lines] 行行程；今天用卡片色標示。行程清單的「每日」版面也用它。 */
+@Composable
+internal fun WeekDayRow(day: WeekDay, isToday: Boolean, now: Long, lines: Int, modifier: GlanceModifier = GlanceModifier) {
+    val style = LocalWidgetStyle.current
+    val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
+    val color = dayColor(day)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(
+                // 今天整列用卡片色標示。
+                if (isToday) {
+                    GlanceModifier.cardBackground(style)
+                } else {
+                    GlanceModifier
+                },
+            )
+            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .clickable(openInCalendar(openDay(day.date))),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(
+            modifier = GlanceModifier.width(44.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                text = day.date.dayOfWeek.getDisplayName(DayTextStyle.SHORT, Locale.getDefault()),
+                style = style.text(10, color, FontWeight.Medium, TextAlign.Center),
+            )
+            ExpressiveText(
+                text = day.date.dayOfMonth.toString(),
+                size = 18,
+                color = if (isToday) style.colors.primary else color,
+            )
+        }
+        Column(modifier = GlanceModifier.defaultWeight().padding(start = 6.dp)) {
+            val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label
+            // 假日一定顯示；農曆、節氣只在還有空行時顯示，不擠掉行程。
+            val showLabel = label != null && (day.holiday != null || day.events.size < lines)
+            if (showLabel && label != null) {
+                Text(
+                    text = label,
+                    maxLines = 1,
+                    style = style.text(
+                        11,
+                        if (day.holiday == HolidayKind.DAY_OFF) style.colors.sunday else style.colors.onSurfaceVariant,
+                    ),
+                )
+            }
+            val room = (if (showLabel) lines - 1 else lines).coerceAtLeast(1)
+            val shown = day.events.take(room)
+            for (event in shown) {
+                // 今天已經結束的行程：色條轉灰、文字用次要色。
+                val past = !event.allDay && event.end <= now
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = GlanceModifier
+                            .width(3.dp)
+                            .height(12.dp)
+                            .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
+                            .cornerRadius(2.dp),
+                    ) {}
+                    val title = TitleShortener.compact(event.title)
                     Text(
-                        text = day.date.dayOfWeek.getDisplayName(DayTextStyle.SHORT, Locale.getDefault()),
-                        style = style.text(10, color, FontWeight.Medium, TextAlign.Center),
-                    )
-                    ExpressiveText(
-                        text = day.date.dayOfMonth.toString(),
-                        size = 18,
-                        color = if (isToday) style.colors.primary else color,
+                        text = if (event.allDay) title else "${timeFormat.format(Date(event.begin))}  $title",
+                        maxLines = 1,
+                        modifier = GlanceModifier.padding(start = 5.dp),
+                        style = style.text(12, if (past) style.colors.onSurfaceVariant else style.colors.onSurface),
                     )
                 }
-                Column(modifier = GlanceModifier.defaultWeight().padding(start = 6.dp)) {
-                    val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label
-                    // 假日一定顯示；農曆、節氣只在還有空行時顯示，不擠掉行程。
-                    val showLabel = label != null && (day.holiday != null || day.events.size < lines)
-                    if (showLabel && label != null) {
-                        Text(
-                            text = label,
-                            maxLines = 1,
-                            style = style.text(
-                                11,
-                                if (day.holiday == HolidayKind.DAY_OFF) style.colors.sunday else style.colors.onSurfaceVariant,
-                            ),
-                        )
-                    }
-                    val room = (if (showLabel) lines - 1 else lines).coerceAtLeast(1)
-                    val shown = day.events.take(room)
-                    for (event in shown) {
-                        // 今天已經結束的行程：色條轉灰、文字用次要色。
-                        val past = !event.allDay && event.end <= state.now
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Box(
-                                modifier = GlanceModifier
-                                    .width(3.dp)
-                                    .height(12.dp)
-                                    .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
-                                    .cornerRadius(2.dp),
-                            ) {}
-                            val title = TitleShortener.compact(event.title)
-                            Text(
-                                text = if (event.allDay) title else "${timeFormat.format(Date(event.begin))}  $title",
-                                maxLines = 1,
-                                modifier = GlanceModifier.padding(start = 5.dp),
-                                style = style.text(12, if (past) style.colors.onSurfaceVariant else style.colors.onSurface),
-                            )
-                        }
-                    }
-                    val hidden = day.more + (day.events.size - shown.size)
-                    if (hidden > 0) {
-                        Text(text = "+$hidden", style = style.text(10, style.colors.onSurfaceVariant))
-                    }
-                }
+            }
+            val hidden = day.more + (day.events.size - shown.size)
+            if (hidden > 0) {
+                Text(text = "+$hidden", style = style.text(10, style.colors.onSurfaceVariant))
             }
         }
     }
@@ -311,7 +315,7 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
 
 /** 日期的顏色：放假日、週日用假日色，週六用週六色；補班日即使是週末也用一般色。 */
 @Composable
-private fun dayColor(day: WeekDay): ColorProvider {
+internal fun dayColor(day: WeekDay): ColorProvider {
     val colors = LocalWidgetStyle.current.colors
     return when {
         day.holiday == HolidayKind.DAY_OFF -> colors.sunday

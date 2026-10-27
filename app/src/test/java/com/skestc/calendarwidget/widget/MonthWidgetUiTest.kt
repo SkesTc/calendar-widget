@@ -152,6 +152,16 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun narrowerMonthStillFitsSearch() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(260.dp, 320.dp))
+        provideComposable { WidgetFrame { MonthContent(october()) } }
+        onNode(hasContentDescriptionEqualTo("搜尋行程")).assertExists()
+        // 窄的時候標題只寫月份。
+        onNode(hasTextEqualTo("10月")).assertExists()
+    }
+
+    @Test
     fun otherMonthShowsBackToTodayButton() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))
