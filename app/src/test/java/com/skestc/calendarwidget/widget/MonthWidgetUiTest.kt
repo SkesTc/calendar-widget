@@ -169,6 +169,16 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun schoolWeekNumbersAppearBesideEachWeek() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 320.dp))
+        val state = (october() as MonthState.Loaded).copy(schoolStart = LocalDate.of(2026, 9, 1))
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        // 10/26 那一週是第 9 週：「9」出現兩次（10/9 的日期與週次）。
+        onAllNodes(hasTextEqualTo("9")).assertCountEquals(2)
+    }
+
+    @Test
     fun otherMonthShowsBackToTodayButton() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))

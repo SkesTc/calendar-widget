@@ -59,6 +59,7 @@ import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.EventStatus
 import com.skestc.calendarwidget.data.MonthLayout
+import com.skestc.calendarwidget.data.SchoolWeeks
 import com.skestc.calendarwidget.data.WeekBuilder
 import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.settings.AgendaLayout
@@ -92,6 +93,8 @@ internal sealed interface AgendaState {
         val now: Long = System.currentTimeMillis(),
         /** 「每日」版面：每天一列（前 7 天一定列出，之後只列有行程或假日的日子）。 */
         val dayRows: List<WeekDay> = emptyList(),
+        /** 學期週次（有設定開學日時）。 */
+        val schoolWeek: Int? = null,
     ) : AgendaState
 }
 
@@ -151,6 +154,7 @@ class AgendaWidget : GlanceAppWidget() {
             days = settings.agendaDays,
             rows = AgendaFormatter(context).rows(events, today, labeler),
             lunarToday = labeler?.labelOf(today)?.long,
+            schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context)),
             layout = settings.agendaLayout,
             now = now,
             dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
@@ -175,7 +179,7 @@ internal fun AgendaContent(state: AgendaState) {
         when (state) {
             AgendaState.NoPermission -> PermissionPrompt()
             is AgendaState.Loaded -> {
-                DateHeader(state.today, state.lunarToday)
+                DateHeader(state.today, state.lunarToday, state.schoolWeek)
                 Spacer(GlanceModifier.height(8.dp))
                 if (LocalSize.current.width < 180.dp) {
                     NextEventOnly(state.rows, state.days)
@@ -192,7 +196,7 @@ internal fun AgendaContent(state: AgendaState) {
 }
 
 @Composable
-private fun DateHeader(today: LocalDate, lunar: String?) {
+private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     // 點日期（左上角）開啟 Google 日曆的今天；沒裝 Google 日曆時用系統預設的日曆 App。
@@ -214,7 +218,11 @@ private fun DateHeader(today: LocalDate, lunar: String?) {
                 style = style.text(16, style.colors.onSurface, FontWeight.Bold),
             )
             Text(
-                text = listOfNotNull(DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today), lunar)
+                text = listOfNotNull(
+                    DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today),
+                    schoolWeek?.let { glanceString(R.string.school_week, it) },
+                    lunar,
+                )
                     .joinToString(" · "),
                 maxLines = 1,
                 style = style.text(12, style.colors.onSurfaceVariant),

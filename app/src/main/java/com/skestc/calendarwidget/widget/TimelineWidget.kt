@@ -45,6 +45,7 @@ import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.EventStatus
 import com.skestc.calendarwidget.data.HolidayKind
+import com.skestc.calendarwidget.data.SchoolWeeks
 import com.skestc.calendarwidget.data.Timeline
 import com.skestc.calendarwidget.data.TimelineBuilder
 import com.skestc.calendarwidget.data.TimelineItem
@@ -126,7 +127,8 @@ class TimelineWidget : GlanceAppWidget() {
 
         val holidays = timeline.allDay.filter { it.holiday == HolidayKind.DAY_OFF }.map { it.title }
         val lunar = if (settings.showLunar) DayLabeler(IcuLunarSource()).labelOf(today).long else null
-        val note = (listOfNotNull(lunar) + holidays).joinToString(" · ").ifEmpty { null }
+        val schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context))?.let { context.getString(R.string.school_week, it) }
+        val note = (listOfNotNull(schoolWeek, lunar) + holidays).joinToString(" · ").ifEmpty { null }
         return TimelineState.Loaded(today, note, timeline, builder.tomorrowPreview(events, today, timeline))
     }
 }

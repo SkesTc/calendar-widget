@@ -62,6 +62,15 @@ class AgendaWidgetUiTest {
     }
 
     @Test
+    fun headerShowsSchoolWeek() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(250.dp, 250.dp))
+        val state = (loaded() as AgendaState.Loaded).copy(schoolWeek = 9)
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasText("第9週")).assertExists()
+    }
+
+    @Test
     fun daysLayoutSkipsEmptyDaysAfterTheFirstWeek() {
         val rows = dayRowsOf(listOf(timed(3, "遠足", at(8, date = today.plusDays(20)), at(9, date = today.plusDays(20)))), today, 31, null)
         assertEquals(8, rows.size)

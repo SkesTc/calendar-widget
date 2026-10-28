@@ -55,6 +55,7 @@ import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthLayout
+import com.skestc.calendarwidget.data.SchoolWeeks
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
@@ -87,6 +88,8 @@ internal sealed interface MonthState {
         val now: Long = System.currentTimeMillis(),
         /** 月曆格子範圍內的所有事件：點日期時直接從這裡挑出當天行程，不必重新查詢。 */
         val events: List<CalendarEvent> = emptyList(),
+        /** 有設定開學日時，每一週左邊標上學期週次。 */
+        val schoolStart: LocalDate? = null,
     ) : MonthState {
         /** 套用使用者點選的日期（不在這個月的格子裡時改選今天或 1 號）。 */
         fun withSelection(picked: LocalDate?): Loaded {
@@ -123,13 +126,13 @@ class MonthWidget : GlanceAppWidget() {
         val initialSettings = WidgetSettings.from(
             getAppWidgetState(context, PreferencesGlanceStateDefinition, id),
         )
-        val initial = MonthCache.get(initialSettings.monthKey()) { load(repository, it) }
+        val initial = MonthCache.get(initialSettings.monthKey()) { load(context, repository, it) }
 
         provideContent {
             val settings = WidgetSettings.from(currentState<Preferences>())
             // 點日期只改選取，不重新查詢：用已載入的整月事件挑出當天行程，畫面馬上更新。
             val state = rememberWidgetData(settings.monthKey(), initialSettings.monthKey(), initial) { key ->
-                MonthCache.get(key) { load(repository, it) }
+                MonthCache.get(key) { load(context, repository, it) }
             }
             val shown = (state as? MonthState.Loaded)
                 ?.withSelection(settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
@@ -144,10 +147,10 @@ class MonthWidget : GlanceAppWidget() {
         }
     }
 
-    private suspend fun load(repository: CalendarRepository, settings: WidgetSettings): MonthState =
-        withContext(Dispatchers.IO) { loadNow(repository, settings) }
+    private suspend fun load(context: Context, repository: CalendarRepository, settings: WidgetSettings): MonthState =
+        withContext(Dispatchers.IO) { loadNow(context, repository, settings) }
 
-    private suspend fun loadNow(repository: CalendarRepository, settings: WidgetSettings): MonthState {
+    private suspend fun loadNow(context: Context, repository: CalendarRepository, settings: WidgetSettings): MonthState {
         if (!repository.hasPermission()) return MonthState.NoPermission
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
@@ -166,6 +169,7 @@ class MonthWidget : GlanceAppWidget() {
             selected = selected,
             selectedEvents = builder.eventsOn(events, selected),
             events = events,
+            schoolStart = SchoolWeeks.start(context),
         )
     }
 }
@@ -250,9 +254,16 @@ private fun ColumnScope.MonthGrid(
     headerWidthDp: Float = LocalSize.current.width.value,
 ) {
     MonthHeader(state.data.month, state.monthOffset, headerWidthDp)
-    WeekdayRow(state.data.firstDayOfWeek, compact)
+    // 有設定開學日、而且格子夠大時，每週最左邊多一欄週次。
+    val weekNumbers = !compact && state.schoolStart != null
+    WeekdayRow(state.data.firstDayOfWeek, compact, weekNumbers)
     for (week in state.data.weeks) {
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+            if (weekNumbers) {
+                // 用這一列的週四判斷，週日或週一開頭的月曆都對得上同一週。
+                val number = SchoolWeeks.weekOf(week[3].date, state.schoolStart)
+                WeekNumberCell(number, GlanceModifier.width(WEEK_NUMBER_WIDTH).fillMaxHeight())
+            }
             for (day in week) {
                 DayCellView(
                     day = day,
@@ -333,11 +344,28 @@ private fun NavIconButton(icon: Int, description: String, delta: Int, size: Dp) 
     }
 }
 
+private val WEEK_NUMBER_WIDTH = 16.dp
+
+/** 學期週次（開學前或太久以後留白）。 */
 @Composable
-private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean) {
+private fun WeekNumberCell(number: Int?, modifier: GlanceModifier) {
+    val style = LocalWidgetStyle.current
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        if (number != null) {
+            Text(
+                text = number.toString(),
+                style = style.text(9, style.colors.outline, FontWeight.Medium, TextAlign.Center),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WeekdayRow(firstDayOfWeek: DayOfWeek, compact: Boolean, weekNumbers: Boolean = false) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     Row(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 2.dp)) {
+        if (weekNumbers) Spacer(GlanceModifier.width(WEEK_NUMBER_WIDTH))
         for (i in 0 until 7) {
             val day = firstDayOfWeek.plus(i.toLong())
             Text(

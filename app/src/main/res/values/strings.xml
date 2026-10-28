@@ -162,6 +162,13 @@
     <string name="sample_online">Online</string>
     <string name="preview_weekday">Monday</string>
     <string name="preview_week_range">Oct 26 – Nov 1</string>
+    <string name="school_week">Week %1$d</string>
+    <string name="school_weeks_title">School weeks</string>
+    <string name="school_weeks_unset">Set the first day of term to show week numbers</string>
+    <string name="school_weeks_summary">Term started %1$s · this is week %2$d</string>
+    <string name="school_weeks_set_only">Term starts %1$s</string>
+    <string name="school_weeks_off">Turn off</string>
+    <string name="school_weeks_pick">First day of term</string>
     <string name="preview_subtitle">Oct 2026</string>
     <string name="preview_today_weekday">Today · Monday</string>
     <string name="preview_month_title">October 2026</string>

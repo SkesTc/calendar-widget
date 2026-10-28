@@ -1,5 +1,19 @@
 package com.skestc.calendarwidget.ui
 
+import android.text.format.DateFormat
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.rememberCoroutineScope
+import com.skestc.calendarwidget.data.SchoolWeeks
+import com.skestc.calendarwidget.widget.RefreshAction
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -253,3 +267,62 @@ fun UpdateHelpRow() {
         )
     }
 }
+
+/**
+ * 「學期週次」：選開學日後，月曆、一週、行程清單與時間軸都會顯示第幾週；可以關掉。
+ * 所有小工具共用，改完立刻重新整理。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SchoolWeeksRow() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var start by remember { mutableStateOf(SchoolWeeks.start(context)) }
+    var picking by remember { mutableStateOf(false) }
+    val today = LocalDate.now()
+    val dateText = start?.let {
+        DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(Locale.getDefault(), "yMd"), Locale.getDefault()).format(it)
+    }
+    val week = SchoolWeeks.weekOf(today, start)
+    SettingsRow(
+        icon = R.drawable.ic_event,
+        title = stringResource(R.string.school_weeks_title),
+        subtitle = when {
+            dateText == null -> stringResource(R.string.school_weeks_unset)
+            week != null -> stringResource(R.string.school_weeks_summary, dateText, week)
+            else -> stringResource(R.string.school_weeks_set_only, dateText)
+        },
+        onClick = { picking = true },
+    )
+
+    fun save(date: LocalDate?) {
+        start = date
+        SchoolWeeks.setStart(context, date)
+        scope.launch { RefreshAction.refreshEverything(context.applicationContext) }
+    }
+
+    if (picking) {
+        // DatePicker 用 UTC 毫秒表示日期。
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = (start ?: today).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { picking = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    picking = false
+                    state.selectedDateMillis?.let { save(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate()) }
+                }) { Text(stringResource(R.string.done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    picking = false
+                    save(null)
+                }) { Text(stringResource(R.string.school_weeks_off)) }
+            },
+        ) {
+            DatePicker(state = state, title = { Text(stringResource(R.string.school_weeks_pick), modifier = Modifier.padding(start = 24.dp, top = 16.dp)) })
+        }
+    }
+}
+

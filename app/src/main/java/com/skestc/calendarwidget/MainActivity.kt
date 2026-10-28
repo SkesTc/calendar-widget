@@ -69,6 +69,7 @@ import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.ui.EventEditorRow
 import com.skestc.calendarwidget.ui.GroupDivider
 import com.skestc.calendarwidget.ui.LongEventsRow
+import com.skestc.calendarwidget.ui.SchoolWeeksRow
 import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.SectionTitle
 import com.skestc.calendarwidget.ui.SettingsGroup
@@ -168,6 +169,8 @@ private fun HomeScreen() {
                     EventEditorRow()
                     GroupDivider()
                     LongEventsRow()
+                    GroupDivider()
+                    SchoolWeeksRow()
                     GroupDivider()
                     UpdateHelpRow()
                 }

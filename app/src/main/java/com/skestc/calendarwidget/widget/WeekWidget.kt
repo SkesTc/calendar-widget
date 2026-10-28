@@ -47,6 +47,7 @@ import com.skestc.calendarwidget.data.HolidayKind
 import com.skestc.calendarwidget.data.TitleShortener
 import com.skestc.calendarwidget.data.WeekBuilder
 import com.skestc.calendarwidget.data.MonthLayout
+import com.skestc.calendarwidget.data.SchoolWeeks
 import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.data.WeekLayout
 import com.skestc.calendarwidget.lunar.DayLabeler
@@ -75,6 +76,8 @@ internal sealed interface WeekState {
         val days: List<WeekDay>,
         /** 已結束（end ≤ now）的行程用淡色顯示。 */
         val now: Long = System.currentTimeMillis(),
+        /** 學期週次（有設定開學日時），顯示在標題列。 */
+        val schoolWeek: Int? = null,
     ) : WeekState
 }
 
@@ -127,7 +130,9 @@ class WeekWidget : GlanceAppWidget() {
         // 下一個行程結束時重畫，讓它變成淡色。
         events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
             ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
-        return WeekState.Loaded(today, WeekBuilder(zone).build(events, first, 7, MAX_PER_DAY, labeler), now)
+        // 7 天跨兩週時用中間那天（第 4 天）的週次。
+        val schoolWeek = SchoolWeeks.weekOf(first.plusDays(3), SchoolWeeks.start(context))
+        return WeekState.Loaded(today, WeekBuilder(zone).build(events, first, 7, MAX_PER_DAY, labeler), now, schoolWeek)
     }
 }
 
@@ -205,7 +210,10 @@ private fun WeekHeader(state: WeekState.Loaded) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     val format = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale)
-    val range = "${format.format(state.days.first().date)} – ${format.format(state.days.last().date)}"
+    val range = listOfNotNull(
+        state.schoolWeek?.let { glanceString(R.string.school_week, it) },
+        "${format.format(state.days.first().date)} – ${format.format(state.days.last().date)}",
+    ).joinToString(" · ")
     // 跟月曆一樣：依寬度（保守估計）扣掉日期範圍與「＋」後剩下的空間，決定按鈕分開放或收進「⋯」。
     val titleSp = 14f * style.textScale * LocalContext.current.resources.configuration.fontScale
     val spare = LocalSize.current.width.value * MonthLayout.SAFETY - 16f - MonthLayout.textWidthDp(range, titleSp) - 34f
