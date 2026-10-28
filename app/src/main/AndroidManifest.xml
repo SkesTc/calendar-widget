@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 讀取手機上已同步的 Google 日曆（不需要 OAuth） -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <!-- 開機後重新排好午夜換日的鬧鐘 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- 列出能新增行程的日曆 App，讓使用者選「＋」要開哪一個（Android 11+ 套件可見性） -->
+    <queries>
+        <!-- Google 日曆：點日期、「＋」預設都優先用它 -->
+        <package android:name="com.google.android.calendar" />
+        <intent>
+            <action android:name="android.intent.action.INSERT" />
+            <data android:mimeType="vnd.android.cursor.item/event" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSERT" />
+            <data android:mimeType="vnd.android.cursor.dir/event" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.INSERT" />
+            <data android:scheme="content" android:host="com.android.calendar" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.CalendarWidget">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- 從 widget 開啟日曆的透明中繼頁，回來時立刻更新 widget -->
+        <activity
+            android:name=".widget.CalendarLaunchActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.CalendarWidget.Transparent" />
+
+        <activity
+            android:name=".ui.WidgetMenuActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@style/Theme.CalendarWidget.Transparent" />
+
+        <activity
+            android:name=".ui.SearchActivity"
+            android:exported="false"
+            android:label="@string/search_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.LongEventsActivity"
+            android:exported="false"
+            android:label="@string/long_events_title" />
+
+        <activity
+            android:name=".config.WidgetConfigActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".widget.AgendaWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/agenda_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.MonthWidgetReceiver"
+            android:exported="true"
+            android:label="@string/month_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/month_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimelineWidgetReceiver"
+            android:exported="true"
+            android:label="@string/timeline_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/timeline_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.NextEventWidgetReceiver"
+            android:exported="true"
+            android:label="@string/next_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.WeekWidgetReceiver"
+            android:exported="true"
+            android:label="@string/week_widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/week_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.TimeChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.LOCALE_CHANGED" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".widget.DayChangeReceiver"
+            android:exported="false" />
+    </application>
+</manifest>

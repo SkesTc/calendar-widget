@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小工具挑選畫面的預覽配色（深色） -->
+<resources>
+    <color name="preview_bg">#1B1C1F</color>
+    <color name="preview_card">#2F3542</color>
+    <color name="preview_on_card">#E2E7F5</color>
+    <color name="preview_primary">#9DC1FF</color>
+    <color name="preview_on_primary">#002F68</color>
+    <color name="preview_on_surface">#E3E2E6</color>
+    <color name="preview_variant">#C1C6D3</color>
+    <color name="preview_outline">#7C818C</color>
+    <color name="preview_sunday">#FF8A80</color>
+</resources>

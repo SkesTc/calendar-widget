@@ -1,0 +1,116 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+# 同一個分支／PR 又推了新版時，取消還在跑的舊版，不用排隊等（tag 的發佈不取消）。
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  # 單元測試和打包分成兩個 job 同時跑，總時間約等於較慢的那一個。
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      # PR 上也寫入快取（預設只有 main 會寫），下一次推送就不用重新下載所有套件。
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: false
+
+      # Robolectric 第一次會下載上百 MB 的 Android 執行環境，放在 ~/.m2，另外快取。
+      - uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+
+      - name: Unit tests
+        run: ./gradlew testDebugUnitTest
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          cache-read-only: false
+
+      # 一次 Gradle 呼叫做完 lint、debug APK 與 release（不簽署，只確認 R8 縮減／混淆後能正常建置），
+      # 省掉每一步重新設定專案的時間。tag 的發佈由下面的 release job 建置。
+      - name: Lint and build
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            ./gradlew lintDebug assembleDebug
+          else
+            ./gradlew lintDebug assembleDebug assembleRelease
+          fi
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.html
+          if-no-files-found: ignore
+
+  # 推送 v1.0.0 這類 tag 時，用 repo secrets 裡的金鑰產生要上傳 Play 的 AAB。
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v5
+
+      - name: Decode keystore
+        env:
+          CW_KEYSTORE_BASE64: ${{ secrets.CW_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$CW_KEYSTORE_BASE64" ]; then
+            echo "::error::缺少 CW_KEYSTORE_BASE64 secret，請見 docs/release.md"
+            exit 1
+          fi
+          echo "$CW_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/upload.jks"
+          echo "CW_KEYSTORE_PATH=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed AAB
+        env:
+          CW_KEYSTORE_PASSWORD: ${{ secrets.CW_KEYSTORE_PASSWORD }}
+          CW_KEY_ALIAS: ${{ secrets.CW_KEY_ALIAS }}
+          CW_KEY_PASSWORD: ${{ secrets.CW_KEY_PASSWORD }}
+          # 每次上傳 Play 都要比上一次大；用 GitHub Actions 的執行編號。
+          CW_VERSION_CODE: ${{ github.run_number }}
+        run: ./gradlew bundleRelease
+
+      - uses: actions/upload-artifact@v5
+        with:
+          name: app-release-aab
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt

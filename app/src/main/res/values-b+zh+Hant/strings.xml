@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 繁體中文（台灣、香港等 zh-Hant 語系）（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->
+<resources>
+    <string name="app_name">行事曆小工具</string>
+    <string name="widget_name">行程清單</string>
+    <string name="widget_description">顯示 Google 日曆接下來的行程</string>
+    <string name="month_widget_name">月曆</string>
+    <string name="month_widget_description">整個月的月曆，有行程的日子會標上彩色圓點</string>
+    <string name="timeline_widget_name">今日時間軸</string>
+    <string name="timeline_widget_description">今天的行程依時間排列，標出現在的位置和空檔</string>
+    <string name="next_widget_name">下一個行程</string>
+    <string name="next_widget_description">極簡小卡，只顯示進行中或下一個行程</string>
+    <string name="week_widget_name">一週</string>
+    <string name="week_widget_description">從今天起 7 天並排，每天的行程一目了然</string>
+    <string name="permission_rationale">需要讀取日曆的權限，才能顯示手機上已同步的 Google 日曆行程。</string>
+    <string name="grant_permission">授權讀取日曆</string>
+    <string name="add_widgets_title">加入桌面小工具</string>
+    <string name="pin_agenda">行程清單</string>
+    <string name="pin_month">月曆</string>
+    <string name="pin_timeline">時間軸</string>
+    <string name="pin_next">下一個行程</string>
+    <string name="pin_week">一週</string>
+    <string name="synced_calendars_count">已同步的日曆（%1$d）</string>
+    <string name="calendar_not_synced">未同步</string>
+    <string name="section_settings">設定</string>
+    <string name="home_today_count">今天有 %1$d 個行程</string>
+    <string name="home_today_none">今天沒有行程</string>
+    <string name="home_more">還有 %1$d 個</string>
+    <string name="pin_no_response">按了沒反應？手動加入</string>
+    <string name="pin_manual_title">從桌面加入小工具</string>
+    <string name="pin_manual_steps">1. 回到桌面，長按空白處\n2. 點「小工具」（有些手機在「桌面設定」裡）\n3. 找到「行事曆小工具」，長按拖到桌面\n\n小米、OPPO 等手機要從 App 加入，需要先開權限：設定 → 應用程式 → 行事曆小工具 → 其他權限 → 允許「桌面捷徑」。</string>
+    <string name="pin_go_home">回到桌面</string>
+    <string name="onboarding_step">第 %1$d 步，共 %2$d 步</string>
+    <string name="onboarding_welcome_title">歡迎使用行事曆小工具</string>
+    <string name="onboarding_widget_body">點下面任一種小工具，桌面會詢問要放在哪裡。之後也可以在桌面長按空白處 →「小工具」加入。</string>
+    <string name="onboarding_holiday_done">已經訂閱節慶假日日曆，放假日與補班日會標在小工具上。</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_back">上一步</string>
+    <string name="onboarding_skip">略過</string>
+    <string name="onboarding_finish">開始使用</string>
+    <string name="long_events_row_hint">隱藏佔滿小工具的長期、重複行程</string>
+    <string name="update_help_row_hint">依手機品牌的省電設定說明</string>
+    <string name="widget_desc_agenda">依日期列出接下來的行程</string>
+    <string name="widget_desc_month">整月一覽，點日期看當天行程</string>
+    <string name="widget_desc_week">七天行程一覽</string>
+    <string name="widget_desc_timeline">今天的時間軸與空檔</string>
+    <string name="widget_desc_next">只顯示下一個行程</string>
+    <string name="no_calendars">找不到日曆。請確認手機的「設定 → 帳戶 → Google」已開啟日曆同步。</string>
+    <string name="holiday_hint_title">顯示國定假日與補班日</string>
+    <string name="holiday_hint_body">在電腦版 Google 日曆：設定 → 新增日曆 → 瀏覽感興趣的日曆 → 節慶假日 → 勾選「台灣的節慶假日」。同步到手機後，月曆會把放假日標成紅字、補班日標上「補班」。</string>
+    <string name="long_events_title">長期行程</string>
+    <string name="long_events_manage_link">隱藏長期行程…</string>
+    <string name="section_editor">「＋」新增行程使用</string>
+    <string name="editor_hint">所有小工具共用</string>
+    <string name="editor_default">Google 日曆（沒有時用系統預設）</string>
+    <string name="editor_ask">每次詢問</string>
+    <string name="editor_chooser_title">用哪個 App 新增行程</string>
+    <string name="widget_settings">小工具設定</string>
+    <string name="more_actions">更多</string>
+    <string name="refresh">重新整理</string>
+    <string name="refreshed">已重新整理小工具</string>
+    <string name="add_event">新增行程</string>
+    <string name="search_title">搜尋行程</string>
+    <string name="search_hint">輸入關鍵字</string>
+    <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。</string>
+    <string name="search_none">找不到符合「%1$s」的行程</string>
+    <string name="search_upcoming">即將到來（%1$d）</string>
+    <string name="search_past">過去（%1$d）</string>
+    <string name="search_range_all">全部</string>
+    <string name="search_range_upcoming">即將到來</string>
+    <string name="search_range_week">本週</string>
+    <string name="search_range_month">本月</string>
+    <string name="search_all_calendars">所有日曆</string>
+    <string name="search_recent">最近搜尋</string>
+    <string name="search_recent_clear">清除</string>
+    <string name="back">返回</string>
+    <string name="google_calendar">Google 日曆</string>
+    <string name="editor_fallback">%1$s 無法開啟，已改用系統預設的日曆 App</string>
+    <string name="previous_month">上個月</string>
+    <string name="next_month">下個月</string>
+    <string name="editor_change">更改</string>
+    <string name="long_events_hidden_count">已隱藏 %1$d 個</string>
+    <string name="long_events_description">跨 3 天以上、或重複 3 次以上的行程（一個月前到三個月後）。隱藏後所有小工具都不再顯示；重複的行程每一次都會一起隱藏。</string>
+    <string name="long_events_none">沒有跨很多天或重複的行程。</string>
+    <string name="long_event_recurring">%1$s – %2$s · 重複 %3$d 次</string>
+    <string name="long_event_range">%1$s – %2$s · %3$d 天</string>
+    <string name="long_event_out_of_range">已隱藏 · 不在目前查詢的範圍</string>
+    <string name="long_event_hide">隱藏</string>
+    <string name="update_help_title">小工具沒有自動更新？</string>
+    <string name="update_help_body">部分手機的省電功能會擋住背景更新，導致換日、行程變動後小工具沒跟著變。請依下列步驟允許本 App 在背景執行：</string>
+    <string name="open_app_info">開啟應用程式資訊</string>
+    <string name="config_title">小工具設定</string>
+    <string name="section_theme">主題</string>
+    <string name="section_opacity">背景不透明度 %1$d%%</string>
+    <string name="section_corner">圓角</string>
+    <string name="section_text_size">文字大小</string>
+    <string name="section_font">字型</string>
+    <string name="show_lunar_title">顯示農曆、節氣與傳統節日</string>
+    <string name="show_lunar_subtitle">國定假日與補班日來自 Google 日曆的「台灣的節慶假日」</string>
+    <string name="section_days">顯示天數</string>
+    <string name="section_agenda_layout">版面</string>
+    <string name="group_content">內容</string>
+    <string name="group_appearance">外觀</string>
+    <string name="group_advanced">進階</string>
+    <string name="section_week_start">一週從哪天開始</string>
+    <string name="week_start_today">今天</string>
+    <string name="week_start_monday">週一</string>
+    <string name="week_start_sunday">週日</string>
+    <string name="section_header_buttons">標題列按鈕</string>
+    <string name="header_buttons_hint">「＋」一定會顯示。放不下的按鈕收進「⋯」；勾得越少，按鈕和標題越寬鬆。</string>
+    <string name="apply_to_all">套用到所有小工具</string>
+    <string name="apply_to_all_body">要把這些日曆、外觀與按鈕設定套用到桌面上所有的小工具嗎？各小工具目前看的月份與選取的日期不受影響。</string>
+    <string name="apply_to_all_confirm">套用</string>
+    <string name="agenda_layout_list">清單</string>
+    <string name="agenda_layout_timeline">時間軸</string>
+    <string name="agenda_layout_days">每日</string>
+    <string name="months_option">%1$d 個月</string>
+    <string name="section_calendars">顯示的日曆</string>
+    <string name="account_calendars_shown">顯示 %1$d／%2$d 個日曆</string>
+    <string name="config_no_permission">尚未授權讀取日曆，請先開啟 App 完成授權。</string>
+    <string name="done">完成</string>
+    <string name="theme_dynamic">Material You</string>
+    <string name="theme_amoled">AMOLED 純黑</string>
+    <string name="theme_morandi">莫蘭迪</string>
+    <string name="theme_journal">手帳</string>
+    <string name="theme_glass">毛玻璃</string>
+    <string name="theme_custom">自訂</string>
+    <string name="section_custom_colors">自訂顏色</string>
+    <string name="custom_target_accent">主色</string>
+    <string name="custom_target_background">背景</string>
+    <string name="custom_hue">色相</string>
+    <string name="custom_saturation">飽和度</string>
+    <string name="custom_lightness">亮度</string>
+    <string name="custom_contrast_note">文字顏色會自動調整，確保看得清楚。</string>
+    <string name="font_theme">跟隨主題</string>
+    <string name="font_sans">無襯線</string>
+    <string name="font_serif">襯線</string>
+    <string name="font_mono">等寬</string>
+    <string name="corner_system">系統</string>
+    <string name="corner_square">直角</string>
+    <string name="size_small">小</string>
+    <string name="size_medium">中</string>
+    <string name="size_large">大</string>
+    <string name="size_xlarge">特大</string>
+    <string name="today_prefix">今天 · %1$s</string>
+    <string name="tomorrow_prefix">明天 · %1$s</string>
+    <string name="today_word">今天</string>
+    <string name="tomorrow_word">明天</string>
+    <string name="all_day">全天</string>
+    <string name="day_all_day">%1$s · 全天</string>
+    <string name="untitled">(無標題)</string>
+    <string name="agenda_empty">接下來 %1$d 天沒有行程 🎉</string>
+    <string name="tap_to_grant">點此授權讀取日曆</string>
+    <string name="makeup_workday">補班</string>
+    <string name="month_open_day">開啟 ›</string>
+    <string name="month_day_empty">沒有行程</string>
+    <string name="in_progress_until">進行中 · 到 %1$s</string>
+    <string name="next_empty">接下來 7 天沒有行程</string>
+    <string name="countdown_until">%1$s後</string>
+    <string name="countdown_left">剩 %1$s</string>
+    <string name="about_duration">約 %1$s</string>
+    <string name="next_after">接著 %1$s  %2$s</string>
+    <string name="timeline_all_day">全天：%1$s</string>
+    <string name="list_separator">、</string>
+    <string name="now">現在</string>
+    <string name="free_time">空檔 %1$s</string>
+    <string name="timeline_no_more">今天沒有其他排定時間的行程</string>
+    <string name="timeline_empty">今天沒有行程 ☕</string>
+    <string name="duration_minutes">%1$d 分</string>
+    <string name="duration_hours">%1$d 小時</string>
+    <string name="duration_hours_minutes">%1$d 小時 %2$d 分</string>
+    <string name="sample_standup">晨會</string>
+    <string name="sample_lunch">午餐約</string>
+    <string name="sample_project">專案討論</string>
+    <string name="sample_dentist">牙醫</string>
+    <string name="sample_book_club">讀書會</string>
+    <string name="sample_gym">健身</string>
+    <string name="sample_dinner">聚餐</string>
+    <string name="sample_hike">爬山</string>
+    <string name="sample_room">會議室 A</string>
+    <string name="sample_online">線上</string>
+    <string name="preview_weekday">星期一</string>
+    <string name="preview_week_range">10月26日 – 11月1日</string>
+    <string name="school_week">第%1$d週</string>
+    <string name="school_weeks_title">學期週次</string>
+    <string name="school_weeks_unset">設定開學日，小工具會顯示第幾週</string>
+    <string name="school_weeks_summary">開學日 %1$s · 本週是第%2$d週</string>
+    <string name="school_weeks_set_only">開學日 %1$s</string>
+    <string name="school_weeks_off">不顯示</string>
+    <string name="school_weeks_pick">選擇開學日</string>
+    <string name="preview_subtitle">九月十七</string>
+    <string name="preview_today_weekday">今天 · 星期一</string>
+    <string name="preview_month_title">2026年10月</string>
+    <string name="preview_gap">空檔 2 小時</string>
+    <string name="preview_next_when">今天 14:00</string>
+    <string name="preview_standup_detail">09:30 – 10:00 · 會議室 A</string>
+    <string name="preview_project_detail">14:00 – 15:00 · 線上</string>
+    <string name="wd_sun">日</string>
+    <string name="wd_mon">一</string>
+    <string name="wd_tue">二</string>
+    <string name="wd_wed">三</string>
+    <string name="wd_thu">四</string>
+    <string name="wd_fri">五</string>
+    <string name="wd_sat">六</string>
+    <string-array name="tips_xiaomi">
+        <item>應用程式資訊 → 開啟「自啟動」</item>
+        <item>應用程式資訊 → 省電策略 → 選「無限制」</item>
+        <item>最近使用的 App 畫面中，把本 App 往下拉鎖定，避免被一鍵清除</item>
+    </string-array>
+    <string-array name="tips_samsung">
+        <item>應用程式資訊 → 電池 → 選「不受限制」</item>
+        <item>設定 → 電池 → 背景使用限制：確認本 App 不在「睡眠中」或「深度睡眠中」的應用程式</item>
+    </string-array>
+    <string-array name="tips_oppo">
+        <item>應用程式資訊 → 電池使用 → 開啟「允許背景活動」與「允許自動啟動」</item>
+    </string-array>
+    <string-array name="tips_vivo">
+        <item>i 管家 → 應用程式管理 → 自啟動管理：允許本 App</item>
+        <item>設定 → 電池 → 背景耗電管理：允許本 App 在背景執行</item>
+    </string-array>
+    <string-array name="tips_huawei">
+        <item>設定 → 電池 → 應用程式啟動管理：本 App 改成「手動管理」並全部開啟</item>
+    </string-array>
+    <string-array name="tips_asus">
+        <item>手機管家 → 自動啟動管理員：允許本 App</item>
+    </string-array>
+    <string-array name="tips_generic">
+        <item>應用程式資訊 → 電池 → 選「不受限制」（或關閉電池最佳化）</item>
+    </string-array>
+</resources>

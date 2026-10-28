@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 英文（預設語系）（由 scripts/gen_strings.py 產生，請改腳本後重新產生） -->
+<resources>
+    <string name="app_name">Calendar Widgets</string>
+    <string name="widget_name">Agenda</string>
+    <string name="widget_description">Upcoming events from your Google Calendar</string>
+    <string name="month_widget_name">Month</string>
+    <string name="month_widget_description">A full month with colored dots on busy days</string>
+    <string name="timeline_widget_name">Today timeline</string>
+    <string name="timeline_widget_description">Today\'s events in order, with now and free time marked</string>
+    <string name="next_widget_name">Next event</string>
+    <string name="next_widget_description">A tiny card with just your current or next event</string>
+    <string name="week_widget_name">Week</string>
+    <string name="week_widget_description">Seven days side by side, starting today</string>
+    <string name="permission_rationale">Calendar access is needed to show the Google Calendar events synced to this phone.</string>
+    <string name="grant_permission">Allow calendar access</string>
+    <string name="add_widgets_title">Add to home screen</string>
+    <string name="pin_agenda">Agenda</string>
+    <string name="pin_month">Month</string>
+    <string name="pin_timeline">Timeline</string>
+    <string name="pin_next">Next</string>
+    <string name="pin_week">Week</string>
+    <string name="synced_calendars_count">Synced calendars (%1$d)</string>
+    <string name="calendar_not_synced">Not synced</string>
+    <string name="section_settings">Settings</string>
+    <string name="home_today_count">Today: %1$d events</string>
+    <string name="home_today_none">No events today</string>
+    <string name="home_more">%1$d more</string>
+    <string name="pin_no_response">Nothing happened? Add it manually</string>
+    <string name="pin_manual_title">Add a widget from the home screen</string>
+    <string name="pin_manual_steps">1. Go to the home screen and long-press an empty spot\n2. Tap “Widgets”\n3. Find “Calendar Widgets” and drag one onto the home screen\n\nOn Xiaomi, OPPO and some other phones, adding from the app needs a permission: Settings → Apps → Calendar Widgets → Other permissions → allow “Home screen shortcuts”.</string>
+    <string name="pin_go_home">Go to home screen</string>
+    <string name="onboarding_step">Step %1$d of %2$d</string>
+    <string name="onboarding_welcome_title">Welcome</string>
+    <string name="onboarding_widget_body">Tap a widget below and your home screen will ask where to put it. You can also add one later: long-press an empty spot on the home screen → Widgets.</string>
+    <string name="onboarding_holiday_done">You\'re subscribed to a holidays calendar: days off and make-up workdays will be marked on the widgets.</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_finish">Get started</string>
+    <string name="long_events_row_hint">Hide long or repeating events from widgets</string>
+    <string name="update_help_row_hint">Battery settings for your phone</string>
+    <string name="widget_desc_agenda">Upcoming events by day, list or timeline</string>
+    <string name="widget_desc_month">The whole month; tap a day to see it</string>
+    <string name="widget_desc_week">Seven days at a glance</string>
+    <string name="widget_desc_timeline">Today on a timeline with free time</string>
+    <string name="widget_desc_next">Just the next event</string>
+    <string name="no_calendars">No calendars found. Make sure calendar sync is on in Settings → Accounts → Google.</string>
+    <string name="holiday_hint_title">Show public holidays</string>
+    <string name="holiday_hint_body">In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.</string>
+    <string name="long_events_title">Long events</string>
+    <string name="long_events_manage_link">Hide long events…</string>
+    <string name="section_editor">“+” opens</string>
+    <string name="editor_hint">Shared by all widgets</string>
+    <string name="editor_default">Google Calendar, else system default</string>
+    <string name="editor_ask">Ask every time</string>
+    <string name="editor_chooser_title">Add event with</string>
+    <string name="widget_settings">Widget settings</string>
+    <string name="more_actions">More</string>
+    <string name="refresh">Refresh</string>
+    <string name="refreshed">Widgets refreshed</string>
+    <string name="add_event">Add event</string>
+    <string name="search_title">Search events</string>
+    <string name="search_hint">Keyword</string>
+    <string name="search_intro">Search titles, locations and notes from a year ago to two years ahead. Tap a result to edit it.</string>
+    <string name="search_none">No events match “%1$s”</string>
+    <string name="search_upcoming">Upcoming (%1$d)</string>
+    <string name="search_past">Past (%1$d)</string>
+    <string name="search_range_all">All</string>
+    <string name="search_range_upcoming">Upcoming</string>
+    <string name="search_range_week">This week</string>
+    <string name="search_range_month">This month</string>
+    <string name="search_all_calendars">All calendars</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_recent_clear">Clear</string>
+    <string name="back">Back</string>
+    <string name="google_calendar">Google Calendar</string>
+    <string name="editor_fallback">%1$s couldn\'t open this, so the default calendar app was used</string>
+    <string name="previous_month">Previous month</string>
+    <string name="next_month">Next month</string>
+    <string name="editor_change">Change</string>
+    <string name="long_events_hidden_count">%1$d hidden</string>
+    <string name="long_events_description">Events lasting 3 days or more, or repeating 3 times or more, from a month ago to three months ahead. Hidden events disappear from every widget; every occurrence of a repeating event is hidden together.</string>
+    <string name="long_events_none">No long or repeating events.</string>
+    <string name="long_event_recurring">%1$s – %2$s · repeats %3$d times</string>
+    <string name="long_event_range">%1$s – %2$s · %3$d days</string>
+    <string name="long_event_out_of_range">Hidden · not in the current range</string>
+    <string name="long_event_hide">Hide</string>
+    <string name="update_help_title">Widgets not updating?</string>
+    <string name="update_help_body">Some phones block background updates to save battery, so widgets may miss the new day or event changes. Allow this app to run in the background:</string>
+    <string name="open_app_info">Open app info</string>
+    <string name="config_title">Widget settings</string>
+    <string name="section_theme">Theme</string>
+    <string name="section_opacity">Background opacity %1$d%%</string>
+    <string name="section_corner">Corners</string>
+    <string name="section_text_size">Text size</string>
+    <string name="section_font">Font</string>
+    <string name="show_lunar_title">Show lunar calendar and solar terms</string>
+    <string name="show_lunar_subtitle">Public holidays come from Google Calendar’s holiday calendars</string>
+    <string name="section_days">Days to show</string>
+    <string name="section_agenda_layout">Layout</string>
+    <string name="group_content">Content</string>
+    <string name="group_appearance">Appearance</string>
+    <string name="group_advanced">More</string>
+    <string name="section_week_start">Week starts on</string>
+    <string name="week_start_today">Today</string>
+    <string name="week_start_monday">Monday</string>
+    <string name="week_start_sunday">Sunday</string>
+    <string name="section_header_buttons">Header buttons</string>
+    <string name="header_buttons_hint">“+” is always shown. Buttons that don’t fit go into “⋯”; fewer buttons leave more room.</string>
+    <string name="apply_to_all">Apply to all widgets</string>
+    <string name="apply_to_all_body">Use these calendars, appearance and buttons for every widget on your home screen? Each widget keeps its own month and selected day.</string>
+    <string name="apply_to_all_confirm">Apply</string>
+    <string name="agenda_layout_list">List</string>
+    <string name="agenda_layout_timeline">Timeline</string>
+    <string name="agenda_layout_days">Days</string>
+    <string name="months_option">%1$d mo</string>
+    <string name="section_calendars">Calendars</string>
+    <string name="account_calendars_shown">%1$d of %2$d calendars shown</string>
+    <string name="config_no_permission">Calendar access hasn’t been allowed yet. Open the app to allow it first.</string>
+    <string name="done">Done</string>
+    <string name="theme_dynamic">Material You</string>
+    <string name="theme_amoled">AMOLED black</string>
+    <string name="theme_morandi">Morandi</string>
+    <string name="theme_journal">Journal</string>
+    <string name="theme_glass">Frosted glass</string>
+    <string name="theme_custom">Custom</string>
+    <string name="section_custom_colors">Custom colors</string>
+    <string name="custom_target_accent">Accent</string>
+    <string name="custom_target_background">Background</string>
+    <string name="custom_hue">Hue</string>
+    <string name="custom_saturation">Saturation</string>
+    <string name="custom_lightness">Lightness</string>
+    <string name="custom_contrast_note">Text colors adjust automatically so everything stays readable.</string>
+    <string name="font_theme">Theme</string>
+    <string name="font_sans">Sans</string>
+    <string name="font_serif">Serif</string>
+    <string name="font_mono">Mono</string>
+    <string name="corner_system">System</string>
+    <string name="corner_square">Square</string>
+    <string name="size_small">S</string>
+    <string name="size_medium">M</string>
+    <string name="size_large">L</string>
+    <string name="size_xlarge">XL</string>
+    <string name="today_prefix">Today · %1$s</string>
+    <string name="tomorrow_prefix">Tomorrow · %1$s</string>
+    <string name="today_word">Today</string>
+    <string name="tomorrow_word">Tomorrow</string>
+    <string name="all_day">All day</string>
+    <string name="day_all_day">%1$s · all day</string>
+    <string name="untitled">(No title)</string>
+    <string name="agenda_empty">No events in the next %1$d days 🎉</string>
+    <string name="tap_to_grant">Tap to allow calendar access</string>
+    <string name="makeup_workday">Work</string>
+    <string name="month_open_day">Open ›</string>
+    <string name="month_day_empty">No events</string>
+    <string name="in_progress_until">Now · until %1$s</string>
+    <string name="next_empty">No events in the next 7 days</string>
+    <string name="countdown_until">in %1$s</string>
+    <string name="countdown_left">%1$s left</string>
+    <string name="about_duration">about %1$s</string>
+    <string name="next_after">Then %1$s  %2$s</string>
+    <string name="timeline_all_day">All day: %1$s</string>
+    <string name="list_separator">", "</string>
+    <string name="now">Now</string>
+    <string name="free_time">Free %1$s</string>
+    <string name="timeline_no_more">No other timed events today</string>
+    <string name="timeline_empty">Nothing scheduled today ☕</string>
+    <string name="duration_minutes">%1$d min</string>
+    <string name="duration_hours">%1$d h</string>
+    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="sample_standup">Stand-up</string>
+    <string name="sample_lunch">Lunch</string>
+    <string name="sample_project">Project sync</string>
+    <string name="sample_dentist">Dentist</string>
+    <string name="sample_book_club">Book club</string>
+    <string name="sample_gym">Gym</string>
+    <string name="sample_dinner">Dinner</string>
+    <string name="sample_hike">Hike</string>
+    <string name="sample_room">Room A</string>
+    <string name="sample_online">Online</string>
+    <string name="preview_weekday">Monday</string>
+    <string name="preview_week_range">Oct 26 – Nov 1</string>
+    <string name="school_week">Week %1$d</string>
+    <string name="school_weeks_title">School weeks</string>
+    <string name="school_weeks_unset">Set the first day of term to show week numbers</string>
+    <string name="school_weeks_summary">Term started %1$s · this is week %2$d</string>
+    <string name="school_weeks_set_only">Term starts %1$s</string>
+    <string name="school_weeks_off">Turn off</string>
+    <string name="school_weeks_pick">First day of term</string>
+    <string name="preview_subtitle">Oct 2026</string>
+    <string name="preview_today_weekday">Today · Monday</string>
+    <string name="preview_month_title">October 2026</string>
+    <string name="preview_gap">Free 2 h</string>
+    <string name="preview_next_when">Today 14:00</string>
+    <string name="preview_standup_detail">09:30 – 10:00 · Room A</string>
+    <string name="preview_project_detail">14:00 – 15:00 · Online</string>
+    <string name="wd_sun">S</string>
+    <string name="wd_mon">M</string>
+    <string name="wd_tue">T</string>
+    <string name="wd_wed">W</string>
+    <string name="wd_thu">T</string>
+    <string name="wd_fri">F</string>
+    <string name="wd_sat">S</string>
+    <string-array name="tips_xiaomi">
+        <item>App info → turn on “Autostart”</item>
+        <item>App info → Battery saver → “No restrictions”</item>
+        <item>In Recents, pull the app down to lock it so it isn’t cleared</item>
+    </string-array>
+    <string-array name="tips_samsung">
+        <item>App info → Battery → “Unrestricted”</item>
+        <item>Settings → Battery → Background usage limits: make sure this app isn’t in Sleeping or Deep sleeping apps</item>
+    </string-array>
+    <string-array name="tips_oppo">
+        <item>App info → Battery usage → allow background activity and auto launch</item>
+    </string-array>
+    <string-array name="tips_vivo">
+        <item>i Manager → App manager → Autostart: allow this app</item>
+        <item>Settings → Battery → Background power consumption: allow this app</item>
+    </string-array>
+    <string-array name="tips_huawei">
+        <item>Settings → Battery → App launch: set this app to “Manage manually” and turn everything on</item>
+    </string-array>
+    <string-array name="tips_asus">
+        <item>Mobile Manager → Auto-start Manager: allow this app</item>
+    </string-array>
+    <string-array name="tips_generic">
+        <item>App info → Battery → “Unrestricted” (or turn off battery optimization)</item>
+    </string-array>
+</resources>
