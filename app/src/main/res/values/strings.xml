@@ -54,6 +54,13 @@
     <string name="search_none">No events match “%1$s”</string>
     <string name="search_upcoming">Upcoming (%1$d)</string>
     <string name="search_past">Past (%1$d)</string>
+    <string name="search_range_all">All</string>
+    <string name="search_range_upcoming">Upcoming</string>
+    <string name="search_range_week">This week</string>
+    <string name="search_range_month">This month</string>
+    <string name="search_all_calendars">All calendars</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_recent_clear">Clear</string>
     <string name="back">Back</string>
     <string name="google_calendar">Google Calendar</string>
     <string name="editor_fallback">%1$s couldn\'t open this, so the default calendar app was used</string>

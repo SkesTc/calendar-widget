@@ -8,6 +8,9 @@ data class SearchResults(val upcoming: List<CalendarEvent>, val past: List<Calen
     val isEmpty: Boolean get() = upcoming.isEmpty() && past.isEmpty()
 }
 
+/** 搜尋結果的時間篩選。 */
+enum class SearchRange { ALL, UPCOMING, THIS_WEEK, THIS_MONTH }
+
 object EventSearch {
     /** 往前一年、往後兩年：涵蓋大部分會想找的行程，又不會讓查詢太慢。 */
     const val DAYS_BACK = 365L
@@ -37,6 +40,32 @@ object EventSearch {
             from = i + k.length
         }
         return ranges
+    }
+
+    /**
+     * 依時間範圍與日曆篩選（[calendarId] 為 null 表示所有日曆）。
+     * 本週是週一到週日；行程只要有一天落在範圍內就算。
+     */
+    fun filter(
+        events: List<CalendarEvent>,
+        range: SearchRange,
+        calendarId: Long?,
+        now: Long,
+        zone: ZoneId = ZoneId.systemDefault(),
+    ): List<CalendarEvent> {
+        val spans = MonthBuilder(zone)
+        val today = java.time.Instant.ofEpochMilli(now).atZone(zone).toLocalDate()
+        val window: ClosedRange<LocalDate>? = when (range) {
+            SearchRange.ALL -> null
+            SearchRange.UPCOMING -> today..LocalDate.MAX
+            SearchRange.THIS_WEEK -> today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+                .let { it..it.plusDays(6) }
+            SearchRange.THIS_MONTH -> today.withDayOfMonth(1)..today.withDayOfMonth(today.lengthOfMonth())
+        }
+        return events.filter { event ->
+            (calendarId == null || event.calendarId == calendarId) &&
+                (window == null || spans.dateSpan(event).let { (first, last) -> last >= window.start && first <= window.endInclusive })
+        }
     }
 
     /** 搜尋範圍的起訖（毫秒）。 */

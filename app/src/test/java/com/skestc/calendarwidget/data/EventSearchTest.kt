@@ -53,3 +53,50 @@ class EventSearchTest {
         assertEquals(at(today.plusDays(730), 0), end)
     }
 }
+
+class SearchFilterTest {
+    private val zone = ZoneId.of("Asia/Taipei")
+    // 2026/10/28 是週三。
+    private val today = LocalDate.of(2026, 10, 28)
+    private val now = LocalDateTime.of(today, LocalTime.of(12, 0)).atZone(zone).toInstant().toEpochMilli()
+    private fun on(id: Long, date: LocalDate, calendarId: Long = 1) = CalendarEvent(
+        id, "e$id",
+        LocalDateTime.of(date, LocalTime.of(9, 0)).atZone(zone).toInstant().toEpochMilli(),
+        LocalDateTime.of(date, LocalTime.of(10, 0)).atZone(zone).toInstant().toEpochMilli(),
+        false, 1, null, "cal", calendarId = calendarId,
+    )
+
+    private val events = listOf(
+        on(1, today.minusDays(10)),
+        on(2, today.minusDays(2)), // 10/26 週一：本週、本月
+        on(3, today.plusDays(4)), // 11/1 週日：本週、下個月
+        on(4, today.plusDays(20), calendarId = 2),
+    )
+
+    private fun titles(range: SearchRange, calendarId: Long? = null) =
+        EventSearch.filter(events, range, calendarId, now, zone).map { it.title }
+
+    @Test
+    fun rangesPickTheRightDays() {
+        assertEquals(listOf("e1", "e2", "e3", "e4"), titles(SearchRange.ALL))
+        assertEquals(listOf("e3", "e4"), titles(SearchRange.UPCOMING))
+        assertEquals(listOf("e2", "e3"), titles(SearchRange.THIS_WEEK))
+        assertEquals(listOf("e1", "e2"), titles(SearchRange.THIS_MONTH))
+    }
+
+    @Test
+    fun calendarFilterCombinesWithRange() {
+        assertEquals(listOf("e4"), titles(SearchRange.ALL, calendarId = 2))
+        assertEquals(emptyList<String>(), titles(SearchRange.THIS_WEEK, calendarId = 2))
+    }
+
+    @Test
+    fun recentSearchesKeepNewestFirstWithoutDuplicates() {
+        var items = listOf<String>()
+        for (k in listOf("校慶", "會議", "校慶", "Meeting", "meeting")) items = RecentSearches.add(items, k)
+        assertEquals(listOf("meeting", "校慶", "會議"), items)
+        repeat(20) { items = RecentSearches.add(items, "k$it") }
+        assertEquals(RecentSearches.MAX, items.size)
+        assertEquals("k19", items.first())
+    }
+}

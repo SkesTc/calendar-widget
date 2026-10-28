@@ -54,6 +54,13 @@
     <string name="search_none">找不到符合「%1$s」的行程</string>
     <string name="search_upcoming">即將到來（%1$d）</string>
     <string name="search_past">過去（%1$d）</string>
+    <string name="search_range_all">全部</string>
+    <string name="search_range_upcoming">即將到來</string>
+    <string name="search_range_week">本週</string>
+    <string name="search_range_month">本月</string>
+    <string name="search_all_calendars">所有日曆</string>
+    <string name="search_recent">最近搜尋</string>
+    <string name="search_recent_clear">清除</string>
     <string name="back">返回</string>
     <string name="google_calendar">Google 日曆</string>
     <string name="editor_fallback">%1$s 無法開啟，已改用系統預設的日曆 App</string>

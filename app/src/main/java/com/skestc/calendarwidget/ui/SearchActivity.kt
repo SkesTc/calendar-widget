@@ -1,5 +1,17 @@
 package com.skestc.calendarwidget.ui
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.TextButton
+import com.skestc.calendarwidget.data.CalendarInfo
+import com.skestc.calendarwidget.data.RecentSearches
+import com.skestc.calendarwidget.data.SearchRange
 import android.content.ContentUris
 import android.content.Intent
 import android.os.Bundle
@@ -97,7 +109,17 @@ private fun SearchScreen(onBack: () -> Unit) {
     val focus = remember { FocusRequester() }
     val keyboard = LocalSoftwareKeyboardController.current
     var keyword by remember { mutableStateOf("") }
-    var results by remember { mutableStateOf<SearchResults?>(null) }
+    // 查到的原始結果；篩選（時間、日曆）在畫面上即時套用，不必重新查詢。
+    var found by remember { mutableStateOf<List<CalendarEvent>?>(null) }
+    var range by remember { mutableStateOf(SearchRange.ALL) }
+    var calendarId by remember { mutableStateOf<Long?>(null) }
+    var calendars by remember { mutableStateOf<List<CalendarInfo>>(emptyList()) }
+    val recentStore = remember { RecentSearches(context) }
+    var recent by remember { mutableStateOf(recentStore.list()) }
+    fun saveRecent(keywordToSave: String) {
+        recentStore.add(keywordToSave)
+        recent = recentStore.list()
+    }
     var searching by remember { mutableStateOf(false) }
     // 編輯完回到搜尋畫面時重新查一次，結果才會反映剛才的修改。
     var resumes by remember { mutableIntStateOf(0) }
@@ -110,20 +132,26 @@ private fun SearchScreen(onBack: () -> Unit) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    LaunchedEffect(Unit) { focus.requestFocus() }
+    LaunchedEffect(Unit) {
+        focus.requestFocus()
+        calendars = repository.calendars().filter { it.visible }
+    }
     // 停止輸入 300 毫秒後才查詢，邊打字邊更新但不會每個字都查一次。
     LaunchedEffect(keyword, resumes) {
         if (keyword.isBlank()) {
-            results = null
+            found = null
             searching = false
             return@LaunchedEffect
         }
         searching = true
         delay(300)
-        val now = System.currentTimeMillis()
-        val (start, end) = EventSearch.range(now)
-        results = EventSearch.split(repository.search(keyword, start, end), now)
+        val (start, end) = EventSearch.range(System.currentTimeMillis())
+        found = repository.search(keyword, start, end)
         searching = false
+    }
+    val results = found?.let {
+        val now = System.currentTimeMillis()
+        EventSearch.split(EventSearch.filter(it, range, calendarId, now), now)
     }
 
     Scaffold(
@@ -146,22 +174,135 @@ private fun SearchScreen(onBack: () -> Unit) {
                 placeholder = { Text(stringResource(R.string.search_hint)) },
                 leadingIcon = { Icon(painterResource(R.drawable.ic_search), contentDescription = null) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
+                keyboardActions = KeyboardActions(onSearch = {
+                    keyboard?.hide()
+                    saveRecent(keyword)
+                }),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
                     .focusRequester(focus),
             )
+            FilterRow(
+                range = range,
+                onRange = { range = it },
+                calendars = calendars,
+                calendarId = calendarId,
+                onCalendar = { calendarId = it },
+            )
             val current = results
             when {
                 !repository.hasPermission() -> Message(stringResource(R.string.config_no_permission))
-                keyword.isBlank() -> Message(stringResource(R.string.search_intro))
+                keyword.isBlank() -> RecentList(
+                    recent = recent,
+                    onPick = {
+                        keyword = it
+                        saveRecent(it)
+                    },
+                    onClear = {
+                        recentStore.clear()
+                        recent = emptyList()
+                    },
+                )
                 current == null || (searching && current.isEmpty) -> Box(
                     modifier = Modifier.fillMaxWidth().padding(24.dp),
                     contentAlignment = Alignment.Center,
                 ) { CircularProgressIndicator() }
                 current.isEmpty -> Message(stringResource(R.string.search_none, keyword.trim()))
-                else -> ResultList(current, keyword)
+                else -> ResultList(current, keyword, onOpen = { saveRecent(keyword) })
+            }
+        }
+    }
+}
+
+/** 時間範圍與日曆的篩選，可以左右捲動。 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilterRow(
+    range: SearchRange,
+    onRange: (SearchRange) -> Unit,
+    calendars: List<CalendarInfo>,
+    calendarId: Long?,
+    onCalendar: (Long?) -> Unit,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        for ((option, label) in listOf(
+            SearchRange.ALL to R.string.search_range_all,
+            SearchRange.UPCOMING to R.string.search_range_upcoming,
+            SearchRange.THIS_WEEK to R.string.search_range_week,
+            SearchRange.THIS_MONTH to R.string.search_range_month,
+        )) {
+            FilterChip(selected = range == option, onClick = { onRange(option) }, label = { Text(stringResource(label)) })
+        }
+        if (calendars.size > 1) {
+            Box {
+                FilterChip(
+                    selected = calendarId != null,
+                    onClick = { menuOpen = true },
+                    label = {
+                        Text(calendars.firstOrNull { it.id == calendarId }?.displayName ?: stringResource(R.string.search_all_calendars))
+                    },
+                    trailingIcon = { Icon(painterResource(R.drawable.ic_expand_more), contentDescription = null) },
+                )
+                DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.search_all_calendars)) },
+                        onClick = {
+                            onCalendar(null)
+                            menuOpen = false
+                        },
+                    )
+                    for (calendar in calendars) {
+                        DropdownMenuItem(
+                            text = { Text(calendar.displayName) },
+                            leadingIcon = {
+                                Box(Modifier.size(12.dp).clip(CircleShape).background(Color(calendar.color)))
+                            },
+                            onClick = {
+                                onCalendar(calendar.id)
+                                menuOpen = false
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** 還沒輸入關鍵字時：說明與最近搜尋（點一下就搜）。 */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecentList(recent: List<String>, onPick: (String) -> Unit, onClear: () -> Unit) {
+    Column {
+        Message(stringResource(R.string.search_intro))
+        if (recent.isNotEmpty()) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.search_recent),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onClear) { Text(stringResource(R.string.search_recent_clear)) }
+            }
+            FlowRow(
+                modifier = Modifier.padding(horizontal = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                for (item in recent) {
+                    AssistChip(onClick = { onPick(item) }, label = { Text(item) })
+                }
             }
         }
     }
@@ -178,15 +319,15 @@ private fun Message(text: String) {
 }
 
 @Composable
-private fun ResultList(results: SearchResults, keyword: String) {
+private fun ResultList(results: SearchResults, keyword: String, onOpen: () -> Unit) {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
         if (results.upcoming.isNotEmpty()) {
             item(key = "h-up") { SectionHeader(stringResource(R.string.search_upcoming, results.upcoming.size)) }
-            items(results.upcoming, key = { "u${it.eventId}-${it.begin}" }) { ResultRow(it, keyword, past = false) }
+            items(results.upcoming, key = { "u${it.eventId}-${it.begin}" }) { ResultRow(it, keyword, past = false, onOpen) }
         }
         if (results.past.isNotEmpty()) {
             item(key = "h-past") { SectionHeader(stringResource(R.string.search_past, results.past.size)) }
-            items(results.past, key = { "p${it.eventId}-${it.begin}" }) { ResultRow(it, keyword, past = true) }
+            items(results.past, key = { "p${it.eventId}-${it.begin}" }) { ResultRow(it, keyword, past = true, onOpen) }
         }
     }
 }
@@ -202,7 +343,7 @@ private fun SectionHeader(text: String) {
 }
 
 @Composable
-private fun ResultRow(event: CalendarEvent, keyword: String, past: Boolean) {
+private fun ResultRow(event: CalendarEvent, keyword: String, past: Boolean, onOpen: () -> Unit) {
     val context = LocalContext.current
     val locale = Locale.getDefault()
     val dateFormat = remember(locale) {
@@ -221,6 +362,8 @@ private fun ResultRow(event: CalendarEvent, keyword: String, past: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
+                // 點過的關鍵字記進「最近搜尋」。
+                onOpen()
                 // 直接打開編輯畫面（優先用 Google 日曆）；日曆 App 不支援「編輯」時改成開啟檢視畫面。
                 val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId)
                 fun withTimes(action: String) = Intent(action, uri)
