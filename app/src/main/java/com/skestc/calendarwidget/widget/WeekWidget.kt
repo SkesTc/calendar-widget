@@ -171,6 +171,9 @@ internal fun WeekContent(state: WeekState) {
     }
 }
 
+/** 換行顯示時一筆行程最多幾行，避免超長說明把清單撐得太長。 */
+private const val MAX_WRAPPED_LINES = 4
+
 private val HEADER_MIN_HEIGHT = 140.dp
 /** 標題列（含下方間距）佔的高度：版面計算要扣掉。 */
 private val HEADER_HEIGHT = 34.dp
@@ -242,9 +245,19 @@ private fun WeekRows(state: WeekState.Loaded, lines: Int) {
     }
 }
 
-/** 一天一列：左邊星期與日期，右邊農曆／假日與最多 [lines] 行行程；今天用卡片色標示。行程清單的「每日」版面也用它。 */
+/**
+ * 一天一列：左邊星期與日期，右邊農曆／假日與最多 [lines] 行行程；今天用卡片色標示。行程清單的「每日」版面也用它。
+ * [wrapTitles]：標題太長時換行完整顯示（可以捲動的行程清單用）；一週小工具高度固定，維持一行並截短。
+ */
 @Composable
-internal fun WeekDayRow(day: WeekDay, isToday: Boolean, now: Long, lines: Int, modifier: GlanceModifier = GlanceModifier) {
+internal fun WeekDayRow(
+    day: WeekDay,
+    isToday: Boolean,
+    now: Long,
+    lines: Int,
+    modifier: GlanceModifier = GlanceModifier,
+    wrapTitles: Boolean = false,
+) {
     val style = LocalWidgetStyle.current
     val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
     val color = dayColor(day)
@@ -296,19 +309,28 @@ internal fun WeekDayRow(day: WeekDay, isToday: Boolean, now: Long, lines: Int, m
             for (event in shown) {
                 // 今天已經結束的行程：色條轉灰、文字用次要色。
                 val past = !event.allDay && event.end <= now
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = GlanceModifier
-                            .width(3.dp)
-                            .height(12.dp)
-                            .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
-                            .cornerRadius(2.dp),
-                    ) {}
-                    val title = TitleShortener.compact(event.title)
+                // 換行時色條對齊第一行。
+                Row(
+                    modifier = if (wrapTitles) GlanceModifier.fillMaxWidth().padding(vertical = 2.dp) else GlanceModifier,
+                    verticalAlignment = if (wrapTitles) Alignment.Top else Alignment.CenterVertically,
+                ) {
+                    // 外層的內距把色條往下推，跟第一行文字對齊（背景會蓋住自己的內距，不能直接加在色條上）。
+                    Box(modifier = GlanceModifier.padding(top = if (wrapTitles) 3.dp else 0.dp)) {
+                        Box(
+                            modifier = GlanceModifier
+                                .width(3.dp)
+                                .height(12.dp)
+                                .background(ColorProvider(Color(if (past) Desaturate.color(event.color) else event.color)))
+                                .cornerRadius(2.dp),
+                        ) {}
+                    }
+                    // 換行顯示時用完整標題；只有一行時拿掉「115學年度」之類的前綴，讓重點放得下。
+                    val title = if (wrapTitles) event.title else TitleShortener.compact(event.title)
                     Text(
                         text = if (event.allDay) title else "${timeFormat.format(Date(event.begin))}  $title",
-                        maxLines = 1,
-                        modifier = GlanceModifier.padding(start = 5.dp),
+                        maxLines = if (wrapTitles) MAX_WRAPPED_LINES else 1,
+                        // 換行時佔滿剩下的寬度，文字才會在欄內折行而不是被切掉。
+                        modifier = (if (wrapTitles) GlanceModifier.defaultWeight() else GlanceModifier).padding(start = 5.dp),
                         style = style.text(12, if (past) style.colors.onSurfaceVariant else style.colors.onSurface),
                     )
                 }

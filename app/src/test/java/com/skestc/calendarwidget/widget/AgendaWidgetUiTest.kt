@@ -44,6 +44,7 @@ class AgendaWidgetUiTest {
             timed(1, "晨會", at(9), at(10)),
             timed(2, "牙醫", at(15, date = today.plusDays(2)), at(16, date = today.plusDays(2))),
             timed(3, "遠足", at(8, date = today.plusDays(20)), at(12, date = today.plusDays(20))),
+            timed(4, "115學年度校慶運動會籌備會議暨各處室工作分配說明", at(13), at(14)),
         )
         val state = AgendaState.Loaded(
             today, days = 31, rows = emptyList(), lunarToday = null,
@@ -56,6 +57,8 @@ class AgendaWidgetUiTest {
         onNode(hasText("遠足")).assertExists()
         // 前 7 天沒有行程的日子也列出來，顯示農曆。
         onNode(hasNumber("27")).assertExists()
+        // 長標題完整顯示（換行），不截掉年度前綴。
+        onNode(hasText("115學年度校慶運動會籌備會議暨各處室工作分配說明")).assertExists()
     }
 
     @Test

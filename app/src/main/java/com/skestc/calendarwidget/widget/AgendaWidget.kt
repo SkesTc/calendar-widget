@@ -393,6 +393,8 @@ private fun AgendaDays(state: AgendaState.Loaded) {
                 now = state.now,
                 lines = DAY_ROW_MAX_EVENTS,
                 modifier = GlanceModifier.padding(vertical = 4.dp),
+                // 清單可以捲動：長標題換行完整顯示。
+                wrapTitles = true,
             )
         }
     }
