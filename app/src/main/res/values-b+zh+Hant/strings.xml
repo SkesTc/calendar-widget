@@ -80,6 +80,18 @@
     <string name="show_lunar_subtitle">國定假日與補班日來自 Google 日曆的「台灣的節慶假日」</string>
     <string name="section_days">顯示天數</string>
     <string name="section_agenda_layout">版面</string>
+    <string name="group_content">內容</string>
+    <string name="group_appearance">外觀</string>
+    <string name="group_advanced">進階</string>
+    <string name="section_week_start">一週從哪天開始</string>
+    <string name="week_start_today">今天</string>
+    <string name="week_start_monday">週一</string>
+    <string name="week_start_sunday">週日</string>
+    <string name="section_header_buttons">標題列按鈕</string>
+    <string name="header_buttons_hint">「＋」一定會顯示。放不下的按鈕收進「⋯」；勾得越少，按鈕和標題越寬鬆。</string>
+    <string name="apply_to_all">套用到所有小工具</string>
+    <string name="apply_to_all_body">要把這些日曆、外觀與按鈕設定套用到桌面上所有的小工具嗎？各小工具目前看的月份與選取的日期不受影響。</string>
+    <string name="apply_to_all_confirm">套用</string>
     <string name="agenda_layout_list">清單</string>
     <string name="agenda_layout_timeline">時間軸</string>
     <string name="agenda_layout_days">每日</string>
@@ -149,6 +161,7 @@
     <string name="sample_room">會議室 A</string>
     <string name="sample_online">線上</string>
     <string name="preview_weekday">星期一</string>
+    <string name="preview_week_range">10月26日 – 11月1日</string>
     <string name="preview_subtitle">九月十七</string>
     <string name="preview_today_weekday">今天 · 星期一</string>
     <string name="preview_month_title">2026年10月</string>

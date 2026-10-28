@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@drawable/preview_widget_bg"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,12 +18,13 @@
         android:layout_height="wrap_content"
         android:text="26"
         android:textColor="@color/preview_primary"
-        android:textSize="34sp"
+        android:textSize="40sp"
         android:textStyle="bold" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:orientation="vertical">
 
@@ -42,6 +43,51 @@
         android:textColor="@color/preview_variant"
         android:textSize="12sp" />
         </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/preview_button_bg">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_search"
+                android:tint="@color/preview_on_card" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/preview_button_bg">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_settings"
+                android:tint="@color/preview_on_card" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_marginStart="4dp"
+            android:background="@drawable/preview_add_bg">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_add"
+                android:tint="@color/preview_on_primary" />
+        </FrameLayout>
     </LinearLayout>
 
     <TextView

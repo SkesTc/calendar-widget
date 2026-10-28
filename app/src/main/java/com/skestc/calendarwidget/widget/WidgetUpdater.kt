@@ -11,7 +11,7 @@ import com.skestc.calendarwidget.settings.WidgetSettings
 /** 所有 widget 共用的更新與背景排程。 */
 object WidgetUpdater {
 
-    private val widgets: List<Pair<GlanceAppWidget, Class<*>>>
+    internal val widgets: List<Pair<GlanceAppWidget, Class<*>>>
         get() = listOf(
             AgendaWidget() to AgendaWidgetReceiver::class.java,
             MonthWidget() to MonthWidgetReceiver::class.java,

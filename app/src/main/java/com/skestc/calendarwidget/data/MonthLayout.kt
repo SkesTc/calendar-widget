@@ -1,5 +1,6 @@
 package com.skestc.calendarwidget.data
 
+import com.skestc.calendarwidget.settings.HeaderButton
 import kotlin.math.floor
 
 /**
@@ -32,17 +33,10 @@ object MonthLayout {
     }
 
     /** 月曆標題列：要顯示哪些按鈕、標題要不要寫年份。 */
-    /** 標題列除了「＋」以外的按鈕要怎麼放。 */
-    enum class HeaderButtons {
-        /** 搜尋、重新整理、設定各一顆。 */
-        ALL,
-        /** 搜尋一顆，重新整理與設定收進「⋯」。 */
-        SEARCH_AND_MENU,
-        /** 只有「⋯」（裡面有搜尋、重新整理、設定）。 */
-        MENU,
-    }
+    /** 標題列實際要畫的按鈕：[shown] 各一顆，[menu] 為 true 時再加一顆「⋯」（放不下的都在裡面）。 */
+    data class HeaderPlan(val shown: List<HeaderButton>, val menu: Boolean)
 
-    data class HeaderFit(val showYear: Boolean, val buttons: HeaderButtons)
+    data class HeaderFit(val showYear: Boolean, val plan: HeaderPlan)
 
     // 標題列的固定寬度（dp）：左右箭頭、「＋」與間距，加上外框與標題列的內距；ACTION 是其他每顆按鈕。
     private const val NAV = 30f
@@ -56,23 +50,30 @@ object MonthLayout {
      */
     const val SAFETY = 0.88f
 
-    /** 扣掉標題與固定按鈕後剩下 [spareDp]，能放幾顆一般按鈕（每顆 [buttonDp] 加間距 [gapDp]）。 */
-    fun buttonsFor(spareDp: Float, buttonDp: Float = ACTION, gapDp: Float = GAP): HeaderButtons = when {
-        spareDp >= (buttonDp + gapDp) * 3 -> HeaderButtons.ALL
-        spareDp >= (buttonDp + gapDp) * 2 -> HeaderButtons.SEARCH_AND_MENU
-        else -> HeaderButtons.MENU
+    /**
+     * 使用者勾選的按鈕 [enabled]（依序）在剩下的 [spareDp] 裡能放幾顆：全部放得下就全放；
+     * 否則留一格給「⋯」，前面放得下幾顆就放幾顆。都沒勾就什麼都不放。
+     */
+    fun planButtons(
+        enabled: List<HeaderButton>,
+        spareDp: Float,
+        buttonDp: Float = ACTION,
+        gapDp: Float = GAP,
+    ): HeaderPlan {
+        if (enabled.isEmpty()) return HeaderPlan(emptyList(), menu = false)
+        val slots = (spareDp / (buttonDp + gapDp)).toInt()
+        if (slots >= enabled.size) return HeaderPlan(enabled, menu = false)
+        return HeaderPlan(enabled.take((slots - 1).coerceAtLeast(0)), menu = true)
     }
 
     /**
-     * 月曆標題列：按鈕優先於年份。先試「年份＋全部按鈕」，再試「只寫月份＋全部按鈕」，
-     * 再把重新整理與設定收進「⋯」。[yearTitleDp]、[monthTitleDp] 是兩種標題的估計寬度。
+     * 月曆標題列：按鈕優先於年份。全部勾選的按鈕都放得下時才寫年份，
+     * 否則只寫月份再分配按鈕。[yearTitleDp]、[monthTitleDp] 是兩種標題的估計寬度。
      */
-    fun headerFit(widthDp: Float, yearTitleDp: Float, monthTitleDp: Float): HeaderFit {
+    fun headerFit(widthDp: Float, yearTitleDp: Float, monthTitleDp: Float, enabled: List<HeaderButton>): HeaderFit {
         val spare = widthDp * SAFETY - PADDING - (NAV * 2 + ADD + GAP * 3)
-        return when {
-            buttonsFor(spare - yearTitleDp) == HeaderButtons.ALL -> HeaderFit(true, HeaderButtons.ALL)
-            else -> HeaderFit(false, buttonsFor(spare - monthTitleDp))
-        }
+        val withYear = planButtons(enabled, spare - yearTitleDp)
+        return if (!withYear.menu) HeaderFit(true, withYear) else HeaderFit(false, planButtons(enabled, spare - monthTitleDp))
     }
 
     /** 粗估文字寬度（dp）：中日韓文字約一個字高，英數約 0.6，空白 0.3。[sizeSp] 已含文字縮放。 */

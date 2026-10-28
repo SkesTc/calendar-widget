@@ -38,6 +38,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
+import androidx.glance.text.TextDecoration
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
@@ -50,6 +51,7 @@ import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.data.WeekLayout
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
+import com.skestc.calendarwidget.settings.HeaderButton
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
@@ -103,7 +105,7 @@ class WeekWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
                     WeekContent(state)
                 }
             }
@@ -115,15 +117,17 @@ class WeekWidget : GlanceAppWidget() {
         val zone = ZoneId.systemDefault()
         val today = LocalDate.now(zone)
         // 前後各多抓一天，涵蓋以 UTC 午夜計的全天事件。
-        val start = today.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = today.plusDays(8).atStartOfDay(zone).toInstant().toEpochMilli()
+        // 從今天、這週一或這週日開始（設定）。
+        val first = settings.weekStart.firstDay(today)
+        val start = first.minusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = first.plusDays(8).atStartOfDay(zone).toInstant().toEpochMilli()
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
         val now = System.currentTimeMillis()
         // 下一個行程結束時重畫，讓它變成淡色。
         events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
             ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
-        return WeekState.Loaded(today, WeekBuilder(zone).build(events, today, 7, MAX_PER_DAY, labeler), now)
+        return WeekState.Loaded(today, WeekBuilder(zone).build(events, first, 7, MAX_PER_DAY, labeler), now)
     }
 }
 
@@ -158,11 +162,25 @@ internal fun WeekContent(state: WeekState) {
                             modifier = GlanceModifier.fillMaxHeight(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // 直排的高度只放得下三顆：重新整理與設定收進「⋯」。
-                            SearchButton(RAIL_BUTTON)
-                            Spacer(GlanceModifier.height(4.dp))
-                            MoreButton(RAIL_BUTTON)
-                            Spacer(GlanceModifier.height(4.dp))
+                            // 直排的高度只放得下三顆：除了「＋」再放兩顆，其餘收進「⋯」。
+                            val plan = MonthLayout.planButtons(
+                                LocalWidgetStyle.current.headerButtons,
+                                spareDp = 2 * (RAIL_BUTTON.value + 4f),
+                                buttonDp = RAIL_BUTTON.value,
+                                gapDp = 4f,
+                            )
+                            for (button in plan.shown) {
+                                when (button) {
+                                    HeaderButton.SEARCH -> SearchButton(RAIL_BUTTON)
+                                    HeaderButton.REFRESH -> RefreshButton(RAIL_BUTTON)
+                                    HeaderButton.SETTINGS -> SettingsButton(RAIL_BUTTON)
+                                }
+                                Spacer(GlanceModifier.height(4.dp))
+                            }
+                            if (plan.menu) {
+                                MoreButton(RAIL_BUTTON)
+                                Spacer(GlanceModifier.height(4.dp))
+                            }
                             AddEventButton(RAIL_BUTTON)
                         }
                     }
@@ -191,7 +209,7 @@ private fun WeekHeader(state: WeekState.Loaded) {
     // 跟月曆一樣：依寬度（保守估計）扣掉日期範圍與「＋」後剩下的空間，決定按鈕分開放或收進「⋯」。
     val titleSp = 14f * style.textScale * LocalContext.current.resources.configuration.fontScale
     val spare = LocalSize.current.width.value * MonthLayout.SAFETY - 16f - MonthLayout.textWidthDp(range, titleSp) - 34f
-    val buttons = MonthLayout.buttonsFor(spare)
+    val plan = MonthLayout.planButtons(style.headerButtons, spare)
     Row(
         modifier = GlanceModifier.fillMaxWidth().height(HEADER_HEIGHT).padding(start = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -202,8 +220,8 @@ private fun WeekHeader(state: WeekState.Loaded) {
             modifier = GlanceModifier.defaultWeight(),
             style = style.text(14, style.colors.onSurface, FontWeight.Bold),
         )
-        ActionButtons(buttons, size = 30.dp, gap = 4.dp)
-        Spacer(GlanceModifier.width(4.dp))
+        ActionButtons(plan, size = 30.dp, gap = 4.dp)
+        if (!plan.isEmpty) Spacer(GlanceModifier.width(4.dp))
         AddEventButton(30.dp)
     }
 }
@@ -391,7 +409,10 @@ private fun WeekDayColumn(
                     color = if (isToday) style.colors.onPrimary else dayColor,
                     weight = FontWeight.Bold,
                     align = TextAlign.Center,
-                ),
+                ).let { base ->
+                    // 放假日除了紅字再加底線（矮的版面不顯示假日名稱）。
+                    if (day.holiday == HolidayKind.DAY_OFF) base.copy(textDecoration = TextDecoration.Underline) else base
+                },
             )
         }
         val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label

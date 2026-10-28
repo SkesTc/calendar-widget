@@ -1,5 +1,6 @@
 package com.skestc.calendarwidget.settings
 
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
@@ -28,7 +29,29 @@ data class WidgetSettings(
     val showLunar: Boolean = defaultShowLunar(),
     /** 行程清單的版面：一般清單，或像「今日時間軸」那樣有時間欄與「現在」橫線。 */
     val agendaLayout: AgendaLayout = AgendaLayout.LIST,
+    /** 一週小工具從哪天開始：今天、這週一或這週日。 */
+    val weekStart: WeekStart = WeekStart.TODAY,
+    /** 標題列要放哪些按鈕（「＋」一定有）；放不下的收進「⋯」。 */
+    val headerButtons: List<HeaderButton> = HeaderButton.entries,
 ) {
+    /** 把使用者在設定頁調整的項目寫回 widget 的狀態，並讓 widget 重新讀取。月份、選取的日期不動。 */
+    fun writeTo(prefs: MutablePreferences) {
+        prefs[KEY_HIDDEN_CALENDARS] = hiddenCalendarIds.map { it.toString() }.toSet()
+        prefs[KEY_AGENDA_DAYS] = agendaDays
+        prefs[KEY_THEME] = appearance.theme.name
+        prefs[KEY_BG_OPACITY] = appearance.backgroundOpacity
+        prefs[KEY_CORNER] = appearance.cornerDp
+        prefs[KEY_TEXT_SCALE] = appearance.textScalePercent
+        prefs[KEY_FONT] = appearance.font.name
+        prefs[KEY_CUSTOM_PRIMARY] = appearance.customPrimary.toInt()
+        prefs[KEY_CUSTOM_BACKGROUND] = appearance.customBackground.toInt()
+        prefs[KEY_SHOW_LUNAR] = showLunar
+        prefs[KEY_AGENDA_LAYOUT] = agendaLayout.name
+        prefs[KEY_WEEK_START] = weekStart.name
+        prefs[KEY_HEADER_BUTTONS] = headerButtons.map { it.name }.toSet()
+        prefs[KEY_REFRESH] = (prefs[KEY_REFRESH] ?: 0L) + 1
+    }
+
     companion object {
         /** 行程清單至少顯示一個月（31 天）；選項是 1、2、3 個月。 */
         const val DEFAULT_AGENDA_DAYS = 31
@@ -48,6 +71,8 @@ data class WidgetSettings(
         val KEY_CUSTOM_BACKGROUND = intPreferencesKey("custom_background")
         val KEY_SHOW_LUNAR = booleanPreferencesKey("show_lunar")
         val KEY_AGENDA_LAYOUT = stringPreferencesKey("agenda_layout")
+        val KEY_WEEK_START = stringPreferencesKey("week_start")
+        val KEY_HEADER_BUTTONS = stringSetPreferencesKey("header_buttons")
 
         fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
 
@@ -71,9 +96,35 @@ data class WidgetSettings(
             ),
             showLunar = prefs[KEY_SHOW_LUNAR] ?: defaultShowLunar(),
             agendaLayout = AgendaLayout.fromKey(prefs[KEY_AGENDA_LAYOUT]),
+            weekStart = WeekStart.fromKey(prefs[KEY_WEEK_START]),
+            // 沒存過時全部顯示；存了空集合表示使用者全部關掉。順序固定為搜尋、重新整理、設定。
+            headerButtons = prefs[KEY_HEADER_BUTTONS]
+                ?.let { names -> HeaderButton.entries.filter { it.name in names } }
+                ?: HeaderButton.entries,
         )
     }
 }
+
+/** 一週小工具的第一天。 */
+enum class WeekStart {
+    TODAY,
+    MONDAY,
+    SUNDAY;
+
+    /** 依 [today] 算出這 7 天的第一天。 */
+    fun firstDay(today: java.time.LocalDate): java.time.LocalDate = when (this) {
+        TODAY -> today
+        MONDAY -> today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY))
+        SUNDAY -> today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY))
+    }
+
+    companion object {
+        fun fromKey(key: String?): WeekStart = entries.firstOrNull { it.name == key } ?: TODAY
+    }
+}
+
+/** 標題列「＋」以外可選的按鈕，依這個順序排。 */
+enum class HeaderButton { SEARCH, REFRESH, SETTINGS }
 
 /** 行程清單的版面。 */
 enum class AgendaLayout {

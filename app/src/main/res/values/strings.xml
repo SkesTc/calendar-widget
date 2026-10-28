@@ -80,6 +80,18 @@
     <string name="show_lunar_subtitle">Public holidays come from Google Calendar’s holiday calendars</string>
     <string name="section_days">Days to show</string>
     <string name="section_agenda_layout">Layout</string>
+    <string name="group_content">Content</string>
+    <string name="group_appearance">Appearance</string>
+    <string name="group_advanced">More</string>
+    <string name="section_week_start">Week starts on</string>
+    <string name="week_start_today">Today</string>
+    <string name="week_start_monday">Monday</string>
+    <string name="week_start_sunday">Sunday</string>
+    <string name="section_header_buttons">Header buttons</string>
+    <string name="header_buttons_hint">“+” is always shown. Buttons that don’t fit go into “⋯”; fewer buttons leave more room.</string>
+    <string name="apply_to_all">Apply to all widgets</string>
+    <string name="apply_to_all_body">Use these calendars, appearance and buttons for every widget on your home screen? Each widget keeps its own month and selected day.</string>
+    <string name="apply_to_all_confirm">Apply</string>
     <string name="agenda_layout_list">List</string>
     <string name="agenda_layout_timeline">Timeline</string>
     <string name="agenda_layout_days">Days</string>
@@ -149,6 +161,7 @@
     <string name="sample_room">Room A</string>
     <string name="sample_online">Online</string>
     <string name="preview_weekday">Monday</string>
+    <string name="preview_week_range">Oct 26 – Nov 1</string>
     <string name="preview_subtitle">Oct 2026</string>
     <string name="preview_today_weekday">Today · Monday</string>
     <string name="preview_month_title">October 2026</string>

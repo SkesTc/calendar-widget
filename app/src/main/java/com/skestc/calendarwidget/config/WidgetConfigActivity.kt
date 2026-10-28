@@ -1,5 +1,11 @@
 package com.skestc.calendarwidget.config
 
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import com.skestc.calendarwidget.settings.HeaderButton
+import com.skestc.calendarwidget.settings.WeekStart
 import android.appwidget.AppWidgetManager
 import android.content.Intent
 import android.os.Bundle
@@ -131,7 +137,7 @@ class WidgetConfigActivity : ComponentActivity() {
                     kind = kind,
                     loadSettings = { glanceId -> loadSettings(glanceId) },
                     glanceId = { GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId) },
-                    onSave = { glanceId, settings -> save(widget, glanceId, settings) },
+                    onSave = { glanceId, settings, applyToAll -> save(widget, glanceId, settings, applyToAll) },
                 )
             }
         }
@@ -140,24 +146,21 @@ class WidgetConfigActivity : ComponentActivity() {
     private suspend fun loadSettings(glanceId: GlanceId): WidgetSettings =
         WidgetSettings.from(getAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId))
 
-    private fun save(widget: GlanceAppWidget, glanceId: GlanceId, settings: WidgetSettings) {
+    private fun save(widget: GlanceAppWidget, glanceId: GlanceId, settings: WidgetSettings, applyToAll: Boolean) {
         lifecycleScope.launch {
-            updateAppWidgetState(this@WidgetConfigActivity, glanceId) { prefs ->
-                prefs[WidgetSettings.KEY_HIDDEN_CALENDARS] =
-                    settings.hiddenCalendarIds.map { it.toString() }.toSet()
-                prefs[WidgetSettings.KEY_AGENDA_DAYS] = settings.agendaDays
-                prefs[WidgetSettings.KEY_THEME] = settings.appearance.theme.name
-                prefs[WidgetSettings.KEY_BG_OPACITY] = settings.appearance.backgroundOpacity
-                prefs[WidgetSettings.KEY_CORNER] = settings.appearance.cornerDp
-                prefs[WidgetSettings.KEY_TEXT_SCALE] = settings.appearance.textScalePercent
-                prefs[WidgetSettings.KEY_FONT] = settings.appearance.font.name
-                prefs[WidgetSettings.KEY_CUSTOM_PRIMARY] = settings.appearance.customPrimary.toInt()
-                prefs[WidgetSettings.KEY_CUSTOM_BACKGROUND] = settings.appearance.customBackground.toInt()
-                prefs[WidgetSettings.KEY_SHOW_LUNAR] = settings.showLunar
-                prefs[WidgetSettings.KEY_AGENDA_LAYOUT] = settings.agendaLayout.name
-                prefs[WidgetSettings.KEY_REFRESH] = (prefs[WidgetSettings.KEY_REFRESH] ?: 0L) + 1
-            }
+            updateAppWidgetState(this@WidgetConfigActivity, glanceId) { prefs -> settings.writeTo(prefs) }
             widget.update(this@WidgetConfigActivity, glanceId)
+            // 「套用到所有小工具」：其他 widget 也寫入同樣的設定（月份、選取的日期這些各自的狀態不動）。
+            if (applyToAll) {
+                val manager = GlanceAppWidgetManager(this@WidgetConfigActivity)
+                for ((other, _) in WidgetUpdater.widgets) {
+                    for (otherId in manager.getGlanceIds(other.javaClass)) {
+                        if (otherId == glanceId) continue
+                        updateAppWidgetState(this@WidgetConfigActivity, otherId) { prefs -> settings.writeTo(prefs) }
+                        other.update(this@WidgetConfigActivity, otherId)
+                    }
+                }
+            }
             WidgetUpdater.syncSchedules(this@WidgetConfigActivity)
             setResult(RESULT_OK, resultIntent())
             finish()
@@ -173,7 +176,7 @@ private fun ConfigScreen(
     kind: WidgetKind,
     loadSettings: suspend (GlanceId) -> WidgetSettings,
     glanceId: () -> GlanceId,
-    onSave: (GlanceId, WidgetSettings) -> Unit,
+    onSave: (GlanceId, WidgetSettings, Boolean) -> Unit,
 ) {
     val context = LocalContext.current
     val repository = remember { CalendarRepository(context) }
@@ -191,6 +194,12 @@ private fun ConfigScreen(
         settings = settings.copy(appearance = change(settings.appearance))
     }
 
+    // 內容最常調整，一定展開；外觀與進階可以收合，免得要捲很久才找到日曆。
+    var appearanceOpen by remember { mutableStateOf(true) }
+    var advancedOpen by remember { mutableStateOf(false) }
+    var confirmApplyAll by remember { mutableStateOf(false) }
+    val hasHeader = kind != WidgetKind.NEXT
+
     Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.config_title)) }) }) { padding ->
         Column(
             modifier = Modifier
@@ -201,6 +210,9 @@ private fun ConfigScreen(
                 appearance = settings.appearance,
                 kind = kind,
                 darkTheme = isSystemInDarkTheme(),
+                agendaLayout = settings.agendaLayout,
+                headerButtons = settings.headerButtons,
+                weekStart = settings.weekStart,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
@@ -212,72 +224,47 @@ private fun ConfigScreen(
             ) {
                 item { Spacer(Modifier.size(4.dp)) }
 
-                item {
-                    Section(stringResource(R.string.section_theme)) {
-                        ThemePicker(
-                            appearance = settings.appearance,
-                            onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
-                        )
-                    }
-                }
+                // ── 內容 ──
+                item { GroupHeader(stringResource(R.string.group_content), expanded = null) }
 
-                if (settings.appearance.theme == WidgetThemeId.CUSTOM) {
+                if (kind == WidgetKind.AGENDA) {
                     item {
-                        Section(stringResource(R.string.section_custom_colors)) {
-                            CustomColorEditor(
-                                primary = settings.appearance.customPrimary,
-                                background = settings.appearance.customBackground,
-                                onChange = { primary, background ->
-                                    updateAppearance { it.copy(customPrimary = primary, customBackground = background) }
-                                },
+                        Section(stringResource(R.string.section_agenda_layout)) {
+                            Segmented(
+                                options = listOf(
+                                    AgendaLayout.LIST to stringResource(R.string.agenda_layout_list),
+                                    AgendaLayout.TIMELINE to stringResource(R.string.agenda_layout_timeline),
+                                    AgendaLayout.DAYS to stringResource(R.string.agenda_layout_days),
+                                ),
+                                selected = settings.agendaLayout,
+                                onSelect = { v -> settings = settings.copy(agendaLayout = v) },
+                            )
+                        }
+                    }
+                    item {
+                        Section(stringResource(R.string.section_days)) {
+                            Segmented(
+                                options = WidgetSettings.AGENDA_DAY_OPTIONS.mapIndexed { i, days -> days to stringResource(R.string.months_option, i + 1) },
+                                selected = settings.agendaDays,
+                                onSelect = { v -> settings = settings.copy(agendaDays = v) },
                             )
                         }
                     }
                 }
 
-                if (settings.appearance.theme.supportsOpacity) {
+                if (kind == WidgetKind.WEEK) {
                     item {
-                        Section(stringResource(R.string.section_opacity, settings.appearance.backgroundOpacity)) {
-                            Slider(
-                                value = settings.appearance.backgroundOpacity.toFloat(),
-                                onValueChange = { v ->
-                                    updateAppearance { it.copy(backgroundOpacity = v.roundToInt()) }
-                                },
-                                valueRange = 0f..100f,
-                                steps = 9,
-                                modifier = Modifier.padding(horizontal = 16.dp),
+                        Section(stringResource(R.string.section_week_start)) {
+                            Segmented(
+                                options = listOf(
+                                    WeekStart.TODAY to stringResource(R.string.week_start_today),
+                                    WeekStart.MONDAY to stringResource(R.string.week_start_monday),
+                                    WeekStart.SUNDAY to stringResource(R.string.week_start_sunday),
+                                ),
+                                selected = settings.weekStart,
+                                onSelect = { v -> settings = settings.copy(weekStart = v) },
                             )
                         }
-                    }
-                }
-
-                item {
-                    Section(stringResource(R.string.section_corner)) {
-                        Segmented(
-                            options = Appearance.CORNER_OPTIONS.map { it to stringResource(cornerLabel(it)) },
-                            selected = settings.appearance.cornerDp,
-                            onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
-                        )
-                    }
-                }
-
-                item {
-                    Section(stringResource(R.string.section_text_size)) {
-                        Segmented(
-                            options = Appearance.TEXT_SCALE_OPTIONS.map { it to stringResource(textScaleLabel(it)) },
-                            selected = settings.appearance.textScalePercent,
-                            onSelect = { v -> updateAppearance { it.copy(textScalePercent = v) } },
-                        )
-                    }
-                }
-
-                item {
-                    Section(stringResource(R.string.section_font)) {
-                        Segmented(
-                            options = FontChoice.entries.map { it to stringResource(it.labelRes) },
-                            selected = settings.appearance.font,
-                            onSelect = { v -> updateAppearance { it.copy(font = v) } },
-                        )
                     }
                 }
 
@@ -302,31 +289,6 @@ private fun ConfigScreen(
                             checked = settings.showLunar,
                             onCheckedChange = { settings = settings.copy(showLunar = it) },
                         )
-                    }
-                }
-
-                if (kind == WidgetKind.AGENDA) {
-                    item {
-                        Section(stringResource(R.string.section_agenda_layout)) {
-                            Segmented(
-                                options = listOf(
-                                    AgendaLayout.LIST to stringResource(R.string.agenda_layout_list),
-                                    AgendaLayout.TIMELINE to stringResource(R.string.agenda_layout_timeline),
-                                    AgendaLayout.DAYS to stringResource(R.string.agenda_layout_days),
-                                ),
-                                selected = settings.agendaLayout,
-                                onSelect = { v -> settings = settings.copy(agendaLayout = v) },
-                            )
-                        }
-                    }
-                    item {
-                        Section(stringResource(R.string.section_days)) {
-                            Segmented(
-                                options = WidgetSettings.AGENDA_DAY_OPTIONS.mapIndexed { i, days -> days to stringResource(R.string.months_option, i + 1) },
-                                selected = settings.agendaDays,
-                                onSelect = { v -> settings = settings.copy(agendaDays = v) },
-                            )
-                        }
                     }
                 }
 
@@ -369,36 +331,222 @@ private fun ConfigScreen(
                     }
                 }
 
-                // 有「＋」按鈕的 widget 才需要選新增行程的 App。
-                if (kind == WidgetKind.AGENDA || kind == WidgetKind.MONTH || kind == WidgetKind.TIMELINE) {
+                // ── 外觀 ──
+                item {
+                    GroupHeader(
+                        stringResource(R.string.group_appearance),
+                        expanded = appearanceOpen,
+                        summary = stringResource(settings.appearance.theme.labelRes),
+                        onToggle = { appearanceOpen = !appearanceOpen },
+                    )
+                }
+                if (appearanceOpen) {
                     item {
-                        Section(stringResource(R.string.section_editor)) {
-                            EventEditorPicker()
+                        Section(stringResource(R.string.section_theme)) {
+                            ThemePicker(
+                                appearance = settings.appearance,
+                                onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
+                            )
+                        }
+                    }
+
+                    if (settings.appearance.theme == WidgetThemeId.CUSTOM) {
+                        item {
+                            Section(stringResource(R.string.section_custom_colors)) {
+                                CustomColorEditor(
+                                    primary = settings.appearance.customPrimary,
+                                    background = settings.appearance.customBackground,
+                                    onChange = { primary, background ->
+                                        updateAppearance { it.copy(customPrimary = primary, customBackground = background) }
+                                    },
+                                )
+                            }
+                        }
+                    }
+
+                    if (settings.appearance.theme.supportsOpacity) {
+                        item {
+                            Section(stringResource(R.string.section_opacity, settings.appearance.backgroundOpacity)) {
+                                Slider(
+                                    value = settings.appearance.backgroundOpacity.toFloat(),
+                                    onValueChange = { v ->
+                                        updateAppearance { it.copy(backgroundOpacity = v.roundToInt()) }
+                                    },
+                                    valueRange = 0f..100f,
+                                    steps = 9,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_corner)) {
+                            Segmented(
+                                options = Appearance.CORNER_OPTIONS.map { it to stringResource(cornerLabel(it)) },
+                                selected = settings.appearance.cornerDp,
+                                onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
+                            )
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_text_size)) {
+                            Segmented(
+                                options = Appearance.TEXT_SCALE_OPTIONS.map { it to stringResource(textScaleLabel(it)) },
+                                selected = settings.appearance.textScalePercent,
+                                onSelect = { v -> updateAppearance { it.copy(textScalePercent = v) } },
+                            )
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_font)) {
+                            Segmented(
+                                options = FontChoice.entries.map { it to stringResource(it.labelRes) },
+                                selected = settings.appearance.font,
+                                onSelect = { v -> updateAppearance { it.copy(font = v) } },
+                            )
                         }
                     }
                 }
 
+                // ── 進階 ──
                 item {
-                    TextButton(
-                        onClick = { context.startActivity(Intent(context, LongEventsActivity::class.java)) },
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    ) {
-                        Text(stringResource(R.string.long_events_manage_link))
+                    GroupHeader(
+                        stringResource(R.string.group_advanced),
+                        expanded = advancedOpen,
+                        onToggle = { advancedOpen = !advancedOpen },
+                    )
+                }
+                if (advancedOpen) {
+                    if (hasHeader) {
+                        item {
+                            Section(stringResource(R.string.section_header_buttons)) {
+                                Text(
+                                    stringResource(R.string.header_buttons_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                )
+                                for (button in HeaderButton.entries) {
+                                    val checked = button in settings.headerButtons
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                settings = settings.copy(
+                                                    headerButtons = HeaderButton.entries.filter {
+                                                        if (it == button) !checked else it in settings.headerButtons
+                                                    },
+                                                )
+                                            }
+                                            .padding(horizontal = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                                        Text(stringResource(button.labelRes), style = MaterialTheme.typography.bodyLarge)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 有「＋」按鈕的 widget 才需要選新增行程的 App。
+                    if (hasHeader) {
+                        item {
+                            Section(stringResource(R.string.section_editor)) {
+                                EventEditorPicker()
+                            }
+                        }
+                    }
+
+                    item {
+                        TextButton(
+                            onClick = { context.startActivity(Intent(context, LongEventsActivity::class.java)) },
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.long_events_manage_link))
+                        }
                     }
                 }
+                item { Spacer(Modifier.size(8.dp)) }
             }
 
-            Button(
-                onClick = { onSave(id, settings) },
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(stringResource(R.string.done))
+                OutlinedButton(onClick = { confirmApplyAll = true }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.apply_to_all), maxLines = 1)
+                }
+                Button(onClick = { onSave(id, settings, false) }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.done))
+                }
             }
         }
     }
+
+    if (confirmApplyAll) {
+        AlertDialog(
+            onDismissRequest = { confirmApplyAll = false },
+            title = { Text(stringResource(R.string.apply_to_all)) },
+            text = { Text(stringResource(R.string.apply_to_all_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmApplyAll = false
+                    onSave(id, settings, true)
+                }) { Text(stringResource(R.string.apply_to_all_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmApplyAll = false }) { Text(stringResource(android.R.string.cancel)) }
+            },
+        )
+    }
 }
+
+/** 設定分組的標題：[expanded] 為 null 時不能收合（「內容」）；可以收合時右邊顯示目前的摘要與箭頭。 */
+@Composable
+private fun GroupHeader(title: String, expanded: Boolean?, summary: String? = null, onToggle: () -> Unit = {}) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (expanded != null) Modifier.clickable(onClick = onToggle) else Modifier)
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        if (expanded == false && summary != null) {
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        }
+        if (expanded != null) {
+            Icon(
+                painterResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private val HeaderButton.labelRes: Int
+    get() = when (this) {
+        HeaderButton.SEARCH -> R.string.search_title
+        HeaderButton.REFRESH -> R.string.refresh
+        HeaderButton.SETTINGS -> R.string.widget_settings
+    }
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) {

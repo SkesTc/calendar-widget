@@ -46,6 +46,7 @@ import androidx.glance.state.PreferencesGlanceStateDefinition
 import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
+import androidx.glance.text.TextDecoration
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
@@ -136,7 +137,7 @@ class MonthWidget : GlanceAppWidget() {
                 ?.copy(now = System.currentTimeMillis())
                 ?: state
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
                     MonthContent(shown)
                 }
             }
@@ -283,6 +284,7 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
         widthDp = widthDp,
         yearTitleDp = MonthLayout.textWidthDp(yearTitle, titleSp),
         monthTitleDp = MonthLayout.textWidthDp(monthTitle, titleSp),
+        enabled = style.headerButtons,
     )
     val backToThisMonth = actionRunCallback<ChangeMonthAction>(actionParametersOf(ChangeMonthAction.DeltaKey to 0))
     Row(
@@ -300,9 +302,9 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
         Spacer(GlanceModifier.width(4.dp))
         NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1, size = 30.dp)
         Spacer(GlanceModifier.width(4.dp))
-        // 放得下就分開放搜尋、重新整理、設定，否則逐步收進「⋯」選單，避免按鈕被擠出畫面。
-        ActionButtons(fit.buttons, size = 30.dp, gap = 4.dp)
-        Spacer(GlanceModifier.width(4.dp))
+        // 勾選的按鈕放得下就各一顆，放不下的收進「⋯」選單，避免按鈕被擠出畫面。
+        ActionButtons(fit.plan, size = 30.dp, gap = 4.dp)
+        if (!fit.plan.isEmpty) Spacer(GlanceModifier.width(4.dp))
         AddEventButton(34.dp)
     }
 }
@@ -411,7 +413,10 @@ private fun DayCellView(
                     // 有行程的日子數字加粗，搭配下方圓點更好辨識。
                     weight = if (isToday || (day.inMonth && day.eventColors.isNotEmpty())) FontWeight.Bold else FontWeight.Normal,
                     align = TextAlign.Center,
-                ),
+                ).let { base ->
+                    // 放假日除了紅字再加底線：色弱或小格子不顯示假日名稱時也分得出來。
+                    if (day.inMonth && day.holiday == HolidayKind.DAY_OFF) base.copy(textDecoration = TextDecoration.Underline) else base
+                },
             )
         }
         if (showLabel) DayLabelText(day)

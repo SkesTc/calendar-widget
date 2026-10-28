@@ -1,5 +1,6 @@
 package com.skestc.calendarwidget.data
 
+import com.skestc.calendarwidget.settings.HeaderButton
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -44,39 +45,44 @@ class MonthLayoutTest {
 class MonthHeaderFitTest {
     private val year = MonthLayout.textWidthDp("2026年10月", 16f)
     private val month = MonthLayout.textWidthDp("10月", 16f)
-    private val all = MonthLayout.HeaderButtons.ALL
-    private val searchAndMenu = MonthLayout.HeaderButtons.SEARCH_AND_MENU
-    private val menu = MonthLayout.HeaderButtons.MENU
+    private val all = HeaderButton.entries
+    private val search = HeaderButton.SEARCH
 
     @Test
     fun wideHeaderShowsYearAndEveryButton() {
-        assertEquals(MonthLayout.HeaderFit(showYear = true, buttons = all), MonthLayout.headerFit(400f, year, month))
+        val fit = MonthLayout.headerFit(400f, year, month, all)
+        assertTrue(fit.showYear)
+        assertEquals(MonthLayout.HeaderPlan(all, menu = false), fit.plan)
     }
 
     @Test
     fun mediumHeaderKeepsSearchAndFoldsTheRestIntoMenu() {
-        assertEquals(MonthLayout.HeaderFit(showYear = false, buttons = searchAndMenu), MonthLayout.headerFit(300f, year, month))
+        val fit = MonthLayout.headerFit(300f, year, month, all)
+        assertTrue(!fit.showYear)
+        assertEquals(MonthLayout.HeaderPlan(listOf(search), menu = true), fit.plan)
     }
 
     @Test
     fun narrowHeaderUsesOnlyTheMenu() {
-        assertEquals(MonthLayout.HeaderFit(showYear = false, buttons = menu), MonthLayout.headerFit(220f, year, month))
+        assertEquals(MonthLayout.HeaderPlan(emptyList(), menu = true), MonthLayout.headerFit(220f, year, month, all).plan)
     }
 
     @Test
-    fun buttonsShrinkInOrderAsSpaceRunsOut() {
-        assertEquals(all, MonthLayout.buttonsFor(102f))
-        assertEquals(searchAndMenu, MonthLayout.buttonsFor(101f))
-        assertEquals(searchAndMenu, MonthLayout.buttonsFor(68f))
-        assertEquals(menu, MonthLayout.buttonsFor(67f))
+    fun fewerChosenButtonsLeaveRoomForTheYear() {
+        val fit = MonthLayout.headerFit(300f, year, month, listOf(search))
+        assertTrue(fit.showYear)
+        assertEquals(MonthLayout.HeaderPlan(listOf(search), menu = false), fit.plan)
+        // 全部取消勾選：只剩「＋」，沒有「⋯」。
+        assertEquals(MonthLayout.HeaderPlan(emptyList(), menu = false), MonthLayout.headerFit(220f, year, month, emptyList()).plan)
     }
 
     @Test
-    fun largerTextNeedsMoreRoom() {
-        val bigYear = MonthLayout.textWidthDp("2026年10月", 16f * 1.5f)
-        val bigMonth = MonthLayout.textWidthDp("10月", 16f * 1.5f)
-        val big = MonthLayout.headerFit(400f, bigYear, bigMonth)
-        assertTrue(big.buttons.ordinal >= MonthLayout.headerFit(400f, year, month).buttons.ordinal)
+    fun planKeepsOrderAndReservesASlotForTheMenu() {
+        assertEquals(MonthLayout.HeaderPlan(all, false), MonthLayout.planButtons(all, 102f))
+        assertEquals(MonthLayout.HeaderPlan(listOf(HeaderButton.SEARCH), true), MonthLayout.planButtons(all, 101f))
+        assertEquals(MonthLayout.HeaderPlan(emptyList(), true), MonthLayout.planButtons(all, 40f))
+        assertEquals(MonthLayout.HeaderPlan(listOf(HeaderButton.REFRESH, HeaderButton.SETTINGS), false),
+            MonthLayout.planButtons(listOf(HeaderButton.REFRESH, HeaderButton.SETTINGS), 68f))
     }
 
     @Test

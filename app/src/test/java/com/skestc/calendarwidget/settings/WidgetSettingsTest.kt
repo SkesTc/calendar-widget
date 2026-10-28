@@ -52,6 +52,28 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun weekStartAndHeaderButtonsRoundTrip() {
+        val settings = WidgetSettings(weekStart = WeekStart.MONDAY, headerButtons = listOf(HeaderButton.SEARCH))
+        val prefs = mutablePreferencesOf()
+        settings.writeTo(prefs)
+        val read = WidgetSettings.from(prefs)
+        assertEquals(WeekStart.MONDAY, read.weekStart)
+        assertEquals(listOf(HeaderButton.SEARCH), read.headerButtons)
+        // 沒存過時全部顯示；全部取消時是空的。
+        assertEquals(HeaderButton.entries, WidgetSettings.from(mutablePreferencesOf()).headerButtons)
+        WidgetSettings(headerButtons = emptyList()).writeTo(prefs)
+        assertEquals(emptyList<HeaderButton>(), WidgetSettings.from(prefs).headerButtons)
+    }
+
+    @Test
+    fun weekStartFirstDay() {
+        val wednesday = java.time.LocalDate.of(2026, 10, 28)
+        assertEquals(wednesday, WeekStart.TODAY.firstDay(wednesday))
+        assertEquals(java.time.LocalDate.of(2026, 10, 26), WeekStart.MONDAY.firstDay(wednesday))
+        assertEquals(java.time.LocalDate.of(2026, 10, 25), WeekStart.SUNDAY.firstDay(wednesday))
+    }
+
+    @Test
     fun agendaShowsAtLeastOneMonth() {
         assertEquals(31, WidgetSettings.from(mutablePreferencesOf()).agendaDays)
         // 舊版存的 7 天升到一個月。

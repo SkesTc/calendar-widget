@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -25,20 +26,25 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.MonthBuilder
+import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
+import com.skestc.calendarwidget.settings.HeaderButton
+import com.skestc.calendarwidget.settings.WeekStart
 import com.skestc.calendarwidget.theme.DayNight
 import com.skestc.calendarwidget.theme.DynamicSpec
 import com.skestc.calendarwidget.theme.ThemeSpecs
@@ -74,7 +80,15 @@ private class PreviewPalette(
  * 背後墊一張示意桌布，才看得出透明度與毛玻璃的效果。
  */
 @Composable
-fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, modifier: Modifier = Modifier) {
+fun WidgetPreview(
+    appearance: Appearance,
+    kind: WidgetKind,
+    darkTheme: Boolean,
+    modifier: Modifier = Modifier,
+    agendaLayout: AgendaLayout = AgendaLayout.LIST,
+    headerButtons: List<HeaderButton> = HeaderButton.entries,
+    weekStart: WeekStart = WeekStart.TODAY,
+) {
     val context = LocalContext.current
     val dynamicSpec = remember { DynamicSpec.resolve(context) }
     val spec = specFor(appearance) ?: dynamicSpec
@@ -147,18 +161,20 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
                     when (kind) {
                         WidgetKind.MONTH -> 260.dp
                         WidgetKind.NEXT -> 64.dp
-                        WidgetKind.WEEK -> 150.dp
-                        else -> 190.dp
+                        WidgetKind.WEEK -> 170.dp
+                        else -> 220.dp
                     },
                 )
                 .padding(12.dp),
         ) {
+            // 標題列按鈕跟 widget 一樣依勾選顯示（預覽的寬度足夠，全部分開畫）。
+            val buttons: @Composable () -> Unit = { PreviewHeaderButtons(palette, headerButtons) }
             when (kind) {
-                WidgetKind.AGENDA -> AgendaPreview(palette, cornerDp, ::text)
-                WidgetKind.MONTH -> MonthPreview(palette, ::text)
-                WidgetKind.TIMELINE -> TimelinePreview(palette, cornerDp, ::text)
+                WidgetKind.AGENDA -> AgendaPreview(palette, cornerDp, ::text, agendaLayout, buttons)
+                WidgetKind.MONTH -> MonthPreview(palette, ::text, buttons)
+                WidgetKind.TIMELINE -> TimelinePreview(palette, cornerDp, ::text, buttons)
                 WidgetKind.NEXT -> NextPreview(palette, ::text)
-                WidgetKind.WEEK -> WeekPreview(palette, ::text)
+                WidgetKind.WEEK -> WeekPreview(palette, ::text, weekStart, buttons)
             }
         }
     }
@@ -166,59 +182,160 @@ fun WidgetPreview(appearance: Appearance, kind: WidgetKind, darkTheme: Boolean, 
 
 private typealias TextStyler = (Int, Color, FontWeight, TextAlign?) -> TextStyle
 
+/** 標題列右邊的按鈕：勾選的搜尋、重新整理、設定，加上「＋」。 */
 @Composable
-private fun AgendaPreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler) {
+private fun PreviewHeaderButtons(palette: PreviewPalette, buttons: List<HeaderButton>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+        for (button in buttons) {
+            PreviewIconButton(
+                icon = when (button) {
+                    HeaderButton.SEARCH -> R.drawable.ic_search
+                    HeaderButton.REFRESH -> R.drawable.ic_refresh
+                    HeaderButton.SETTINGS -> R.drawable.ic_settings
+                },
+                background = palette.card,
+                tint = palette.onCard,
+            )
+        }
+        PreviewIconButton(R.drawable.ic_add, palette.primary, palette.onPrimary, size = 32.dp)
+    }
+}
+
+@Composable
+private fun PreviewIconButton(icon: Int, background: Color, tint: Color, size: Dp = 28.dp) {
+    Box(Modifier.size(size).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
+        Icon(painterResource(icon), contentDescription = null, tint = tint, modifier = Modifier.size(size * 0.6f))
+    }
+}
+
+/** 圓潤粗體的大號數字（widget 上的 ExpressiveText）。 */
+@Composable
+private fun roundedNumerals(): FontFamily? {
+    val context = LocalContext.current
+    return remember {
+        runCatching { FontFamily(Font(path = "fonts/google_sans_flex_rounded_bold.ttf", assetManager = context.assets)) }.getOrNull()
+    }
+}
+
+private data class PreviewEvent(val time: String, val title: Int, val detail: String, val color: Color, val past: Boolean = false)
+
+@Composable
+private fun AgendaPreview(
+    palette: PreviewPalette,
+    cornerDp: Float,
+    text: TextStyler,
+    layout: AgendaLayout,
+    buttons: @Composable () -> Unit,
+) {
     val today = LocalDate.now()
     val locale = Locale.getDefault()
-    val cardShape = RoundedCornerShape(min((cornerDp / 2).dp, 12.dp))
+    val rounded = roundedNumerals()
+    val events = listOf(
+        PreviewEvent("09:30", R.string.sample_standup, "09:30 – 10:00 · " + stringResource(R.string.sample_room), Color(0xFF4285F4), past = true),
+        PreviewEvent("12:00", R.string.sample_lunch, "12:00 – 13:00", Color(0xFF0B8043)),
+        PreviewEvent("14:00", R.string.sample_project, "14:00 – 15:00 · " + stringResource(R.string.sample_online), Color(0xFFE67C73)),
+    )
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(today.dayOfMonth.toString(), style = text(34, palette.primary, FontWeight.Bold, null))
-            Spacer(Modifier.width(8.dp))
+            Text(
+                today.dayOfMonth.toString(),
+                style = text(40, palette.primary, FontWeight.Bold, null).copy(fontFamily = rounded ?: FontFamily.Default),
+            )
+            Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
-                    style = text(14, palette.onSurface, FontWeight.Medium, null),
+                    maxLines = 1,
+                    style = text(16, palette.onSurface, FontWeight.Bold, null),
                 )
                 Text(
                     DateTimeFormatter.ofPattern("yyyy/MM", locale).format(today),
                     style = text(12, palette.onSurfaceVariant, FontWeight.Normal, null),
                 )
             }
-            Box(
-                Modifier.size(36.dp).clip(CircleShape).background(palette.primary),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("+", style = text(20, palette.onPrimary, FontWeight.Bold, null))
-            }
+            buttons()
         }
         Spacer(Modifier.height(8.dp))
-        Text(stringResource(R.string.today_word), style = text(12, palette.primary, FontWeight.Medium, null))
-        Spacer(Modifier.height(4.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            val samples = listOf(
-                Triple(stringResource(R.string.sample_standup), "09:30 – 10:00 · " + stringResource(R.string.sample_room), Color(0xFF4285F4)),
-                Triple(stringResource(R.string.sample_lunch), "12:00 – 13:00", Color(0xFF0B8043)),
-            )
-            for ((title, time, color) in samples) {
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(cardShape)
-                        .background(palette.card)
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Box(Modifier.width(4.dp).height(30.dp).clip(RoundedCornerShape(2.dp)).background(color))
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            title,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = text(14, palette.onCard, FontWeight.Medium, null),
-                        )
-                        Text(time, style = text(12, palette.onCard, FontWeight.Normal, null))
+        when (layout) {
+            AgendaLayout.LIST -> {
+                Text(stringResource(R.string.today_word), style = text(12, palette.primary, FontWeight.Bold, null))
+                Spacer(Modifier.height(4.dp))
+                // 同一天的卡片連成一組：外側大圓角、內側小圓角（已結束的沒有底色）。
+                val big = if (cornerDp > 0f) 16.dp else 0.dp
+                val small = if (cornerDp > 0f) 4.dp else 0.dp
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    events.forEachIndexed { i, event ->
+                        val shape = when {
+                            event.past -> RoundedCornerShape(0.dp)
+                            i == 1 -> RoundedCornerShape(topStart = big, topEnd = big, bottomStart = small, bottomEnd = small)
+                            else -> RoundedCornerShape(topStart = small, topEnd = small, bottomStart = big, bottomEnd = big)
+                        }
+                        val color = if (event.past) palette.onSurfaceVariant else palette.onCard
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(shape)
+                                .background(if (event.past) Color.Transparent else palette.card)
+                                .padding(horizontal = 10.dp, vertical = 5.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Box(Modifier.width(4.dp).height(28.dp).clip(RoundedCornerShape(2.dp)).background(if (event.past) palette.outline else event.color))
+                            Spacer(Modifier.width(8.dp))
+                            Column {
+                                Text(stringResource(event.title), maxLines = 1, overflow = TextOverflow.Ellipsis, style = text(14, color, FontWeight.Medium, null))
+                                Text(event.detail, maxLines = 1, style = text(12, color, FontWeight.Normal, null))
+                            }
+                        }
+                    }
+                }
+            }
+            AgendaLayout.TIMELINE -> {
+                val cardShape = RoundedCornerShape(if (cornerDp > 0f) 16.dp else 0.dp)
+                Text(stringResource(R.string.today_word), style = text(12, palette.primary, FontWeight.Bold, null))
+                Spacer(Modifier.height(4.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    TimelinePreviewRow(palette, cardShape, text, events[0].time, stringResource(events[0].title), events[0].detail, events[0].color, past = true)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(stringResource(R.string.now), Modifier.width(46.dp), style = text(12, palette.primary, FontWeight.Bold, null))
+                        Box(Modifier.weight(1f).height(2.dp).background(palette.primary))
+                    }
+                    TimelinePreviewRow(palette, cardShape, text, events[1].time, stringResource(events[1].title), events[1].detail, events[1].color, past = false)
+                }
+            }
+            AgendaLayout.DAYS -> {
+                // 每天一列：左邊星期與大號日期，右邊行程；今天用卡片色標示。
+                for (offset in 0..1) {
+                    val date = today.plusDays(offset.toLong())
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(if (cornerDp > 0f) 16.dp else 0.dp))
+                            .background(if (offset == 0) palette.card else Color.Transparent)
+                            .padding(horizontal = 4.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.width(44.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(date.dayOfWeek.getDisplayName(DayTextStyle.SHORT, locale), style = text(10, palette.onSurface, FontWeight.Medium, TextAlign.Center))
+                            Text(
+                                date.dayOfMonth.toString(),
+                                style = text(18, if (offset == 0) palette.primary else palette.onSurface, FontWeight.Bold, TextAlign.Center)
+                                    .copy(fontFamily = rounded ?: FontFamily.Default),
+                            )
+                        }
+                        Column(Modifier.weight(1f).padding(start = 6.dp)) {
+                            val dayEvents = if (offset == 0) events.drop(1) else listOf(events[0].copy(past = false))
+                            for (event in dayEvents) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(Modifier.width(3.dp).height(12.dp).clip(RoundedCornerShape(2.dp)).background(event.color))
+                                    Text(
+                                        "${event.time}  ${stringResource(event.title)}",
+                                        maxLines = 1,
+                                        modifier = Modifier.padding(start = 5.dp),
+                                        style = text(12, palette.onSurface, FontWeight.Normal, null),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -227,7 +344,7 @@ private fun AgendaPreview(palette: PreviewPalette, cornerDp: Float, text: TextSt
 }
 
 @Composable
-private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
+private fun MonthPreview(palette: PreviewPalette, text: TextStyler, buttons: @Composable () -> Unit) {
     val locale = Locale.getDefault()
     val today = LocalDate.now()
     val month = YearMonth.from(today)
@@ -252,16 +369,12 @@ private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
 
     Column(Modifier.fillMaxSize()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, Modifier.weight(1f), style = text(16, palette.onSurface, FontWeight.Bold, null))
-            for (label in listOf("‹", "›")) {
-                Box(
-                    Modifier.size(28.dp).clip(CircleShape).background(palette.card),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(label, style = text(16, palette.onCard, FontWeight.Bold, null))
-                }
-                Spacer(Modifier.width(4.dp))
-            }
+            Text(title, Modifier.weight(1f), maxLines = 1, style = text(16, palette.onSurface, FontWeight.Bold, null))
+            PreviewIconButton(R.drawable.ic_chevron_left, palette.card, palette.onCard)
+            Spacer(Modifier.width(4.dp))
+            PreviewIconButton(R.drawable.ic_chevron_right, palette.card, palette.onCard)
+            Spacer(Modifier.width(4.dp))
+            buttons()
         }
         Row(Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
             for (i in 0 until 7) {
@@ -298,14 +411,14 @@ private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
                                         !cell.inMonth -> palette.outline
                                         else -> weekend(cell.date.dayOfWeek) ?: palette.onSurface
                                     },
-                                    if (isToday) FontWeight.Bold else FontWeight.Normal,
+                                    if (isToday || (cell.inMonth && cell.eventColors.isNotEmpty())) FontWeight.Bold else FontWeight.Normal,
                                     TextAlign.Center,
                                 ),
                             )
                         }
-                        Row(Modifier.height(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(Modifier.height(8.dp), verticalAlignment = Alignment.CenterVertically) {
                             cell.eventColors.forEach {
-                                Box(Modifier.padding(horizontal = 1.dp).size(4.dp).clip(CircleShape).background(Color(it)))
+                                Box(Modifier.padding(horizontal = 1.5.dp).size(6.dp).clip(CircleShape).background(Color(it)))
                             }
                         }
                     }
@@ -316,10 +429,23 @@ private fun MonthPreview(palette: PreviewPalette, text: TextStyler) {
 }
 
 @Composable
-private fun TimelinePreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler) {
-    val cardShape = RoundedCornerShape(min((cornerDp / 2).dp, 12.dp))
+private fun TimelinePreview(palette: PreviewPalette, cornerDp: Float, text: TextStyler, buttons: @Composable () -> Unit) {
+    val cardShape = RoundedCornerShape(if (cornerDp > 0f) 16.dp else 0.dp)
+    val today = LocalDate.now()
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(stringResource(R.string.today_word), style = text(16, palette.onSurface, FontWeight.Bold, null))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                today.dayOfMonth.toString(),
+                style = text(34, palette.primary, FontWeight.Bold, null).copy(fontFamily = roundedNumerals() ?: FontFamily.Default),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                stringResource(R.string.today_word),
+                Modifier.weight(1f),
+                style = text(16, palette.onSurface, FontWeight.Bold, null),
+            )
+            buttons()
+        }
         Spacer(Modifier.height(2.dp))
         TimelinePreviewRow(
             palette, cardShape, text, "09:30", stringResource(R.string.sample_standup), "09:30 – 10:00",
@@ -388,8 +514,9 @@ private fun NextPreview(palette: PreviewPalette, text: TextStyler) {
 }
 
 @Composable
-private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
+private fun WeekPreview(palette: PreviewPalette, text: TextStyler, weekStart: WeekStart, buttons: @Composable () -> Unit) {
     val today = LocalDate.now()
+    val first = weekStart.firstDay(today)
     val locale = Locale.getDefault()
     val samples = mapOf(
         0 to listOf(R.string.sample_standup to Color(0xFF4285F4)),
@@ -398,46 +525,59 @@ private fun WeekPreview(palette: PreviewPalette, text: TextStyler) {
         4 to listOf(R.string.sample_dinner to Color(0xFFE67C73)),
         6 to listOf(R.string.sample_hike to Color(0xFF0B8043)),
     )
-    Row(Modifier.fillMaxSize()) {
-        for (offset in 0 until 7) {
-            val date = today.plusDays(offset.toLong())
-            val dayColor = when (date.dayOfWeek) {
-                DayOfWeek.SUNDAY -> palette.sunday
-                DayOfWeek.SATURDAY -> palette.saturday
-                else -> palette.onSurface
-            }
-            Column(
-                Modifier.weight(1f).padding(horizontal = 1.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    date.dayOfWeek.getDisplayName(DayTextStyle.NARROW, locale),
-                    style = text(10, dayColor, FontWeight.Medium, TextAlign.Center),
-                )
-                Box(
-                    Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(if (offset == 0) palette.primary else Color.Transparent),
-                    contentAlignment = Alignment.Center,
+    val range = DateTimeFormatter.ofPattern(android.text.format.DateFormat.getBestDateTimePattern(locale, "MMMd"), locale)
+    Column(Modifier.fillMaxSize()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 4.dp)) {
+            Text(
+                "${range.format(first)} – ${range.format(first.plusDays(6))}",
+                Modifier.weight(1f),
+                maxLines = 1,
+                style = text(14, palette.onSurface, FontWeight.Bold, null),
+            )
+            buttons()
+        }
+        Row(Modifier.fillMaxSize()) {
+            for (offset in 0 until 7) {
+                val date = first.plusDays(offset.toLong())
+                val isToday = date == today
+                val dayColor = when (date.dayOfWeek) {
+                    DayOfWeek.SUNDAY -> palette.sunday
+                    DayOfWeek.SATURDAY -> palette.saturday
+                    else -> palette.onSurface
+                }
+                Column(
+                    Modifier.weight(1f).padding(horizontal = 1.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        date.dayOfMonth.toString(),
-                        style = text(13, if (offset == 0) palette.onPrimary else dayColor, FontWeight.Bold, TextAlign.Center),
+                        date.dayOfWeek.getDisplayName(DayTextStyle.NARROW, locale),
+                        style = text(10, dayColor, FontWeight.Medium, TextAlign.Center),
                     )
-                }
-                for ((title, color) in samples[offset].orEmpty()) {
-                    Text(
-                        stringResource(title),
-                        maxLines = 1,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 2.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(color.copy(alpha = 0.3f))
-                            .padding(horizontal = 2.dp, vertical = 1.dp),
-                        style = text(9, palette.onSurface, FontWeight.Medium, null),
-                    )
+                    Box(
+                        Modifier
+                            .size(24.dp)
+                            .clip(CircleShape)
+                            .background(if (isToday) palette.primary else Color.Transparent),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            date.dayOfMonth.toString(),
+                            style = text(13, if (isToday) palette.onPrimary else dayColor, FontWeight.Bold, TextAlign.Center),
+                        )
+                    }
+                    for ((title, color) in samples[offset].orEmpty()) {
+                        Text(
+                            stringResource(title),
+                            maxLines = 1,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 2.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(color.copy(alpha = 0.3f))
+                                .padding(horizontal = 2.dp, vertical = 1.dp),
+                            style = text(9, palette.onSurface, FontWeight.Medium, null),
+                        )
+                    }
                 }
             }
         }

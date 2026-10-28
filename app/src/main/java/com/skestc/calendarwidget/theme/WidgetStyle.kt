@@ -25,6 +25,7 @@ import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
+import com.skestc.calendarwidget.settings.HeaderButton
 import androidx.glance.color.ColorProvider as DayNightColorProvider
 
 /** widget 用到的顏色角色（Glance ColorProvider）。 */
@@ -47,6 +48,8 @@ class WidgetStyle(
     val corner: Dp,
     val textScale: Float,
     private val fontFamily: FontFamily?,
+    /** 標題列要放哪些按鈕（每個 widget 各自設定）。 */
+    val headerButtons: List<HeaderButton> = HeaderButton.entries,
 ) {
     /** 大號數字用圓潤粗體（[ExpressiveText]）；選了襯線／等寬字型時不用。 */
     val roundedNumerals: Boolean get() = fontFamily == null || fontFamily == FontFamily.SansSerif
@@ -76,7 +79,11 @@ val LocalWidgetStyle = staticCompositionLocalOf<WidgetStyle> {
 
 /** 必須放在 GlanceTheme 裡面：Material You 主題直接沿用 GlanceTheme 的動態色。 */
 @Composable
-fun ProvideWidgetStyle(appearance: Appearance, content: @Composable () -> Unit) {
+fun ProvideWidgetStyle(
+    appearance: Appearance,
+    headerButtons: List<HeaderButton> = HeaderButton.entries,
+    content: @Composable () -> Unit,
+) {
     val context = LocalContext.current
     val spec = specFor(appearance)
     val colors = if (spec == null) dynamicColors(context, appearance) else fixedColors(spec, appearance)
@@ -93,6 +100,7 @@ fun ProvideWidgetStyle(appearance: Appearance, content: @Composable () -> Unit) 
         corner = resolveCornerDp(context, appearance.cornerDp).dp,
         textScale = appearance.textScalePercent / 100f,
         fontFamily = fontFamily,
+        headerButtons = headerButtons,
     )
     CompositionLocalProvider(LocalWidgetStyle provides style, content = content)
 }

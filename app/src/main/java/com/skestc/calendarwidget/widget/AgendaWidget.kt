@@ -63,6 +63,7 @@ import com.skestc.calendarwidget.data.WeekBuilder
 import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.settings.AgendaLayout
 import com.skestc.calendarwidget.settings.EventEditor
+import com.skestc.calendarwidget.settings.HeaderButton
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
 import com.skestc.calendarwidget.theme.LocalWidgetStyle
@@ -119,7 +120,7 @@ class AgendaWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
                     AgendaContent(state)
                 }
             }
@@ -298,28 +299,25 @@ internal fun RefreshButton(size: Dp = 36.dp) {
     }
 }
 
-/**
- * 「＋」以外的按鈕，依空間放：搜尋、重新整理、設定各一顆；
- * 或只留搜尋、其他收進「⋯」；或全部收進「⋯」。後面接著放「＋」的話自己加間距。
- */
+/** 依 [plan] 畫「＋」以外的按鈕：勾選且放得下的各一顆，放不下的收進「⋯」。後面接「＋」的話自己加間距。 */
 @Composable
-internal fun ActionButtons(buttons: MonthLayout.HeaderButtons, size: Dp, gap: Dp) {
-    when (buttons) {
-        MonthLayout.HeaderButtons.ALL -> {
-            SearchButton(size)
-            Spacer(GlanceModifier.width(gap))
-            RefreshButton(size)
-            Spacer(GlanceModifier.width(gap))
-            SettingsButton(size)
+internal fun ActionButtons(plan: MonthLayout.HeaderPlan, size: Dp, gap: Dp) {
+    plan.shown.forEachIndexed { index, button ->
+        if (index > 0) Spacer(GlanceModifier.width(gap))
+        when (button) {
+            HeaderButton.SEARCH -> SearchButton(size)
+            HeaderButton.REFRESH -> RefreshButton(size)
+            HeaderButton.SETTINGS -> SettingsButton(size)
         }
-        MonthLayout.HeaderButtons.SEARCH_AND_MENU -> {
-            SearchButton(size)
-            Spacer(GlanceModifier.width(gap))
-            MoreButton(size)
-        }
-        MonthLayout.HeaderButtons.MENU -> MoreButton(size)
+    }
+    if (plan.menu) {
+        if (plan.shown.isNotEmpty()) Spacer(GlanceModifier.width(gap))
+        MoreButton(size)
     }
 }
+
+/** [plan] 畫出來有沒有任何按鈕（決定「＋」前面要不要加間距）。 */
+internal val MonthLayout.HeaderPlan.isEmpty: Boolean get() = shown.isEmpty() && !menu
 
 /** 放大鏡：打開 App 的行程搜尋。 */
 @Composable
@@ -351,17 +349,14 @@ internal fun HeaderActions() {
         AddEventButton(32.dp)
         return
     }
-    // 標題左邊還有大號日期與星期（約 140dp）：寬的時候按鈕全部分開放，
-    // 窄一點只留搜尋、其他收進「⋯」，再窄就只有「⋯」，避免按鈕被擠出畫面。
-    val buttons = when {
-        width >= 340.dp -> MonthLayout.HeaderButtons.ALL
-        width >= 280.dp -> MonthLayout.HeaderButtons.SEARCH_AND_MENU
-        else -> MonthLayout.HeaderButtons.MENU
-    }
-    val size = if (width >= 280.dp) 36.dp else 32.dp
-    val gap = if (width >= 280.dp) 6.dp else 4.dp
-    ActionButtons(buttons, size, gap)
-    Spacer(GlanceModifier.width(gap))
+    // 標題左邊還有大號日期與星期（約 120dp）：依剩下的寬度（保守估計）放勾選的按鈕，放不下的收進「⋯」。
+    val roomy = width >= 280.dp
+    val size = if (roomy) 36.dp else 32.dp
+    val gap = if (roomy) 6.dp else 4.dp
+    val spare = width.value * MonthLayout.SAFETY - 32f - 120f - (size + gap).value
+    val plan = MonthLayout.planButtons(LocalWidgetStyle.current.headerButtons, spare, size.value, gap.value)
+    ActionButtons(plan, size, gap)
+    if (!plan.isEmpty) Spacer(GlanceModifier.width(gap))
     AddEventButton(size)
 }
 

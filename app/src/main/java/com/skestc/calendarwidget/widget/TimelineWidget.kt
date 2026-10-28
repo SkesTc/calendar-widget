@@ -99,7 +99,7 @@ class TimelineWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
                     TimelineContent(state)
                 }
             }
