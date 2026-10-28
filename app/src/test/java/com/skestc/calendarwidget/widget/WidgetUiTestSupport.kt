@@ -62,6 +62,6 @@ object WidgetFixtures {
 @Composable
 fun WidgetFrame(appearance: Appearance = Appearance(), content: @Composable () -> Unit) {
     GlanceTheme {
-        ProvideWidgetStyle(appearance, content)
+        ProvideWidgetStyle(appearance, content = content)
     }
 }
