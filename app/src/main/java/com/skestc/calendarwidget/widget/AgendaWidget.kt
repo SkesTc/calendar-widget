@@ -29,6 +29,7 @@ import androidx.glance.appwidget.appWidgetBackground
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.provideContent
 import androidx.glance.appwidget.state.getAppWidgetState
 import androidx.glance.background
@@ -57,6 +58,7 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.data.EventStatus
+import com.skestc.calendarwidget.data.MonthLayout
 import com.skestc.calendarwidget.data.WeekBuilder
 import com.skestc.calendarwidget.data.WeekDay
 import com.skestc.calendarwidget.settings.AgendaLayout
@@ -275,6 +277,50 @@ internal fun MoreButton(size: Dp = 36.dp) {
     }
 }
 
+/** 重新整理：重新讀取日曆並更新所有小工具。 */
+@Composable
+internal fun RefreshButton(size: Dp = 36.dp) {
+    val style = LocalWidgetStyle.current
+    Box(
+        modifier = GlanceModifier
+            .size(size)
+            .background(style.colors.card)
+            .cornerRadius(size / 2)
+            .clickable(actionRunCallback<RefreshAction>()),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            provider = ImageProvider(R.drawable.ic_refresh),
+            contentDescription = glanceString(R.string.refresh),
+            colorFilter = ColorFilter.tint(style.colors.onCard),
+            modifier = GlanceModifier.size(size * 0.6f),
+        )
+    }
+}
+
+/**
+ * 「＋」以外的按鈕，依空間放：搜尋、重新整理、設定各一顆；
+ * 或只留搜尋、其他收進「⋯」；或全部收進「⋯」。後面接著放「＋」的話自己加間距。
+ */
+@Composable
+internal fun ActionButtons(buttons: MonthLayout.HeaderButtons, size: Dp, gap: Dp) {
+    when (buttons) {
+        MonthLayout.HeaderButtons.ALL -> {
+            SearchButton(size)
+            Spacer(GlanceModifier.width(gap))
+            RefreshButton(size)
+            Spacer(GlanceModifier.width(gap))
+            SettingsButton(size)
+        }
+        MonthLayout.HeaderButtons.SEARCH_AND_MENU -> {
+            SearchButton(size)
+            Spacer(GlanceModifier.width(gap))
+            MoreButton(size)
+        }
+        MonthLayout.HeaderButtons.MENU -> MoreButton(size)
+    }
+}
+
 /** 放大鏡：打開 App 的行程搜尋。 */
 @Composable
 internal fun SearchButton(size: Dp = 36.dp) {
@@ -305,19 +351,18 @@ internal fun HeaderActions() {
         AddEventButton(32.dp)
         return
     }
-    // 標題左邊還有大號日期與星期：約 4 格寬（280dp）以上才分開放搜尋、設定，
-    // 否則合併成「⋯」，避免按鈕被擠出畫面（桌面回報的寬度不一定準，抓寬鬆一點）。
-    if (width >= 280.dp) {
-        SearchButton(36.dp)
-        Spacer(GlanceModifier.width(6.dp))
-        SettingsButton(36.dp)
-        Spacer(GlanceModifier.width(6.dp))
-        AddEventButton(36.dp)
-    } else {
-        MoreButton(32.dp)
-        Spacer(GlanceModifier.width(4.dp))
-        AddEventButton(32.dp)
+    // 標題左邊還有大號日期與星期（約 140dp）：寬的時候按鈕全部分開放，
+    // 窄一點只留搜尋、其他收進「⋯」，再窄就只有「⋯」，避免按鈕被擠出畫面。
+    val buttons = when {
+        width >= 340.dp -> MonthLayout.HeaderButtons.ALL
+        width >= 280.dp -> MonthLayout.HeaderButtons.SEARCH_AND_MENU
+        else -> MonthLayout.HeaderButtons.MENU
     }
+    val size = if (width >= 280.dp) 36.dp else 32.dp
+    val gap = if (width >= 280.dp) 6.dp else 4.dp
+    ActionButtons(buttons, size, gap)
+    Spacer(GlanceModifier.width(gap))
+    AddEventButton(size)
 }
 
 @Composable

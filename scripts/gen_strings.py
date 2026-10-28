@@ -50,6 +50,8 @@ S = [
  ("editor_chooser_title", "Add event with", "用哪個 App 新增行程"),
  ("widget_settings", "Widget settings", "小工具設定"),
  ("more_actions", "More", "更多"),
+ ("refresh", "Refresh", "重新整理"),
+ ("refreshed", "Widgets refreshed", "已重新整理小工具"),
  ("add_event", "Add event", "新增行程"),
  ("search_title", "Search events", "搜尋行程"),
  ("search_hint", "Keyword", "輸入關鍵字"),

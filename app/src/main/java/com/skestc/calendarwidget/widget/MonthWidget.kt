@@ -290,14 +290,8 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
         Spacer(GlanceModifier.width(4.dp))
         NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1, size = 30.dp)
         Spacer(GlanceModifier.width(4.dp))
-        // 放得下就分開放搜尋與設定，否則合併成「⋯」選單，避免按鈕被擠出畫面。
-        if (fit.separateButtons) {
-            SearchButton(size = 30.dp)
-            Spacer(GlanceModifier.width(4.dp))
-            SettingsButton(size = 30.dp)
-        } else {
-            MoreButton(size = 30.dp)
-        }
+        // 放得下就分開放搜尋、重新整理、設定，否則逐步收進「⋯」選單，避免按鈕被擠出畫面。
+        ActionButtons(fit.buttons, size = 30.dp, gap = 4.dp)
         Spacer(GlanceModifier.width(4.dp))
         AddEventButton(34.dp)
     }

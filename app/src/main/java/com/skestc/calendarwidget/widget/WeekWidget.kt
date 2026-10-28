@@ -158,9 +158,10 @@ internal fun WeekContent(state: WeekState) {
                             modifier = GlanceModifier.fillMaxHeight(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            // 直排的高度只放得下三顆：重新整理與設定收進「⋯」。
                             SearchButton(RAIL_BUTTON)
                             Spacer(GlanceModifier.height(4.dp))
-                            SettingsButton(RAIL_BUTTON)
+                            MoreButton(RAIL_BUTTON)
                             Spacer(GlanceModifier.height(4.dp))
                             AddEventButton(RAIL_BUTTON)
                         }
@@ -187,9 +188,10 @@ private fun WeekHeader(state: WeekState.Loaded) {
     val locale = Locale.getDefault()
     val format = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale)
     val range = "${format.format(state.days.first().date)} – ${format.format(state.days.last().date)}"
-    // 跟月曆一樣：寬度（保守估計）放得下日期範圍＋三顆按鈕才分開放，否則搜尋與設定合併成「⋯」。
+    // 跟月曆一樣：依寬度（保守估計）扣掉日期範圍與「＋」後剩下的空間，決定按鈕分開放或收進「⋯」。
     val titleSp = 14f * style.textScale * LocalContext.current.resources.configuration.fontScale
-    val separate = LocalSize.current.width.value * 0.88f - 16f >= MonthLayout.textWidthDp(range, titleSp) + 98f
+    val spare = LocalSize.current.width.value * MonthLayout.SAFETY - 16f - MonthLayout.textWidthDp(range, titleSp) - 34f
+    val buttons = MonthLayout.buttonsFor(spare)
     Row(
         modifier = GlanceModifier.fillMaxWidth().height(HEADER_HEIGHT).padding(start = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -200,13 +202,7 @@ private fun WeekHeader(state: WeekState.Loaded) {
             modifier = GlanceModifier.defaultWeight(),
             style = style.text(14, style.colors.onSurface, FontWeight.Bold),
         )
-        if (separate) {
-            SearchButton(30.dp)
-            Spacer(GlanceModifier.width(4.dp))
-            SettingsButton(30.dp)
-        } else {
-            MoreButton(30.dp)
-        }
+        ActionButtons(buttons, size = 30.dp, gap = 4.dp)
         Spacer(GlanceModifier.width(4.dp))
         AddEventButton(30.dp)
     }

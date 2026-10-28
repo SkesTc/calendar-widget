@@ -45,6 +45,8 @@
     <string name="editor_chooser_title">Add event with</string>
     <string name="widget_settings">Widget settings</string>
     <string name="more_actions">More</string>
+    <string name="refresh">Refresh</string>
+    <string name="refreshed">Widgets refreshed</string>
     <string name="add_event">Add event</string>
     <string name="search_title">Search events</string>
     <string name="search_hint">Keyword</string>

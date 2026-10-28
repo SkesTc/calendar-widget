@@ -44,30 +44,39 @@ class MonthLayoutTest {
 class MonthHeaderFitTest {
     private val year = MonthLayout.textWidthDp("2026年10月", 16f)
     private val month = MonthLayout.textWidthDp("10月", 16f)
+    private val all = MonthLayout.HeaderButtons.ALL
+    private val searchAndMenu = MonthLayout.HeaderButtons.SEARCH_AND_MENU
+    private val menu = MonthLayout.HeaderButtons.MENU
 
     @Test
-    fun wideHeaderShowsYearAndSeparateButtons() {
-        assertEquals(MonthLayout.HeaderFit(showYear = true, separateButtons = true), MonthLayout.headerFit(400f, year, month))
+    fun wideHeaderShowsYearAndEveryButton() {
+        assertEquals(MonthLayout.HeaderFit(showYear = true, buttons = all), MonthLayout.headerFit(400f, year, month))
     }
 
     @Test
-    fun mediumHeaderDropsTheYearBeforeAnyButton() {
-        assertEquals(MonthLayout.HeaderFit(showYear = false, separateButtons = true), MonthLayout.headerFit(300f, year, month))
+    fun mediumHeaderKeepsSearchAndFoldsTheRestIntoMenu() {
+        assertEquals(MonthLayout.HeaderFit(showYear = false, buttons = searchAndMenu), MonthLayout.headerFit(300f, year, month))
     }
 
     @Test
-    fun narrowHeaderMergesSearchAndSettingsIntoMenu() {
-        assertEquals(MonthLayout.HeaderFit(showYear = false, separateButtons = false), MonthLayout.headerFit(220f, year, month))
+    fun narrowHeaderUsesOnlyTheMenu() {
+        assertEquals(MonthLayout.HeaderFit(showYear = false, buttons = menu), MonthLayout.headerFit(220f, year, month))
+    }
+
+    @Test
+    fun buttonsShrinkInOrderAsSpaceRunsOut() {
+        assertEquals(all, MonthLayout.buttonsFor(102f))
+        assertEquals(searchAndMenu, MonthLayout.buttonsFor(101f))
+        assertEquals(searchAndMenu, MonthLayout.buttonsFor(68f))
+        assertEquals(menu, MonthLayout.buttonsFor(67f))
     }
 
     @Test
     fun largerTextNeedsMoreRoom() {
         val bigYear = MonthLayout.textWidthDp("2026年10月", 16f * 1.5f)
         val bigMonth = MonthLayout.textWidthDp("10月", 16f * 1.5f)
-        val normal = MonthLayout.headerFit(300f, year, month)
-        val big = MonthLayout.headerFit(300f, bigYear, bigMonth)
-        assertTrue(big.separateButtons <= normal.separateButtons)
-        assertTrue(!big.showYear)
+        val big = MonthLayout.headerFit(400f, bigYear, bigMonth)
+        assertTrue(big.buttons.ordinal >= MonthLayout.headerFit(400f, year, month).buttons.ordinal)
     }
 
     @Test

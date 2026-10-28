@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -28,9 +29,14 @@ import androidx.compose.ui.unit.dp
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.config.WidgetConfigActivity
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
+import com.skestc.calendarwidget.widget.RefreshAction
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 /**
- * widget 太窄、放不下「搜尋」「設定」兩顆按鈕時，改成一顆「⋯」，點了開這個小選單。
+ * widget 太窄、放不下搜尋、重新整理、設定這些按鈕時，改成一顆「⋯」，點了開這個小選單。
  * 透明的 Activity，只顯示一個對話框。
  */
 class WidgetMenuActivity : ComponentActivity() {
@@ -47,6 +53,15 @@ class WidgetMenuActivity : ComponentActivity() {
                         Column {
                             MenuItem(R.drawable.ic_search, stringResource(R.string.search_title)) {
                                 startActivity(Intent(this@WidgetMenuActivity, SearchActivity::class.java))
+                                finish()
+                            }
+                            MenuItem(R.drawable.ic_refresh, stringResource(R.string.refresh)) {
+                                // 在背景更新（不跟著這個畫面一起被取消），提示後馬上關掉選單。
+                                val appContext = applicationContext
+                                CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+                                    RefreshAction.refreshEverything(appContext)
+                                }
+                                Toast.makeText(appContext, R.string.refreshed, Toast.LENGTH_SHORT).show()
                                 finish()
                             }
                             if (appWidgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {

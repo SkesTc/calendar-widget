@@ -32,9 +32,19 @@ object MonthLayout {
     }
 
     /** 月曆標題列：要顯示哪些按鈕、標題要不要寫年份。 */
-    data class HeaderFit(val showYear: Boolean, val separateButtons: Boolean)
+    /** 標題列除了「＋」以外的按鈕要怎麼放。 */
+    enum class HeaderButtons {
+        /** 搜尋、重新整理、設定各一顆。 */
+        ALL,
+        /** 搜尋一顆，重新整理與設定收進「⋯」。 */
+        SEARCH_AND_MENU,
+        /** 只有「⋯」（裡面有搜尋、重新整理、設定）。 */
+        MENU,
+    }
 
-    // 標題列的固定寬度（dp）：左右箭頭、「＋」、搜尋、設定、「⋯」與間距，加上外框與標題列的內距。
+    data class HeaderFit(val showYear: Boolean, val buttons: HeaderButtons)
+
+    // 標題列的固定寬度（dp）：左右箭頭、「＋」與間距，加上外框與標題列的內距；ACTION 是其他每顆按鈕。
     private const val NAV = 30f
     private const val ADD = 34f
     private const val ACTION = 30f
@@ -44,21 +54,24 @@ object MonthLayout {
      * 桌面回報的 widget 大小不一定準（各家桌面、橫直向不同），只用 88% 來算，
      * 寧可少放一顆按鈕，也不要讓按鈕被擠出畫面。
      */
-    private const val SAFETY = 0.88f
+    const val SAFETY = 0.88f
+
+    /** 扣掉標題與固定按鈕後剩下 [spareDp]，能放幾顆一般按鈕（每顆 [buttonDp] 加間距 [gapDp]）。 */
+    fun buttonsFor(spareDp: Float, buttonDp: Float = ACTION, gapDp: Float = GAP): HeaderButtons = when {
+        spareDp >= (buttonDp + gapDp) * 3 -> HeaderButtons.ALL
+        spareDp >= (buttonDp + gapDp) * 2 -> HeaderButtons.SEARCH_AND_MENU
+        else -> HeaderButtons.MENU
+    }
 
     /**
-     * 依寬度決定標題列：放得下「搜尋」「設定」兩顆就分開放（優先保留），
-     * 否則合併成一顆「⋯」選單；年份放得下才寫。[yearTitleDp]、[monthTitleDp] 是兩種標題的估計寬度。
+     * 月曆標題列：按鈕優先於年份。先試「年份＋全部按鈕」，再試「只寫月份＋全部按鈕」，
+     * 再把重新整理與設定收進「⋯」。[yearTitleDp]、[monthTitleDp] 是兩種標題的估計寬度。
      */
     fun headerFit(widthDp: Float, yearTitleDp: Float, monthTitleDp: Float): HeaderFit {
-        val available = widthDp * SAFETY - PADDING
-        val base = NAV * 2 + ADD + GAP * 3
-        val separate = base + (ACTION + GAP) * 2
+        val spare = widthDp * SAFETY - PADDING - (NAV * 2 + ADD + GAP * 3)
         return when {
-            available >= separate + yearTitleDp -> HeaderFit(showYear = true, separateButtons = true)
-            available >= separate + monthTitleDp -> HeaderFit(showYear = false, separateButtons = true)
-            available >= base + ACTION + GAP + yearTitleDp -> HeaderFit(showYear = true, separateButtons = false)
-            else -> HeaderFit(showYear = false, separateButtons = false)
+            buttonsFor(spare - yearTitleDp) == HeaderButtons.ALL -> HeaderFit(true, HeaderButtons.ALL)
+            else -> HeaderFit(false, buttonsFor(spare - monthTitleDp))
         }
     }
 
