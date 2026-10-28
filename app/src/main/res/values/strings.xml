@@ -25,7 +25,7 @@
     <string name="section_settings">Settings</string>
     <string name="home_today_count">Today: %1$d events</string>
     <string name="home_today_none">No events today</string>
-    <string name="home_next">Next: %1$s</string>
+    <string name="home_more">%1$d more</string>
     <string name="long_events_row_hint">Hide long or repeating events from widgets</string>
     <string name="update_help_row_hint">Battery settings for your phone</string>
     <string name="widget_desc_agenda">Upcoming events by day, list or timeline</string>

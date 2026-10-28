@@ -37,7 +37,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,15 +51,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.MonthBuilder
@@ -74,6 +82,7 @@ import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.SectionTitle
 import com.skestc.calendarwidget.ui.SettingsGroup
 import com.skestc.calendarwidget.ui.UpdateHelpRow
+import com.skestc.calendarwidget.ui.openEventEditor
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
 import com.skestc.calendarwidget.widget.MonthWidgetReceiver
@@ -102,7 +111,15 @@ class MainActivity : ComponentActivity() {
 }
 
 /** 首頁上方「今天」卡片的資料。 */
-private data class TodaySummary(val count: Int, val next: NextEvent?, val lunar: String?)
+private data class TodaySummary(
+    val events: List<CalendarEvent>,
+    val next: NextEvent?,
+    val lunar: String?,
+    val now: Long,
+)
+
+/** 首頁卡片最多列幾個今天的行程，其餘顯示「還有 N 個」。 */
+private const val TODAY_LIMIT = 6
 
 /** 首頁：整頁可以捲動。今天概況與搜尋 → 加入小工具 → 設定 → 已同步的日曆。 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -121,10 +138,22 @@ private fun HomeScreen() {
     LaunchedEffect(granted) {
         if (granted) {
             calendars = repository.calendars()
-            today = loadToday(repository)
             WidgetUpdater.syncSchedules(context)
             WidgetUpdater.refreshAll(context)
         }
+    }
+    // 每次回到首頁（例如編輯完行程）都重新讀今天的行程。
+    var resumes by remember { mutableIntStateOf(0) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) resumes++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+    LaunchedEffect(granted, resumes) {
+        if (granted) today = loadToday(repository)
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -206,7 +235,7 @@ private suspend fun loadToday(repository: CalendarRepository): TodaySummary {
     val end = date.plusDays(2).atStartOfDay(zone).toInstant().toEpochMilli()
     val events = MonthBuilder(zone).eventsOn(repository.instances(start, end), date)
     val lunar = if (WidgetSettings.defaultShowLunar()) DayLabeler(IcuLunarSource()).labelOf(date).long else null
-    return TodaySummary(events.size, NextEventPicker.pick(events, now, zone), lunar)
+    return TodaySummary(events, NextEventPicker.pick(events, now, zone), lunar, now)
 }
 
 /** 今天的大號日期、農曆、行程數與下一個行程，下面是搜尋列。 */
@@ -251,26 +280,32 @@ private fun TodayCard(summary: TodaySummary?) {
             Spacer(Modifier.height(12.dp))
             if (summary != null) {
                 Text(
-                    if (summary.count == 0) {
+                    if (summary.events.isEmpty()) {
                         stringResource(R.string.home_today_none)
                     } else {
-                        stringResource(R.string.home_today_count, summary.count)
+                        stringResource(R.string.home_today_count, summary.events.size)
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                summary.next?.let { next ->
-                    val time = if (next.event.allDay) {
-                        stringResource(R.string.all_day)
-                    } else {
-                        DateFormat.getTimeFormat(context).format(Date(next.event.begin))
+                if (summary.events.isNotEmpty()) {
+                    Spacer(Modifier.height(4.dp))
+                    for (event in summary.events.take(TODAY_LIMIT)) {
+                        TodayEventRow(
+                            event,
+                            past = !event.allDay && event.end <= summary.now,
+                            isNext = event == summary.next?.event,
+                        )
                     }
-                    Text(
-                        stringResource(R.string.home_next, "$time  ${next.event.title}"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                    )
+                    val more = summary.events.size - TODAY_LIMIT
+                    if (more > 0) {
+                        Text(
+                            stringResource(R.string.home_more, more),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(start = 24.dp, top = 2.dp),
+                        )
+                    }
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -301,6 +336,46 @@ private fun TodayCard(summary: TodaySummary?) {
                 }
             }
         }
+    }
+}
+
+/** 卡片裡的一個今天行程：色點、時間、標題；點了直接打開編輯畫面。已結束的變淡，下一個加粗。 */
+@Composable
+private fun TodayEventRow(event: CalendarEvent, past: Boolean, isNext: Boolean) {
+    val context = LocalContext.current
+    val timeFormat = remember { DateFormat.getTimeFormat(context) }
+    val alpha = if (past) 0.55f else 1f
+    val onColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = alpha)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable { openEventEditor(context, event) }
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(Color(event.color).copy(alpha = alpha)),
+        )
+        Spacer(Modifier.width(14.dp))
+        Text(
+            if (event.allDay) stringResource(R.string.all_day) else timeFormat.format(Date(event.begin)),
+            style = MaterialTheme.typography.labelLarge,
+            color = onColor,
+            modifier = Modifier.width(64.dp),
+        )
+        Text(
+            event.title,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = if (isNext) FontWeight.Bold else null,
+            color = onColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 

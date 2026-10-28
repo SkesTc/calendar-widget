@@ -29,7 +29,7 @@ S = [
  ("section_settings", "Settings", "設定"),
  ("home_today_count", "Today: %1$d events", "今天有 %1$d 個行程"),
  ("home_today_none", "No events today", "今天沒有行程"),
- ("home_next", "Next: %1$s", "下一個：%1$s"),
+ ("home_more", "%1$d more", "還有 %1$d 個"),
  ("long_events_row_hint", "Hide long or repeating events from widgets", "隱藏佔滿小工具的長期、重複行程"),
  ("update_help_row_hint", "Battery settings for your phone", "依手機品牌的省電設定說明"),
  ("widget_desc_agenda", "Upcoming events by day, list or timeline", "依日期列出接下來的行程"),

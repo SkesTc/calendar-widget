@@ -12,10 +12,7 @@ import androidx.compose.material3.TextButton
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.RecentSearches
 import com.skestc.calendarwidget.data.SearchRange
-import android.content.ContentUris
-import android.content.Intent
 import android.os.Bundle
-import android.provider.CalendarContract
 import android.text.format.DateFormat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -80,9 +77,7 @@ import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.EventSearch
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.SearchResults
-import com.skestc.calendarwidget.settings.EventEditor
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
-import com.skestc.calendarwidget.widget.CalendarLaunchActivity
 import kotlinx.coroutines.delay
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -364,19 +359,7 @@ private fun ResultRow(event: CalendarEvent, keyword: String, past: Boolean, onOp
             .clickable {
                 // 點過的關鍵字記進「最近搜尋」。
                 onOpen()
-                // 直接打開編輯畫面（優先用 Google 日曆）；日曆 App 不支援「編輯」時改成開啟檢視畫面。
-                val uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId)
-                fun withTimes(action: String) = Intent(action, uri)
-                    .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, event.begin)
-                    .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, event.end)
-                context.startActivity(
-                    CalendarLaunchActivity.intentFor(
-                        context,
-                        target = withTimes(Intent.ACTION_EDIT),
-                        preferredPackage = EventEditor.GOOGLE_CALENDAR,
-                        fallback = withTimes(Intent.ACTION_VIEW),
-                    ),
-                )
+                openEventEditor(context, event)
             }
             .padding(horizontal = 24.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
