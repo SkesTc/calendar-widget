@@ -26,6 +26,10 @@
     <string name="home_today_count">Today: %1$d events</string>
     <string name="home_today_none">No events today</string>
     <string name="home_more">%1$d more</string>
+    <string name="pin_no_response">Nothing happened? Add it manually</string>
+    <string name="pin_manual_title">Add a widget from the home screen</string>
+    <string name="pin_manual_steps">1. Go to the home screen and long-press an empty spot\n2. Tap “Widgets”\n3. Find “Calendar Widgets” and drag one onto the home screen\n\nOn Xiaomi, OPPO and some other phones, adding from the app needs a permission: Settings → Apps → Calendar Widgets → Other permissions → allow “Home screen shortcuts”.</string>
+    <string name="pin_go_home">Go to home screen</string>
     <string name="onboarding_step">Step %1$d of %2$d</string>
     <string name="onboarding_welcome_title">Welcome</string>
     <string name="onboarding_widget_body">Tap a widget below and your home screen will ask where to put it. You can also add one later: long-press an empty spot on the home screen → Widgets.</string>

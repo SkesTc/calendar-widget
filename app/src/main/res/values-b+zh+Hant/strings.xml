@@ -26,6 +26,10 @@
     <string name="home_today_count">今天有 %1$d 個行程</string>
     <string name="home_today_none">今天沒有行程</string>
     <string name="home_more">還有 %1$d 個</string>
+    <string name="pin_no_response">按了沒反應？手動加入</string>
+    <string name="pin_manual_title">從桌面加入小工具</string>
+    <string name="pin_manual_steps">1. 回到桌面，長按空白處\n2. 點「小工具」（有些手機在「桌面設定」裡）\n3. 找到「行事曆小工具」，長按拖到桌面\n\n小米、OPPO 等手機要從 App 加入，需要先開權限：設定 → 應用程式 → 行事曆小工具 → 其他權限 → 允許「桌面捷徑」。</string>
+    <string name="pin_go_home">回到桌面</string>
     <string name="onboarding_step">第 %1$d 步，共 %2$d 步</string>
     <string name="onboarding_welcome_title">歡迎使用行事曆小工具</string>
     <string name="onboarding_widget_body">點下面任一種小工具，桌面會詢問要放在哪裡。之後也可以在桌面長按空白處 →「小工具」加入。</string>

@@ -30,6 +30,10 @@ S = [
  ("home_today_count", "Today: %1$d events", "今天有 %1$d 個行程"),
  ("home_today_none", "No events today", "今天沒有行程"),
  ("home_more", "%1$d more", "還有 %1$d 個"),
+ ("pin_no_response", "Nothing happened? Add it manually", "按了沒反應？手動加入"),
+ ("pin_manual_title", "Add a widget from the home screen", "從桌面加入小工具"),
+ ("pin_manual_steps", "1. Go to the home screen and long-press an empty spot\\n2. Tap “Widgets”\\n3. Find “Calendar Widgets” and drag one onto the home screen\\n\\nOn Xiaomi, OPPO and some other phones, adding from the app needs a permission: Settings → Apps → Calendar Widgets → Other permissions → allow “Home screen shortcuts”.", "1. 回到桌面，長按空白處\\n2. 點「小工具」（有些手機在「桌面設定」裡）\\n3. 找到「行事曆小工具」，長按拖到桌面\\n\\n小米、OPPO 等手機要從 App 加入，需要先開權限：設定 → 應用程式 → 行事曆小工具 → 其他權限 → 允許「桌面捷徑」。"),
+ ("pin_go_home", "Go to home screen", "回到桌面"),
  # 第一次使用引導
  ("onboarding_step", "Step %1$d of %2$d", "第 %1$d 步，共 %2$d 步"),
  ("onboarding_welcome_title", "Welcome", "歡迎使用行事曆小工具"),
