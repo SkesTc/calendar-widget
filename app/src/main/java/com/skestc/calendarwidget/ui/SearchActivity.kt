@@ -51,6 +51,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -128,7 +129,9 @@ private fun SearchScreen(onBack: () -> Unit) {
     }
 
     LaunchedEffect(Unit) {
-        focus.requestFocus()
+        // 搜尋框在 Scaffold 內容裡，要等第一次排版後才掛上 FocusRequester；拿不到焦點也不影響使用。
+        withFrameNanos { }
+        runCatching { focus.requestFocus() }
         calendars = repository.calendars().filter { it.visible }
     }
     // 停止輸入 300 毫秒後才查詢，邊打字邊更新但不會每個字都查一次。

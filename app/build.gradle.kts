@@ -44,6 +44,13 @@ android {
     testOptions {
         // Robolectric 的 widget UI 測試需要讀 App 的資源。
         unitTests.isIncludeAndroidResources = true
+        // 測試失敗時在 CI 記錄裡印出完整的例外與堆疊。
+        unitTests.all {
+            it.testLogging {
+                events("failed")
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            }
+        }
     }
 
     lint {
