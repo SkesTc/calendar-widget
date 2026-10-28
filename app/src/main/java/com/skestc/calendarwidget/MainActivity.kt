@@ -77,6 +77,8 @@ import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.ui.EventEditorRow
 import com.skestc.calendarwidget.ui.GroupDivider
 import com.skestc.calendarwidget.ui.LongEventsRow
+import com.skestc.calendarwidget.ui.Onboarding
+import com.skestc.calendarwidget.ui.OnboardingScreen
 import com.skestc.calendarwidget.ui.SchoolWeeksRow
 import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.SectionTitle
@@ -130,6 +132,8 @@ private fun HomeScreen() {
     var granted by remember { mutableStateOf(repository.hasPermission()) }
     var calendars by remember { mutableStateOf<List<CalendarInfo>>(emptyList()) }
     var today by remember { mutableStateOf<TodaySummary?>(null) }
+    // 已經授權過的人（舊版升級上來）不再看引導。
+    var onboarded by remember { mutableStateOf(Onboarding.done(context) || repository.hasPermission()) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
@@ -166,6 +170,20 @@ private fun HomeScreen() {
             )
         },
     ) { padding ->
+        if (!onboarded) {
+            OnboardingScreen(
+                modifier = Modifier.padding(padding),
+                granted = granted,
+                hasHolidayCalendar = calendars.any { it.isHoliday },
+                onGrant = { permissionLauncher.launch(Manifest.permission.READ_CALENDAR) },
+                onFinish = {
+                    Onboarding.setDone(context)
+                    onboarded = true
+                },
+                widgetGallery = { WidgetGallery() },
+            )
+            return@Scaffold
+        }
         if (!granted) {
             PermissionScreen(
                 modifier = Modifier.padding(padding),

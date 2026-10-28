@@ -26,6 +26,14 @@
     <string name="home_today_count">Today: %1$d events</string>
     <string name="home_today_none">No events today</string>
     <string name="home_more">%1$d more</string>
+    <string name="onboarding_step">Step %1$d of %2$d</string>
+    <string name="onboarding_welcome_title">Welcome</string>
+    <string name="onboarding_widget_body">Tap a widget below and your home screen will ask where to put it. You can also add one later: long-press an empty spot on the home screen → Widgets.</string>
+    <string name="onboarding_holiday_done">You\'re subscribed to a holidays calendar: days off and make-up workdays will be marked on the widgets.</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_back">Back</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_finish">Get started</string>
     <string name="long_events_row_hint">Hide long or repeating events from widgets</string>
     <string name="update_help_row_hint">Battery settings for your phone</string>
     <string name="widget_desc_agenda">Upcoming events by day, list or timeline</string>

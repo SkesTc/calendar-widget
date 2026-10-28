@@ -26,6 +26,14 @@
     <string name="home_today_count">今天有 %1$d 個行程</string>
     <string name="home_today_none">今天沒有行程</string>
     <string name="home_more">還有 %1$d 個</string>
+    <string name="onboarding_step">第 %1$d 步，共 %2$d 步</string>
+    <string name="onboarding_welcome_title">歡迎使用行事曆小工具</string>
+    <string name="onboarding_widget_body">點下面任一種小工具，桌面會詢問要放在哪裡。之後也可以在桌面長按空白處 →「小工具」加入。</string>
+    <string name="onboarding_holiday_done">已經訂閱節慶假日日曆，放假日與補班日會標在小工具上。</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_back">上一步</string>
+    <string name="onboarding_skip">略過</string>
+    <string name="onboarding_finish">開始使用</string>
     <string name="long_events_row_hint">隱藏佔滿小工具的長期、重複行程</string>
     <string name="update_help_row_hint">依手機品牌的省電設定說明</string>
     <string name="widget_desc_agenda">依日期列出接下來的行程</string>
