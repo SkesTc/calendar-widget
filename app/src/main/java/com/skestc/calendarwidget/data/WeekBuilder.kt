@@ -71,4 +71,41 @@ object NextEventPicker {
     fun nextBoundary(next: NextEvent?, now: Long): Long? = next?.let {
         if (it.inProgress) it.event.end else it.event.begin
     }?.takeIf { it > now }
+
+    private const val MINUTE = 60_000L
+
+    /**
+     * 倒數的分鐘數：還沒開始時是「幾分鐘後開始」，進行中是「還剩幾分鐘」。
+     * 全天行程、或還要 24 小時以上才開始的不倒數（顯示日期與時間就夠了）。
+     */
+    fun countdownMinutes(next: NextEvent?, now: Long): Long? {
+        val event = next?.event ?: return null
+        if (event.allDay) return null
+        val target = if (next.inProgress) event.end else event.begin
+        val millis = target - now
+        if (millis <= 0 || millis > 24 * 60 * MINUTE) return null
+        return (millis + MINUTE - 1) / MINUTE
+    }
+
+    /** 倒數一小時以上只顯示「約 N 小時」，一小時內才顯示分鐘。 */
+    fun roundedCountdown(minutes: Long): Long = if (minutes >= 60) ((minutes + 30) / 60) * 60 else minutes
+
+    /**
+     * 為了讓倒數跟得上，下一次重畫的時間：一小時內每 5 分鐘、更久的每 15 分鐘，
+     * 但不會晚於行程開始或結束（[nextBoundary]）。
+     */
+    fun nextRefresh(next: NextEvent?, now: Long): Long? {
+        val boundary = nextBoundary(next, now) ?: return null
+        val minutes = countdownMinutes(next, now) ?: return boundary
+        val step = if (minutes <= 60) 5 * MINUTE else 15 * MINUTE
+        return minOf(boundary, now + step)
+    }
+
+    /** 接在 [next] 後面的下一個有時間的行程（高的 widget 顯示「接著」）。 */
+    fun following(events: List<CalendarEvent>, next: NextEvent?, now: Long): CalendarEvent? {
+        val current = next?.event ?: return null
+        return events
+            .filter { it.holiday == null && !it.allDay && it.end > now && it != current && it.begin >= current.begin }
+            .minByOrNull { it.begin }
+    }
 }

@@ -125,6 +125,10 @@
     <string name="month_day_empty">沒有行程</string>
     <string name="in_progress_until">進行中 · 到 %1$s</string>
     <string name="next_empty">接下來 7 天沒有行程</string>
+    <string name="countdown_until">%1$s後</string>
+    <string name="countdown_left">剩 %1$s</string>
+    <string name="about_duration">約 %1$s</string>
+    <string name="next_after">接著 %1$s  %2$s</string>
     <string name="timeline_all_day">全天：%1$s</string>
     <string name="list_separator">、</string>
     <string name="now">現在</string>

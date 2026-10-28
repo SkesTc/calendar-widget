@@ -38,6 +38,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.unit.ColorProvider
 import com.skestc.calendarwidget.R
+import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.NextEvent
 import com.skestc.calendarwidget.data.NextEventPicker
@@ -56,7 +57,14 @@ import java.util.Locale
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface NextEventState {
     data object NoPermission : NextEventState
-    data class Loaded(val today: LocalDate, val next: NextEvent?) : NextEventState
+    data class Loaded(
+        val today: LocalDate,
+        val next: NextEvent?,
+        /** 倒數用的「現在」。 */
+        val now: Long = System.currentTimeMillis(),
+        /** 高的 widget 在下方顯示「接著」的行程。 */
+        val after: CalendarEvent? = null,
+    ) : NextEventState
 }
 
 /**
@@ -101,9 +109,10 @@ class NextEventWidget : GlanceAppWidget() {
         if (!repository.hasPermission()) return NextEventState.NoPermission
         val now = System.currentTimeMillis()
         val events = repository.upcomingEvents(days = 7, limit = 50, hiddenCalendarIds = settings.hiddenCalendarIds)
+        // 今天的行程都結束後，自然會挑到明天（或之後）的第一個。
         val next = NextEventPicker.pick(events, now)
-        NextEventPicker.nextBoundary(next, now)?.let { DayChangeScheduler.scheduleBoundary(context, it) }
-        return NextEventState.Loaded(LocalDate.now(), next)
+        NextEventPicker.nextRefresh(next, now)?.let { DayChangeScheduler.scheduleBoundary(context, it) }
+        return NextEventState.Loaded(LocalDate.now(), next, now, NextEventPicker.following(events, next, now))
     }
 }
 
@@ -122,14 +131,14 @@ internal fun NextEventContent(state: NextEventState) {
             NextEventState.NoPermission -> PermissionPrompt()
             is NextEventState.Loaded -> {
                 val next = state.next
-                if (next == null) NoUpcoming() else NextEventRow(next, state.today)
+                if (next == null) NoUpcoming() else NextEventRow(next, state.today, state.now, state.after)
             }
         }
     }
 }
 
 @Composable
-private fun NextEventRow(next: NextEvent, today: LocalDate) {
+private fun NextEventRow(next: NextEvent, today: LocalDate, now: Long, after: CalendarEvent?) {
     val style = LocalWidgetStyle.current
     val context = LocalContext.current
     val size = LocalSize.current
@@ -155,7 +164,7 @@ private fun NextEventRow(next: NextEvent, today: LocalDate) {
         Spacer(GlanceModifier.width(10.dp))
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
-                text = whenLabel(context, next, today),
+                text = whenLabel(context, next, today, now),
                 maxLines = 1,
                 style = style.text(11, if (next.inProgress) style.colors.primary else style.colors.onSurfaceVariant, FontWeight.Bold),
             )
@@ -172,16 +181,38 @@ private fun NextEventRow(next: NextEvent, today: LocalDate) {
                     style = style.text(12, style.colors.onSurfaceVariant),
                 )
             }
+            // 夠高時預告接下來的行程。
+            if (tall && after != null) {
+                Text(
+                    text = glanceString(
+                        R.string.next_after,
+                        DateFormat.getTimeFormat(context).format(Date(after.begin)),
+                        after.title,
+                    ),
+                    maxLines = 1,
+                    modifier = GlanceModifier.padding(top = 4.dp),
+                    style = style.text(12, style.colors.onSurfaceVariant),
+                )
+            }
         }
     }
 }
 
-/** 「進行中 · 到 15:00」「今天 14:00」「明天 · 全天」「10月28日 週三 09:00」。 */
-private fun whenLabel(context: Context, next: NextEvent, today: LocalDate): String {
+/**
+ * 「進行中 · 到 15:00 · 剩 25 分鐘」「今天 14:00 · 25 分鐘後」「明天 · 全天」「10月28日 週三 09:00」。
+ * 24 小時內的行程加上倒數；一小時以上只顯示大約幾小時。
+ */
+private fun whenLabel(context: Context, next: NextEvent, today: LocalDate, now: Long): String {
     val event = next.event
     val timeFormat = DateFormat.getTimeFormat(context)
+    val countdown = NextEventPicker.countdownMinutes(next, now)?.let { minutes ->
+        val rounded = NextEventPicker.roundedCountdown(minutes)
+        val text = if (minutes >= 60) context.getString(R.string.about_duration, formatDuration(context, rounded)) else formatDuration(context, rounded)
+        context.getString(if (next.inProgress) R.string.countdown_left else R.string.countdown_until, text)
+    }
+    fun withCountdown(label: String) = listOfNotNull(label, countdown).joinToString(" · ")
     if (next.inProgress && !event.allDay) {
-        return context.getString(R.string.in_progress_until, timeFormat.format(Date(event.end)))
+        return withCountdown(context.getString(R.string.in_progress_until, timeFormat.format(Date(event.end))))
     }
     val zone = if (event.allDay) ZoneOffset.UTC else ZoneId.systemDefault()
     val date = Instant.ofEpochMilli(event.begin).atZone(zone).toLocalDate()
@@ -191,7 +222,7 @@ private fun whenLabel(context: Context, next: NextEvent, today: LocalDate): Stri
         date == today.plusDays(1) -> context.getString(R.string.tomorrow_word)
         else -> DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEE"), locale).format(date)
     }
-    return if (event.allDay) context.getString(R.string.day_all_day, day) else "$day ${timeFormat.format(Date(event.begin))}"
+    return if (event.allDay) context.getString(R.string.day_all_day, day) else withCountdown("$day ${timeFormat.format(Date(event.begin))}")
 }
 
 @Composable

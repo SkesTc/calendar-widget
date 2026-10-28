@@ -64,6 +64,23 @@ class NextEventWidgetUiTest {
     }
 
     @Test
+    fun countdownAndFollowingEvent() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(180.dp, 110.dp))
+        val next = NextEvent(timed(1, "晨會", at(9), at(10)), false)
+        provideComposable {
+            WidgetFrame {
+                NextEventContent(
+                    NextEventState.Loaded(today, next, now = at(8, 35), after = timed(2, "午餐", at(12), at(13))),
+                )
+            }
+        }
+        onNode(hasText("25 分後")).assertExists()
+        onNode(hasText("接著")).assertExists()
+        onNode(hasText("午餐")).assertExists()
+    }
+
+    @Test
     fun nothingUpcoming() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(180.dp, 40.dp))

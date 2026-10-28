@@ -36,6 +36,23 @@ class TimelineBuilderTest {
     }
 
     @Test
+    fun previewsTomorrowOnlyWhenTodayIsDone() {
+        val tomorrow = today.plusDays(1)
+        val events = listOf(
+            timed(1, at(9), at(10)),
+            timed(2, at(14, date = tomorrow), at(15, date = tomorrow)),
+            allDay(3, tomorrow),
+            allDay(4, tomorrow, HolidayKind.OBSERVANCE),
+        )
+        val evening = at(20)
+        val done = builder.build(events, today, evening)
+        assertEquals(listOf("a3", "e2"), builder.tomorrowPreview(events, today, done).map { it.title })
+        // 今天還有行程時不預告。
+        val morning = at(8)
+        assertTrue(builder.tomorrowPreview(events, today, builder.build(events, today, morning)).isEmpty())
+    }
+
+    @Test
     fun marksPastCurrentAndFutureEvents() {
         val events = listOf(
             timed(1, at(9), at(10)),

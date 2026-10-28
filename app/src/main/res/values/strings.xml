@@ -125,6 +125,10 @@
     <string name="month_day_empty">No events</string>
     <string name="in_progress_until">Now · until %1$s</string>
     <string name="next_empty">No events in the next 7 days</string>
+    <string name="countdown_until">in %1$s</string>
+    <string name="countdown_left">%1$s left</string>
+    <string name="about_duration">about %1$s</string>
+    <string name="next_after">Then %1$s  %2$s</string>
     <string name="timeline_all_day">All day: %1$s</string>
     <string name="list_separator">", "</string>
     <string name="now">Now</string>

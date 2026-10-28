@@ -64,6 +64,20 @@ class TimelineBuilder(private val zone: ZoneId = ZoneId.systemDefault()) {
         return Timeline(allDay.sortedBy { it.holiday == null }, items)
     }
 
+    /**
+     * 今天已經沒有還沒結束的行程時，預告明天的行程（全天在前，最多 [TOMORROW_LIMIT] 筆），
+     * 晚上看時間軸不會只剩一片空白。今天還有行程時回傳空清單。
+     */
+    fun tomorrowPreview(events: List<CalendarEvent>, today: LocalDate, timeline: Timeline): List<CalendarEvent> {
+        val stillToCome = timeline.items.any { it is TimelineItem.Event && it.status != EventStatus.PAST }
+        if (stillToCome) return emptyList()
+        val tomorrow = today.plusDays(1)
+        return events
+            .filter { it.holiday == null && spans.dateSpan(it).let { (first, last) -> tomorrow in first..last } }
+            .sortedWith(compareBy({ !it.allDay }, { it.begin }))
+            .take(TOMORROW_LIMIT)
+    }
+
     /** 下一個會讓時間軸改變的時刻（某個行程開始或結束），用來排程更新。 */
     fun nextBoundary(timeline: Timeline, now: Long): Long? =
         timeline.items
@@ -74,5 +88,6 @@ class TimelineBuilder(private val zone: ZoneId = ZoneId.systemDefault()) {
 
     companion object {
         const val MIN_GAP_MINUTES = 60L
+        const val TOMORROW_LIMIT = 6
     }
 }

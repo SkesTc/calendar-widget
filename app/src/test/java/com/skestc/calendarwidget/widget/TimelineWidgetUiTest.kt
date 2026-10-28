@@ -82,6 +82,22 @@ class TimelineWidgetUiTest {
     }
 
     @Test
+    fun eveningShowsTomorrow() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(250.dp, 300.dp))
+        val events = listOf(
+            timed(1, "晨會", at(9), at(10)),
+            timed(2, "校務會議", at(14, date = today.plusDays(1)), at(15, date = today.plusDays(1))),
+        )
+        val builder = TimelineBuilder(WidgetFixtures.zone)
+        val timeline = builder.build(events, today, at(20))
+        val state = TimelineState.Loaded(today, null, timeline, builder.tomorrowPreview(events, today, timeline))
+        provideComposable { WidgetFrame { TimelineContent(state) } }
+        onNode(hasText("明天 ·")).assertExists()
+        onNode(hasTextEqualTo("校務會議")).assertExists()
+    }
+
+    @Test
     fun emptyDay() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(250.dp, 300.dp))

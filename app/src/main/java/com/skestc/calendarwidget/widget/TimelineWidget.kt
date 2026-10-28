@@ -65,7 +65,13 @@ import java.util.Locale
 // internal：讓 UI 測試可以直接畫出各種狀態。
 internal sealed interface TimelineState {
     data object NoPermission : TimelineState
-    data class Loaded(val today: LocalDate, val note: String?, val timeline: Timeline) : TimelineState
+    data class Loaded(
+        val today: LocalDate,
+        val note: String?,
+        val timeline: Timeline,
+        /** 今天的行程都結束了：接著預告明天的行程。 */
+        val tomorrow: List<CalendarEvent> = emptyList(),
+    ) : TimelineState
 }
 
 /**
@@ -121,7 +127,7 @@ class TimelineWidget : GlanceAppWidget() {
         val holidays = timeline.allDay.filter { it.holiday == HolidayKind.DAY_OFF }.map { it.title }
         val lunar = if (settings.showLunar) DayLabeler(IcuLunarSource()).labelOf(today).long else null
         val note = (listOfNotNull(lunar) + holidays).joinToString(" · ").ifEmpty { null }
-        return TimelineState.Loaded(today, note, timeline)
+        return TimelineState.Loaded(today, note, timeline, builder.tomorrowPreview(events, today, timeline))
     }
 }
 
@@ -142,7 +148,7 @@ internal fun TimelineContent(state: TimelineState) {
                 Spacer(GlanceModifier.height(6.dp))
                 val allDay = state.timeline.allDay.filter { it.holiday != HolidayKind.DAY_OFF }
                 if (allDay.isNotEmpty()) AllDayStrip(allDay)
-                if (state.timeline.items.isEmpty()) {
+                if (state.timeline.items.isEmpty() && state.tomorrow.isEmpty()) {
                     TimelineEmpty(hasAllDay = allDay.isNotEmpty())
                 } else {
                     LazyColumn(modifier = GlanceModifier.fillMaxSize()) {
@@ -152,6 +158,11 @@ internal fun TimelineContent(state: TimelineState) {
                                 TimelineItem.NowMarker -> NowMarkerRow()
                                 is TimelineItem.Gap -> GapRow(item.minutes)
                             }
+                        }
+                        // 今天都結束了：預告明天。
+                        if (state.tomorrow.isNotEmpty()) {
+                            item { TomorrowHeader(state.today.plusDays(1)) }
+                            items(state.tomorrow) { event -> TimelineEventRow(event, EventStatus.FUTURE) }
                         }
                     }
                 }
@@ -283,6 +294,21 @@ internal fun TimelineEventRow(event: CalendarEvent, status: EventStatus) {
             }
         }
     }
+}
+
+@Composable
+private fun TomorrowHeader(date: LocalDate) {
+    val style = LocalWidgetStyle.current
+    val locale = Locale.getDefault()
+    val formatted = java.time.format.DateTimeFormatter
+        .ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale)
+        .format(date)
+    Text(
+        text = glanceString(R.string.tomorrow_prefix, formatted),
+        maxLines = 1,
+        modifier = GlanceModifier.padding(start = 4.dp, top = 10.dp, bottom = 6.dp),
+        style = style.text(13, style.colors.primary, FontWeight.Bold),
+    )
 }
 
 @Composable
