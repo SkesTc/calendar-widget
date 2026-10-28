@@ -201,7 +201,11 @@ internal fun MonthContent(state: MonthState) {
                     // 平板、摺疊機：月曆在左、選取日期的行程在右。
                     Row(modifier = GlanceModifier.fillMaxSize()) {
                         Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight()) {
-                            MonthGrid(state, compact = false, showLabels = showLabels, selectable = true)
+                            // 右側行程區塊佔 200dp＋間距：標題列只有左邊的寬度。
+                            MonthGrid(
+                                state, compact = false, showLabels = showLabels, selectable = true,
+                                headerWidthDp = size.width.value - 210f,
+                            )
                         }
                         Spacer(GlanceModifier.width(10.dp))
                         DayPanel(
@@ -237,8 +241,14 @@ internal fun MonthContent(state: MonthState) {
 
 /** 標題、星期列與日期格子；放在 Column 裡，週列平分剩下的高度。 */
 @Composable
-private fun ColumnScope.MonthGrid(state: MonthState.Loaded, compact: Boolean, showLabels: Boolean, selectable: Boolean) {
-    MonthHeader(state.data.month, state.monthOffset)
+private fun ColumnScope.MonthGrid(
+    state: MonthState.Loaded,
+    compact: Boolean,
+    showLabels: Boolean,
+    selectable: Boolean,
+    headerWidthDp: Float = LocalSize.current.width.value,
+) {
+    MonthHeader(state.data.month, state.monthOffset, headerWidthDp)
     WeekdayRow(state.data.firstDayOfWeek, compact)
     for (week in state.data.weeks) {
         Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
@@ -258,7 +268,7 @@ private fun ColumnScope.MonthGrid(state: MonthState.Loaded, compact: Boolean, sh
 }
 
 @Composable
-private fun MonthHeader(month: YearMonth, monthOffset: Int) {
+private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
     val style = LocalWidgetStyle.current
     val context = LocalContext.current
     val locale = Locale.getDefault()
@@ -270,7 +280,7 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int) {
     // 標題字級含使用者的文字大小與系統字型縮放，估算寬度時一起算進去。
     val titleSp = 16f * style.textScale * context.resources.configuration.fontScale
     val fit = MonthLayout.headerFit(
-        widthDp = LocalSize.current.width.value,
+        widthDp = widthDp,
         yearTitleDp = MonthLayout.textWidthDp(yearTitle, titleSp),
         monthTitleDp = MonthLayout.textWidthDp(monthTitle, titleSp),
     )
