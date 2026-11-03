@@ -10,6 +10,9 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
+import com.skestc.calendarwidget.data.FetchResult
+import com.skestc.calendarwidget.data.LocationReader
+import com.skestc.calendarwidget.data.WeatherLocationMode
 import com.skestc.calendarwidget.data.WeatherStore
 import java.util.concurrent.TimeUnit
 
@@ -21,14 +24,23 @@ class WeatherWorker(
 
     override suspend fun doWork(): Result {
         val store = WeatherStore(applicationContext)
-        if (store.place == null) {
+        if (!store.enabled) {
             // 天氣關閉了：更新一次讓 widget 拿掉天氣列。
             WidgetUpdater.refreshAll(applicationContext)
             return Result.success()
         }
-        if (!store.fetch()) return Result.retry()
-        WidgetUpdater.refreshAll(applicationContext)
-        return Result.success()
+        // 背景拿不到新的位置，用系統記得的最後位置（有的話）。
+        if (store.mode == WeatherLocationMode.GPS) {
+            LocationReader.lastKnown(applicationContext)?.let { store.saveGps(it.latitude, it.longitude) }
+        }
+        return when (store.fetch()) {
+            FetchResult.WeatherFailed -> Result.retry()
+            FetchResult.NoLocation -> Result.success()
+            else -> {
+                WidgetUpdater.refreshAll(applicationContext)
+                Result.success()
+            }
+        }
     }
 
     companion object {
@@ -41,7 +53,7 @@ class WeatherWorker(
 
         /** 依目前的設定開始或停止每小時更新。 */
         fun sync(context: Context) {
-            if (WeatherStore(context).place == null) {
+            if (!WeatherStore(context).enabled) {
                 cancel(context)
                 return
             }
@@ -52,12 +64,12 @@ class WeatherWorker(
             )
         }
 
-        /** 不連網，只讓 widget 重新讀快取（例如關閉天氣時把那一列拿掉）。 */
-        fun refreshWidgets(context: Context) {
+        /** 馬上抓一次（換設定、或 widget 發現快取太舊時）；已經在排隊就不重複。 */
+        fun fetchNow(context: Context, replace: Boolean = false) {
             WorkManager.getInstance(context).enqueueUniqueWork(
                 NOW,
-                ExistingWorkPolicy.REPLACE,
-                OneTimeWorkRequestBuilder<WeatherWorker>().build(),
+                if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
+                OneTimeWorkRequestBuilder<WeatherWorker>().setConstraints(constraints).build(),
             )
         }
 
@@ -65,15 +77,6 @@ class WeatherWorker(
             val work = WorkManager.getInstance(context)
             work.cancelUniqueWork(PERIODIC)
             work.cancelUniqueWork(NOW)
-        }
-
-        /** 馬上抓一次（換地區、或 widget 發現快取太舊時）；已經在排隊就不重複。 */
-        fun fetchNow(context: Context, replace: Boolean = false) {
-            WorkManager.getInstance(context).enqueueUniqueWork(
-                NOW,
-                if (replace) ExistingWorkPolicy.REPLACE else ExistingWorkPolicy.KEEP,
-                OneTimeWorkRequestBuilder<WeatherWorker>().setConstraints(constraints).build(),
-            )
         }
     }
 }

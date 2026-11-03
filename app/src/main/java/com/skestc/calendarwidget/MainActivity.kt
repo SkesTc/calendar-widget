@@ -68,6 +68,9 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.skestc.calendarwidget.data.CalendarEvent
+import com.skestc.calendarwidget.data.LocationReader
+import com.skestc.calendarwidget.data.WeatherStore
+import com.skestc.calendarwidget.widget.WeatherWorker
 import com.skestc.calendarwidget.data.CalendarInfo
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.data.MonthBuilder
@@ -160,6 +163,10 @@ private fun HomeScreen() {
     }
     LaunchedEffect(granted, resumes) {
         if (granted) today = loadToday(repository)
+        // 天氣跟隨 GPS 時，開 App 是更新位置的機會（Android 不讓背景取得位置）。
+        if (WeatherStore(context).enabled) {
+            LocationReader.refreshForWeather(context) { WeatherWorker.fetchNow(context) }
+        }
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

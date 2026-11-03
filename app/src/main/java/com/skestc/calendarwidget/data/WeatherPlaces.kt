@@ -34,4 +34,19 @@ object WeatherPlaces {
     )
 
     fun byId(id: String?): WeatherPlace? = all.firstOrNull { it.id == id }
+
+    /** 離這個座標最近的縣市（GPS 模式顯示「目前位置 · 臺中市」用）。 */
+    fun nearest(latitude: Double, longitude: Double): WeatherPlace =
+        all.minBy { Geo.distanceKm(latitude, longitude, it.latitude, it.longitude) }
+}
+
+object Geo {
+    /** 兩點的大圓距離（公里）。 */
+    fun distanceKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2).let { it * it } +
+            Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) * Math.sin(dLon / 2).let { it * it }
+        return 6371.0 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+    }
 }

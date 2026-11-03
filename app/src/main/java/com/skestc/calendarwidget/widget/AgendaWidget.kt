@@ -58,6 +58,7 @@ import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.WeatherCodes
 import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.data.WeatherToday
+import com.skestc.calendarwidget.ui.WeatherDetailActivity
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
@@ -253,6 +254,7 @@ private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
 @Composable
 internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
     val style = LocalWidgetStyle.current
+    val context = LocalContext.current
     val details = listOfNotNull(
         glanceString(WeatherCodes.description(weather.code)),
         glanceString(R.string.weather_high_low, weather.low, weather.high),
@@ -263,6 +265,8 @@ internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
             .fillMaxWidth()
             .background(style.colors.card)
             .cornerRadius(16.dp)
+            // 點了開啟天氣與空氣品質的詳細內容。
+            .clickable(actionStartIntent(WeatherDetailActivity.intent(context)))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

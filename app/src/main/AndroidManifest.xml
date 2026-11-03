@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <!-- 只用在天氣與空氣品質（使用者選了地區才會連網）。 -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 天氣選「跟隨 GPS」時才會要求（大概位置即可，不需要背景位置） -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <!-- 開機後重新排好午夜換日的鬧鐘 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -62,6 +64,17 @@
             android:exported="false"
             android:label="@string/search_title"
             android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.WeatherSettingsActivity"
+            android:exported="false"
+            android:label="@string/weather_title"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ui.WeatherDetailActivity"
+            android:exported="false"
+            android:label="@string/weather_title" />
 
         <activity
             android:name=".ui.LongEventsActivity"
