@@ -53,7 +53,11 @@ import com.skestc.calendarwidget.MainActivity
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.AgendaFormatter
 import com.skestc.calendarwidget.data.AgendaRow
+import com.skestc.calendarwidget.data.AqiLevel
 import com.skestc.calendarwidget.data.CalendarEvent
+import com.skestc.calendarwidget.data.WeatherCodes
+import com.skestc.calendarwidget.data.WeatherStore
+import com.skestc.calendarwidget.data.WeatherToday
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
@@ -95,6 +99,8 @@ internal sealed interface AgendaState {
         val dayRows: List<WeekDay> = emptyList(),
         /** 學期週次（有設定開學日時）。 */
         val schoolWeek: Int? = null,
+        /** 今天的天氣與空氣品質（首頁選了地區才有）。 */
+        val weather: WeatherToday? = null,
     ) : AgendaState
 }
 
@@ -149,6 +155,9 @@ class AgendaWidget : GlanceAppWidget() {
         events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
             ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
+        val weatherStore = WeatherStore(context)
+        // 快取太舊（例如背景更新被省電機制擋掉）就補抓，抓到後會再更新 widget。
+        if (weatherStore.isStale(now)) WeatherWorker.fetchNow(context)
         return AgendaState.Loaded(
             today = today,
             days = settings.agendaDays,
@@ -157,6 +166,7 @@ class AgendaWidget : GlanceAppWidget() {
             schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context)),
             layout = settings.agendaLayout,
             now = now,
+            weather = weatherStore.cached(today),
             dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
                 dayRowsOf(events, today, settings.agendaDays, labeler)
             } else {
@@ -181,6 +191,10 @@ internal fun AgendaContent(state: AgendaState) {
             is AgendaState.Loaded -> {
                 DateHeader(state.today, state.lunarToday, state.schoolWeek)
                 Spacer(GlanceModifier.height(8.dp))
+                state.weather?.let {
+                    WeatherRow(it, compact = LocalSize.current.width < 250.dp)
+                    Spacer(GlanceModifier.height(8.dp))
+                }
                 if (LocalSize.current.width < 180.dp) {
                     NextEventOnly(state.rows, state.days)
                 } else {
@@ -229,6 +243,63 @@ private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
             )
         }
         HeaderActions()
+    }
+}
+
+/**
+ * 今天的天氣一列：圖示、現在溫度、天氣與高低溫、降雨機率，右邊是空氣品質（環境部的分級顏色）。
+ * 窄的 widget 只留圖示、溫度與 AQI。
+ */
+@Composable
+internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
+    val style = LocalWidgetStyle.current
+    val details = listOfNotNull(
+        glanceString(WeatherCodes.description(weather.code)),
+        glanceString(R.string.weather_high_low, weather.low, weather.high),
+        weather.rainChance?.let { glanceString(R.string.weather_rain_chance, it) },
+    ).joinToString(" · ")
+    Row(
+        modifier = GlanceModifier
+            .fillMaxWidth()
+            .background(style.colors.card)
+            .cornerRadius(16.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(WeatherCodes.emoji(weather.code, weather.isDay), style = style.text(18, style.colors.onCard))
+        Spacer(GlanceModifier.width(8.dp))
+        Text(
+            glanceString(R.string.weather_temperature, weather.temperature),
+            style = style.text(18, style.colors.onCard, FontWeight.Bold),
+        )
+        Spacer(GlanceModifier.width(8.dp))
+        Text(
+            if (compact) "" else details,
+            maxLines = 1,
+            modifier = GlanceModifier.defaultWeight(),
+            style = style.text(12, style.colors.onCard),
+        )
+        weather.aqi?.let { aqi ->
+            val level = AqiLevel.of(aqi)
+            Spacer(GlanceModifier.width(6.dp))
+            Text(
+                if (compact) {
+                    glanceString(R.string.aqi_short, aqi)
+                } else {
+                    glanceString(R.string.aqi_format, aqi, glanceString(level.label))
+                },
+                maxLines = 1,
+                modifier = GlanceModifier
+                    .background(ColorProvider(Color(level.color)))
+                    .cornerRadius(10.dp)
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                style = style.text(
+                    11,
+                    ColorProvider(if (level.darkText) Color(0xFF1F1F1F) else Color.White),
+                    FontWeight.Bold,
+                ),
+            )
+        }
     }
 }
 

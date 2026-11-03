@@ -70,6 +70,41 @@ class AgendaWidgetUiTest {
         onNode(hasText("第9週")).assertExists()
     }
 
+    private val weather = com.skestc.calendarwidget.data.WeatherToday(
+        date = today, temperature = 24, code = 2, isDay = true,
+        high = 27, low = 19, rainChance = 30, aqi = 72, fetchedAt = 0,
+    )
+
+    @Test
+    fun weatherRowShowsTemperatureRainAndAqi() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 300.dp))
+        val state = (loaded() as AgendaState.Loaded).copy(weather = weather)
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasTextEqualTo("24°")).assertExists()
+        onNode(hasText("多雲 · 19°–27° · 降雨 30%")).assertExists()
+        onNode(hasTextEqualTo("AQI 72 普通")).assertExists()
+    }
+
+    @Test
+    fun narrowWeatherRowKeepsTemperatureAndAqiOnly() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(220.dp, 300.dp))
+        val state = (loaded() as AgendaState.Loaded).copy(weather = weather.copy(rainChance = null))
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasTextEqualTo("24°")).assertExists()
+        onNode(hasTextEqualTo("AQI 72")).assertExists()
+        onNode(hasText("多雲")).assertDoesNotExist()
+    }
+
+    @Test
+    fun noWeatherRowWhenOff() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 300.dp))
+        provideComposable { WidgetFrame { AgendaContent(loaded()) } }
+        onNode(hasText("AQI")).assertDoesNotExist()
+    }
+
     @Test
     fun daysLayoutSkipsEmptyDaysAfterTheFirstWeek() {
         val rows = dayRowsOf(listOf(timed(3, "遠足", at(8, date = today.plusDays(20)), at(9, date = today.plusDays(20)))), today, 31, null)

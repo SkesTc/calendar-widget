@@ -7,6 +7,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.skestc.calendarwidget.data.SchoolWeeks
+import com.skestc.calendarwidget.data.WeatherPlace
+import com.skestc.calendarwidget.data.WeatherPlaces
+import com.skestc.calendarwidget.data.WeatherStore
+import com.skestc.calendarwidget.widget.WeatherWorker
+import androidx.compose.material3.RadioButton
 import com.skestc.calendarwidget.widget.RefreshAction
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -326,3 +331,67 @@ fun SchoolWeeksRow() {
     }
 }
 
+
+/** 天氣與空氣品質：選縣市（所有行程清單小工具共用），或關閉。 */
+@Composable
+fun WeatherSettingsRow() {
+    val context = LocalContext.current
+    val store = remember { WeatherStore(context) }
+    var place by remember { mutableStateOf(store.place) }
+    var picking by remember { mutableStateOf(false) }
+    SettingsRow(
+        icon = R.drawable.ic_weather,
+        title = stringResource(R.string.weather_title),
+        subtitle = place?.let { stringResource(R.string.weather_summary, it.name()) }
+            ?: stringResource(R.string.weather_off_summary),
+        onClick = { picking = true },
+    )
+
+    fun save(choice: WeatherPlace?) {
+        picking = false
+        place = choice
+        store.place = choice
+        val app = context.applicationContext
+        WeatherWorker.sync(app)
+        if (choice != null) WeatherWorker.fetchNow(app, replace = true)
+        // 關閉時馬上把那一列拿掉；開啟時等抓到資料由背景工作更新。
+        if (choice == null) WeatherWorker.refreshWidgets(app)
+    }
+
+    if (picking) {
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            title = { Text(stringResource(R.string.weather_pick)) },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        stringResource(R.string.weather_source),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                    PlaceOption(stringResource(R.string.weather_off), selected = place == null) { save(null) }
+                    for (option in WeatherPlaces.all) {
+                        PlaceOption(option.name(), selected = place?.id == option.id) { save(option) }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { picking = false }) { Text(stringResource(R.string.done)) } },
+        )
+    }
+}
+
+@Composable
+private fun PlaceOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(8.dp))
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+    }
+}

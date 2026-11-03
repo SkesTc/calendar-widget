@@ -86,6 +86,7 @@ import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.SectionTitle
 import com.skestc.calendarwidget.ui.SettingsGroup
 import com.skestc.calendarwidget.ui.UpdateHelpRow
+import com.skestc.calendarwidget.ui.WeatherSettingsRow
 import com.skestc.calendarwidget.ui.openEventEditor
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.AgendaWidgetReceiver
@@ -219,6 +220,8 @@ private fun HomeScreen() {
                     LongEventsRow()
                     GroupDivider()
                     SchoolWeeksRow()
+                    GroupDivider()
+                    WeatherSettingsRow()
                     GroupDivider()
                     UpdateHelpRow()
                 }

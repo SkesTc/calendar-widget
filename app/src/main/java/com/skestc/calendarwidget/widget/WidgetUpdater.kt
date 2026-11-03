@@ -50,9 +50,11 @@ object WidgetUpdater {
         if (hasAnyWidget(context)) {
             CalendarChangeWorker.schedule(context)
             DayChangeScheduler.schedule(context)
+            WeatherWorker.sync(context)
         } else {
             CalendarChangeWorker.cancel(context)
             DayChangeScheduler.cancel(context)
+            WeatherWorker.cancel(context)
         }
     }
 }
