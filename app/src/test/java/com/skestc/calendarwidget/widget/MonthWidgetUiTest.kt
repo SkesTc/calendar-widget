@@ -64,6 +64,54 @@ class MonthWidgetUiTest {
         onAllNodes(hasTextEqualTo("十七")).assertCountEquals(31)
     }
 
+    private val weather = com.skestc.calendarwidget.data.WeatherToday(
+        date = today, temperature = 24, code = 2, isDay = true,
+        high = 27, low = 19, rainChance = 30, aqi = 72, fetchedAt = 0,
+    )
+
+    @Test
+    fun tallMonthShowsWeatherAboveTheGrid() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val state = (october() as MonthState.Loaded).copy(weather = weather.copy(description = "多雲時晴"))
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasTextEqualTo("24°")).assertExists()
+        // 氣象署的描述優先於代碼對應的文字。
+        onNode(hasText("多雲時晴 · 19°–27° · 降雨 30%")).assertExists()
+        onNode(hasTextEqualTo("AQI 72 普通")).assertExists()
+        onNode(hasText("10月")).assertExists()
+    }
+
+    @Test
+    fun shortMonthLeavesWeatherOut() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 260.dp))
+        val state = (october() as MonthState.Loaded).copy(weather = weather)
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasText("AQI")).assertDoesNotExist()
+        onNode(hasTextEqualTo("31")).assertExists()
+    }
+
+    @Test
+    fun narrowTallMonthUsesCompactWeather() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(260.dp, 400.dp))
+        val state = (october() as MonthState.Loaded).copy(weather = weather)
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasTextEqualTo("AQI 72")).assertExists()
+        onNode(hasText("降雨")).assertDoesNotExist()
+    }
+
+    @Test
+    fun wideMonthPutsWeatherAboveTheDayPanel() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(560.dp, 300.dp))
+        val state = (october() as MonthState.Loaded).copy(weather = weather)
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasTextEqualTo("24°")).assertExists()
+        onNode(hasTextEqualTo("AQI 72")).assertExists()
+    }
+
     @Test
     fun compactMonthHidesLabels() = runGlanceAppWidgetUnitTest {
         setContext(context)

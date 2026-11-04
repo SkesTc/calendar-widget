@@ -56,6 +56,8 @@ import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthLayout
 import com.skestc.calendarwidget.data.SchoolWeeks
+import com.skestc.calendarwidget.data.WeatherStore
+import com.skestc.calendarwidget.data.WeatherToday
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.theme.Desaturate
@@ -90,6 +92,8 @@ internal sealed interface MonthState {
         val events: List<CalendarEvent> = emptyList(),
         /** 有設定開學日時，每一週左邊標上學期週次。 */
         val schoolStart: LocalDate? = null,
+        /** 今天的天氣與空氣品質（首頁開啟天氣時才有）。 */
+        val weather: WeatherToday? = null,
     ) : MonthState {
         /** 套用使用者點選的日期（不在這個月的格子裡時改選今天或 1 號）。 */
         fun withSelection(picked: LocalDate?): Loaded {
@@ -111,6 +115,10 @@ class MonthWidget : GlanceAppWidget() {
         val PANEL_MIN_HEIGHT = 340.dp
         /** 平板、摺疊機展開：行程改放在月曆右邊。 */
         val WIDE_MIN_WIDTH = 480.dp
+        /** 月曆上方顯示天氣列的最小高度（太矮時格子優先）。 */
+        val WEATHER_MIN_HEIGHT = 300.dp
+        /** 窄於這個寬度時天氣列只留圖示、溫度與 AQI。 */
+        val WEATHER_FULL_MIN_WIDTH = 300.dp
     }
 
     /**
@@ -163,6 +171,9 @@ class MonthWidget : GlanceAppWidget() {
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
         val labeler = if (settings.showLunar) MonthCache.labeler else null
         val selected = builder.selectedDate(month, today, null)
+        val weatherStore = WeatherStore(context)
+        // 快取太舊就補抓，抓到後會再更新 widget。
+        if (weatherStore.isStale()) WeatherWorker.fetchNow(context)
         return MonthState.Loaded(
             data = builder.build(month, today, events, labeler),
             monthOffset = settings.monthOffset,
@@ -170,6 +181,7 @@ class MonthWidget : GlanceAppWidget() {
             selectedEvents = builder.eventsOn(events, selected),
             events = events,
             schoolStart = SchoolWeeks.start(context),
+            weather = weatherStore.cached(),
         )
     }
 }
@@ -193,14 +205,18 @@ internal fun MonthContent(state: MonthState) {
                 // 格子夠高才放農曆／假日小字（約每格 40dp 以上）。
                 // 再高一點（約 4×4 以上）時，點日期改成在下方列出當天行程。
                 val panelBelow = !wide && !compact && size.height >= MonthWidget.PANEL_MIN_HEIGHT
-                val inner = size.height.value - 20f
+                // 天氣列：平板放在右邊行程上方；一般大小夠高時放在月曆上方。
+                val weather = state.weather?.takeIf { wide || size.height >= MonthWidget.WEATHER_MIN_HEIGHT }
+                val weatherHeight = if (weather != null) weatherRowHeight(style.textScale) else 0f
+                val inner = size.height.value - 20f - if (wide) 0f else weatherHeight
                 // 下方區塊依當天行程數量長高（最多約一半），其餘留給月曆格子。
                 val panelHeight = if (panelBelow) {
                     MonthLayout.panelHeight(inner, state.selectedEvents.size, style.textScale)
                 } else {
                     0f
                 }
-                val showLabels = !compact && size.height.value - panelHeight >= MonthWidget.LABELS_MIN_HEIGHT.value
+                val showLabels = !compact &&
+                    size.height.value - panelHeight - (if (wide) 0f else weatherHeight) >= MonthWidget.LABELS_MIN_HEIGHT.value
                 val selectable = wide || panelBelow
                 if (wide) {
                     // 平板、摺疊機：月曆在左、選取日期的行程在右。
@@ -213,16 +229,26 @@ internal fun MonthContent(state: MonthState) {
                             )
                         }
                         Spacer(GlanceModifier.width(10.dp))
-                        DayPanel(
-                            date = state.selected,
-                            events = state.selectedEvents,
-                            now = state.now,
-                            // 右側區塊沒有上方間距，算法同下方區塊。
-                            maxEvents = MonthLayout.eventsThatFit(inner + 6f, state.selectedEvents.size, style.textScale),
-                            modifier = GlanceModifier.width(200.dp).fillMaxHeight(),
-                        )
+                        Column(modifier = GlanceModifier.width(200.dp).fillMaxHeight()) {
+                            if (weather != null) {
+                                WeatherRow(weather, compact = true)
+                                Spacer(GlanceModifier.height(6.dp))
+                            }
+                            DayPanel(
+                                date = state.selected,
+                                events = state.selectedEvents,
+                                now = state.now,
+                                // 右側區塊沒有上方間距，算法同下方區塊。
+                                maxEvents = MonthLayout.eventsThatFit(inner + 6f - weatherHeight, state.selectedEvents.size, style.textScale),
+                                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                            )
+                        }
                     }
                 } else {
+                    if (weather != null) {
+                        WeatherRow(weather, compact = size.width < MonthWidget.WEATHER_FULL_MIN_WIDTH)
+                        Spacer(GlanceModifier.height(6.dp))
+                    }
                     if (panelBelow) {
                         Column(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
                             MonthGrid(state, compact, showLabels, selectable)
@@ -243,6 +269,9 @@ internal fun MonthContent(state: MonthState) {
         }
     }
 }
+
+/** 天氣列加下方間距大約佔的高度（dp），依文字大小調整。 */
+internal fun weatherRowHeight(textScale: Float): Float = 40f * textScale + 6f
 
 /** 標題、星期列與日期格子；放在 Column 裡，週列平分剩下的高度。 */
 @Composable
