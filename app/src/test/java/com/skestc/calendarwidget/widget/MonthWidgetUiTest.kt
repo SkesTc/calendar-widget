@@ -79,7 +79,8 @@ class MonthWidgetUiTest {
         // 氣象署的描述優先於代碼對應的文字。
         onNode(hasText("多雲時晴 · 19°–27° · 降雨 30%")).assertExists()
         onNode(hasTextEqualTo("AQI 72 普通")).assertExists()
-        onNode(hasText("10月")).assertExists()
+        // 月曆照樣畫出來（下方行程區塊的標題也含「10月」，改用切換按鈕確認）。
+        onNode(hasContentDescriptionEqualTo("上個月")).assertExists()
     }
 
     @Test
