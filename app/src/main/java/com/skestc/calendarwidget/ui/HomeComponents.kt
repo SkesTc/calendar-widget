@@ -7,6 +7,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.rememberCoroutineScope
 import com.skestc.calendarwidget.data.SchoolWeeks
+import com.skestc.calendarwidget.settings.DayOpen
 import android.content.Context
 import com.skestc.calendarwidget.data.AirSource
 import com.skestc.calendarwidget.data.WeatherSource
@@ -370,4 +371,54 @@ internal fun weatherSummary(context: Context): String {
         if (store.airSource == AirSource.MOENV) R.string.air_source_moenv_short else R.string.air_source_open_meteo_short,
     )
     return listOf(where, weather, air).distinct().joinToString(" · ")
+}
+
+/** 在小工具上點日期或行程時：開 App 內的行程檢視，或開日曆 App。 */
+@Composable
+fun DayOpenRow() {
+    val context = LocalContext.current
+    var inApp by remember { mutableStateOf(DayOpen.inApp(context)) }
+    var picking by remember { mutableStateOf(false) }
+    SettingsRow(
+        icon = R.drawable.ic_event,
+        title = stringResource(R.string.day_open_title),
+        subtitle = stringResource(if (inApp) R.string.day_open_in_app else R.string.day_open_calendar),
+        onClick = { picking = true },
+    )
+    if (picking) {
+        fun choose(value: Boolean) {
+            inApp = value
+            DayOpen.setInApp(context, value)
+            picking = false
+        }
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            title = { Text(stringResource(R.string.day_open_title)) },
+            text = {
+                Column {
+                    DayOpenOption(stringResource(R.string.day_open_in_app), stringResource(R.string.day_open_in_app_hint), inApp) { choose(true) }
+                    DayOpenOption(stringResource(R.string.day_open_calendar), stringResource(R.string.day_open_calendar_hint), !inApp) { choose(false) }
+                }
+            },
+            confirmButton = { TextButton(onClick = { picking = false }) { Text(stringResource(R.string.done)) } },
+        )
+    }
+}
+
+@Composable
+private fun DayOpenOption(title: String, hint: String, selected: Boolean, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.RadioButton(selected = selected, onClick = null, modifier = Modifier.padding(8.dp))
+        Column {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }

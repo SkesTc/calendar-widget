@@ -50,6 +50,8 @@ class WidgetStyle(
     private val fontFamily: FontFamily?,
     /** 標題列要放哪些按鈕（每個 widget 各自設定）。 */
     val headerButtons: List<HeaderButton> = HeaderButton.entries,
+    /** 這個 widget 沒勾選的日曆：點進 App 內的行程檢視時一樣不顯示。 */
+    val hiddenCalendarIds: Set<Long> = emptySet(),
 ) {
     /** 大號數字用圓潤粗體（[ExpressiveText]）；選了襯線／等寬字型時不用。 */
     val roundedNumerals: Boolean get() = fontFamily == null || fontFamily == FontFamily.SansSerif
@@ -82,6 +84,7 @@ val LocalWidgetStyle = staticCompositionLocalOf<WidgetStyle> {
 fun ProvideWidgetStyle(
     appearance: Appearance,
     headerButtons: List<HeaderButton> = HeaderButton.entries,
+    hiddenCalendarIds: Set<Long> = emptySet(),
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -101,6 +104,7 @@ fun ProvideWidgetStyle(
         textScale = appearance.textScalePercent / 100f,
         fontFamily = fontFamily,
         headerButtons = headerButtons,
+        hiddenCalendarIds = hiddenCalendarIds,
     )
     CompositionLocalProvider(LocalWidgetStyle provides style, content = content)
 }

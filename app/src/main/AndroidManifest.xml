@@ -66,6 +66,11 @@
             android:windowSoftInputMode="adjustResize" />
 
         <activity
+            android:name=".ui.EventViewerActivity"
+            android:exported="false"
+            android:label="@string/view_title" />
+
+        <activity
             android:name=".ui.WeatherSettingsActivity"
             android:exported="false"
             android:label="@string/weather_title"

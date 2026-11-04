@@ -108,7 +108,7 @@ class WeekWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
                     WeekContent(state)
                 }
             }

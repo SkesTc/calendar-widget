@@ -148,7 +148,7 @@ class MonthWidget : GlanceAppWidget() {
                 ?.copy(now = System.currentTimeMillis())
                 ?: state
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance, settings.headerButtons) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
                     MonthContent(shown)
                 }
             }

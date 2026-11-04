@@ -79,6 +79,7 @@ import com.skestc.calendarwidget.data.NextEventPicker
 import com.skestc.calendarwidget.lunar.DayLabeler
 import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.ui.DayOpenRow
 import com.skestc.calendarwidget.ui.EventEditorRow
 import com.skestc.calendarwidget.ui.GroupDivider
 import com.skestc.calendarwidget.ui.LongEventsRow
@@ -223,6 +224,8 @@ private fun HomeScreen() {
             item(key = "settings") {
                 SettingsGroup {
                     EventEditorRow()
+                    GroupDivider()
+                    DayOpenRow()
                     GroupDivider()
                     LongEventsRow()
                     GroupDivider()
