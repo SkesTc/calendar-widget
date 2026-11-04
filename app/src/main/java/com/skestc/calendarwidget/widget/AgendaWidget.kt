@@ -167,7 +167,7 @@ class AgendaWidget : GlanceAppWidget() {
             schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context)),
             layout = settings.agendaLayout,
             now = now,
-            weather = weatherStore.cached(today),
+            weather = weatherStore.cached(),
             dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
                 dayRowsOf(events, today, settings.agendaDays, labeler)
             } else {
@@ -256,7 +256,7 @@ internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
     val style = LocalWidgetStyle.current
     val context = LocalContext.current
     val details = listOfNotNull(
-        glanceString(WeatherCodes.description(weather.code)),
+        weather.description ?: glanceString(WeatherCodes.description(weather.code)),
         glanceString(R.string.weather_high_low, weather.low, weather.high),
         weather.rainChance?.let { glanceString(R.string.weather_rain_chance, it) },
     ).joinToString(" · ")

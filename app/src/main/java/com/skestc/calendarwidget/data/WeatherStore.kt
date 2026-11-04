@@ -7,22 +7,21 @@ import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
-import java.time.LocalDate
 import java.time.LocalDateTime
 
 /** 天氣的地點：關閉、自選縣市，或跟隨手機位置。 */
 enum class WeatherLocationMode { OFF, PLACE, GPS }
 
-/** 這次要查詢的座標與顯示名稱。 */
-data class WeatherTarget(val latitude: Double, val longitude: Double, val name: String)
+/** 這次要查詢的座標、顯示名稱，與氣象署預報用的縣市。 */
+data class WeatherTarget(val latitude: Double, val longitude: Double, val name: String, val county: String)
 
 /** 抓天氣的結果，設定頁顯示用。 */
 sealed interface FetchResult {
     data object Ok : FetchResult
     data object NoLocation : FetchResult
     data object WeatherFailed : FetchResult
-    /** 天氣有抓到，但環境部的資料抓不到，改用 Open-Meteo 的空氣品質。 */
-    data class AirFallback(val reason: String) : FetchResult
+    /** 有抓到資料，但氣象署或環境部抓不到，該部分暫用 Open-Meteo（原因見設定頁）。 */
+    data object Partial : FetchResult
 }
 
 /**
@@ -58,6 +57,22 @@ class WeatherStore(context: Context) {
             markStale()
         }
 
+    var weatherSource: WeatherSource
+        get() = prefs.getString(KEY_WEATHER_SOURCE, null)?.let { runCatching { WeatherSource.valueOf(it) }.getOrNull() }
+            ?: WeatherSource.OPEN_METEO
+        set(value) {
+            prefs.edit().putString(KEY_WEATHER_SOURCE, value.name).apply()
+            markStale()
+        }
+
+    /** 中央氣象署氣象資料開放平臺的授權碼。 */
+    var cwaKey: String
+        get() = prefs.getString(KEY_CWA_KEY, "").orEmpty()
+        set(value) {
+            prefs.edit().putString(KEY_CWA_KEY, value.trim()).apply()
+            markStale()
+        }
+
     /** 環境部資料開放平臺的 API 金鑰。 */
     var moenvKey: String
         get() = prefs.getString(KEY_MOENV_KEY, "").orEmpty()
@@ -90,26 +105,49 @@ class WeatherStore(context: Context) {
 
     fun target(): WeatherTarget? = when (mode) {
         WeatherLocationMode.OFF -> null
-        WeatherLocationMode.PLACE -> place?.let { WeatherTarget(it.latitude, it.longitude, it.name()) }
+        WeatherLocationMode.PLACE -> place?.let { WeatherTarget(it.latitude, it.longitude, it.name(), it.cwaName) }
         WeatherLocationMode.GPS -> lastGps()?.let { (lat, lon) ->
-            WeatherTarget(lat, lon, app.getString(R.string.weather_here, WeatherPlaces.nearest(lat, lon).name()))
+            val county = WeatherPlaces.nearest(lat, lon)
+            WeatherTarget(lat, lon, app.getString(R.string.weather_here, county.name()), county.cwaName)
         }
     }
 
     /** 快取裡今天的天氣；關閉、沒抓過或已經不是今天時回傳 null。 */
-    fun cached(today: LocalDate = LocalDate.now()): WeatherToday? {
+    fun cached(now: LocalDateTime = LocalDateTime.now()): WeatherToday? {
         if (!enabled) return null
-        val forecast = prefs.getString(KEY_FORECAST, null) ?: return null
-        return runCatching { WeatherParser.parse(forecast, cachedAir(), fetchedAt()) }.getOrNull()
-            ?.takeIf { it.date == today }
+        val air = cachedAir()
+        val openMeteo = prefs.getString(KEY_FORECAST, null)
+            ?.let { runCatching { WeatherParser.parse(it, air, fetchedAt()) }.getOrNull() }
+            ?.takeIf { it.date == now.toLocalDate() }
+        return WeatherMerge.today(openMeteo, cachedCwa(now), air?.aqi, now, fetchedAt())
+            ?.takeIf { it.date == now.toLocalDate() }
     }
 
     fun cachedDetail(now: LocalDateTime = LocalDateTime.now()): WeatherDetail? {
-        if (!enabled) return null
-        val forecast = prefs.getString(KEY_FORECAST, null) ?: return null
-        return runCatching { WeatherDetailParser.parse(forecast, cachedAir(), fetchedAt(), now) }.getOrNull()
+        val today = cached(now) ?: return null
+        val cwa = cachedCwa(now)
+        val base = prefs.getString(KEY_FORECAST, null)
+            ?.let { runCatching { WeatherDetailParser.parse(it, cachedAir(), fetchedAt(), now) }.getOrNull() }
             ?.takeIf { it.today.date == now.toLocalDate() }
+            ?: WeatherDetail(today, null, null, null, null, null, null, emptyList(), emptyList())
+        if (cwa == null) return base
+        return base.copy(
+            today = today,
+            humidity = cwa.humidity ?: base.humidity,
+            windKmh = cwa.windMs?.let { Math.round(it * 3.6).toInt() } ?: base.windKmh,
+            cwa = cwa,
+        )
     }
+
+    /** 選了氣象署、而且有抓到今天還用得到的資料時才回傳。 */
+    fun cachedCwa(now: LocalDateTime = LocalDateTime.now()): CwaWeather? {
+        if (weatherSource != WeatherSource.CWA) return null
+        val cwa = CwaWeather.fromJson(prefs.getString(KEY_CWA, null)) ?: return null
+        return cwa.takeIf { it.temperature != null || it.periodAt(now) != null }
+    }
+
+    /** 上次抓氣象署資料失敗的原因（設定頁顯示）；成功時為 null。 */
+    fun weatherError(): String? = prefs.getString(KEY_WEATHER_ERROR, null)
 
     fun cachedAir(): AirQuality? = AirQuality.fromJson(prefs.getString(KEY_AIR, null))
 
@@ -137,9 +175,36 @@ class WeatherStore(context: Context) {
     /** 連網抓一次並存進快取；天氣失敗時保留舊的快取。 */
     suspend fun fetch(): FetchResult = withContext(Dispatchers.IO) {
         val target = target() ?: return@withContext FetchResult.NoLocation
+        // Open-Meteo 一定抓：逐時、未來幾天、紫外線與日出日落都來自它。
         val forecast = runCatching { get(forecastUrl(target)) }.getOrNull()
             ?.takeIf { runCatching { WeatherParser.parse(it, null, 0) }.isSuccess }
-            ?: return@withContext FetchResult.WeatherFailed
+
+        var weatherError: String? = null
+        val cwa = if (weatherSource == WeatherSource.CWA) {
+            if (cwaKey.isBlank()) {
+                weatherError = app.getString(R.string.cwa_error_no_key)
+                null
+            } else {
+                val observation = runCatching { get(cwaObservationUrl(cwaKey)) }
+                    .onFailure { weatherError = it.message ?: it.javaClass.simpleName }
+                    .getOrNull()
+                    ?.let { CwaParsers.observation(it, target.latitude, target.longitude) }
+                val periods = runCatching { get(cwaForecastUrl(cwaKey, target.county)) }
+                    .onFailure { weatherError = it.message ?: it.javaClass.simpleName }
+                    .getOrNull()
+                    ?.let { CwaParsers.forecast36h(it) }
+                    .orEmpty()
+                if (observation == null && periods.isEmpty()) {
+                    if (weatherError == null) weatherError = app.getString(R.string.moenv_error_format)
+                    null
+                } else {
+                    (observation ?: CwaWeather(county = target.county)).copy(county = target.county, periods = periods)
+                }
+            }
+        } else {
+            null
+        }
+        if (forecast == null && cwa == null) return@withContext FetchResult.WeatherFailed
 
         var airError: String? = null
         val moenv = if (airSource == AirSource.MOENV) {
@@ -165,7 +230,9 @@ class WeatherStore(context: Context) {
         val air = moenv ?: runCatching { get(airUrl(target)) }.getOrNull()?.let { AirParsers.openMeteo(it) }
 
         prefs.edit()
-            .putString(KEY_FORECAST, forecast)
+            .apply { if (forecast != null) putString(KEY_FORECAST, forecast) }
+            .putString(KEY_CWA, cwa?.toJson())
+            .putString(KEY_WEATHER_ERROR, weatherError)
             .putString(KEY_AIR, air?.toJson())
             .putLong(KEY_FETCHED_AT, System.currentTimeMillis())
             .putString(KEY_FETCHED_NAME, target.name)
@@ -173,7 +240,7 @@ class WeatherStore(context: Context) {
             .putString(KEY_FETCHED_LON, target.longitude.toString())
             .putString(KEY_AIR_ERROR, airError)
             .apply()
-        airError?.let { FetchResult.AirFallback(it) } ?: FetchResult.Ok
+        if (airError != null || weatherError != null) FetchResult.Partial else FetchResult.Ok
     }
 
     private fun clearCache() {
@@ -185,6 +252,8 @@ class WeatherStore(context: Context) {
             .remove(KEY_FETCHED_LAT)
             .remove(KEY_FETCHED_LON)
             .remove(KEY_AIR_ERROR)
+            .remove(KEY_CWA)
+            .remove(KEY_WEATHER_ERROR)
             .apply()
     }
 
@@ -221,6 +290,10 @@ class WeatherStore(context: Context) {
         private const val KEY_FETCHED_LAT = "fetched_lat"
         private const val KEY_FETCHED_LON = "fetched_lon"
         private const val KEY_AIR_ERROR = "air_error"
+        private const val KEY_WEATHER_SOURCE = "weather_source"
+        private const val KEY_CWA_KEY = "cwa_key"
+        private const val KEY_CWA = "cwa"
+        private const val KEY_WEATHER_ERROR = "weather_error"
         private const val TIMEOUT_MS = 15_000
         /** 背景每小時更新；超過兩小時沒更新就在 widget 載入時補抓。 */
         const val MAX_AGE_MS = 2 * 60 * 60 * 1000L
@@ -237,6 +310,17 @@ class WeatherStore(context: Context) {
         internal fun airUrl(target: WeatherTarget) =
             "https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${target.latitude}&longitude=${target.longitude}" +
                 "&current=us_aqi,pm2_5,pm10,ozone&timezone=auto"
+
+        private const val CWA_API = "https://opendata.cwa.gov.tw/api/v1/rest/datastore"
+
+        /** 局屬氣象站的現在天氣觀測。 */
+        internal fun cwaObservationUrl(key: String) =
+            "$CWA_API/O-A0003-001?Authorization=${URLEncoder.encode(key, "UTF-8")}&format=JSON"
+
+        /** 縣市的 36 小時天氣預報。 */
+        internal fun cwaForecastUrl(key: String, county: String) =
+            "$CWA_API/F-C0032-001?Authorization=${URLEncoder.encode(key, "UTF-8")}&format=JSON" +
+                "&locationName=${URLEncoder.encode(county, "UTF-8")}"
 
         internal fun moenvUrl(key: String) =
             "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=${URLEncoder.encode(key, "UTF-8")}&limit=1000&format=JSON"

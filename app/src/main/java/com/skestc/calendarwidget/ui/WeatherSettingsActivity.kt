@@ -61,6 +61,7 @@ import com.skestc.calendarwidget.data.FetchResult
 import com.skestc.calendarwidget.data.LocationReader
 import com.skestc.calendarwidget.data.WeatherLocationMode
 import com.skestc.calendarwidget.data.WeatherPlaces
+import com.skestc.calendarwidget.data.WeatherSource
 import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
 import com.skestc.calendarwidget.widget.WeatherWorker
@@ -108,6 +109,8 @@ private fun WeatherSettingsScreen(onBack: () -> Unit) {
     var place by remember { mutableStateOf(store.place) }
     var source by remember { mutableStateOf(store.airSource) }
     var key by remember { mutableStateOf(store.moenvKey) }
+    var weatherSource by remember { mutableStateOf(store.weatherSource) }
+    var cwaKey by remember { mutableStateOf(store.cwaKey) }
     var busy by remember { mutableStateOf(false) }
     // 更新完重新讀狀態。
     var version by remember { mutableIntStateOf(0) }
@@ -209,6 +212,43 @@ private fun WeatherSettingsScreen(onBack: () -> Unit) {
                 }
             }
 
+            SectionTitle(stringResource(R.string.weather_source_title))
+            SettingsGroup {
+                ChoiceRow(
+                    title = stringResource(R.string.air_source_open_meteo),
+                    subtitle = stringResource(R.string.weather_source_open_meteo_hint),
+                    selected = weatherSource == WeatherSource.OPEN_METEO,
+                ) {
+                    weatherSource = WeatherSource.OPEN_METEO
+                    store.weatherSource = weatherSource
+                    if (store.enabled) update()
+                }
+                GroupDivider()
+                ChoiceRow(
+                    title = stringResource(R.string.weather_source_cwa),
+                    subtitle = stringResource(R.string.weather_source_cwa_hint),
+                    selected = weatherSource == WeatherSource.CWA,
+                ) {
+                    weatherSource = WeatherSource.CWA
+                    store.weatherSource = weatherSource
+                    if (store.enabled && cwaKey.isNotBlank()) update()
+                }
+                if (weatherSource == WeatherSource.CWA) {
+                    KeyEditor(
+                        value = cwaKey,
+                        onValueChange = { cwaKey = it },
+                        label = stringResource(R.string.cwa_key_label),
+                        steps = stringResource(R.string.cwa_key_steps),
+                        site = CWA_SITE,
+                        busy = busy,
+                        onSave = {
+                            store.cwaKey = cwaKey
+                            update()
+                        },
+                    )
+                }
+            }
+
             SectionTitle(stringResource(R.string.air_source_title))
             SettingsGroup {
                 ChoiceRow(
@@ -231,36 +271,18 @@ private fun WeatherSettingsScreen(onBack: () -> Unit) {
                     if (store.enabled && key.isNotBlank()) update()
                 }
                 if (source == AirSource.MOENV) {
-                    Column(
-                        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedTextField(
-                            value = key,
-                            onValueChange = { key = it },
-                            label = { Text(stringResource(R.string.moenv_key_label)) },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Text(
-                            stringResource(R.string.moenv_key_steps),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(MOENV_SITE)))
-                            }) { Text(stringResource(R.string.moenv_open_site)) }
-                            Button(
-                                enabled = !busy,
-                                onClick = {
-                                    store.moenvKey = key
-                                    update()
-                                },
-                            ) { Text(stringResource(R.string.moenv_save_test)) }
-                        }
-                    }
+                    KeyEditor(
+                        value = key,
+                        onValueChange = { key = it },
+                        label = stringResource(R.string.moenv_key_label),
+                        steps = stringResource(R.string.moenv_key_steps),
+                        site = MOENV_SITE,
+                        busy = busy,
+                        onSave = {
+                            store.moenvKey = key
+                            update()
+                        },
+                    )
                 }
             }
 
@@ -295,6 +317,41 @@ private fun WeatherSettingsScreen(onBack: () -> Unit) {
 }
 
 private const val MOENV_SITE = "https://data.moenv.gov.tw/"
+private const val CWA_SITE = "https://opendata.cwa.gov.tw/user/authkey"
+
+/** 金鑰輸入框、申請步驟、開啟平臺與「儲存並測試」。 */
+@Composable
+private fun KeyEditor(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    steps: String,
+    site: String,
+    busy: Boolean,
+    onSave: () -> Unit,
+) {
+    val context = LocalContext.current
+    Column(
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(steps, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(site)))
+            }) { Text(stringResource(R.string.moenv_open_site)) }
+            Button(enabled = !busy, onClick = onSave) { Text(stringResource(R.string.moenv_save_test)) }
+        }
+    }
+}
 
 /** 上次更新的時間、地點與空氣品質來源；環境部抓不到時說明原因。 */
 @Composable
@@ -304,6 +361,8 @@ private fun WeatherStatus(store: WeatherStore, version: Int) {
     val name = remember(version) { store.cachedName() }
     val air = remember(version) { store.cachedAir() }
     val error = remember(version) { store.airError() }
+    val weatherError = remember(version) { store.weatherError() }
+    val cwa = remember(version) { store.cachedCwa() }
     Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -316,6 +375,20 @@ private fun WeatherStatus(store: WeatherStore, version: Int) {
             },
             style = MaterialTheme.typography.bodyMedium,
         )
+        if (cwa != null) {
+            Text(
+                cwa.station?.let { stringResource(R.string.cwa_station, it) } ?: stringResource(R.string.cwa_forecast_county, cwa.county),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (weatherError != null) {
+            Text(
+                stringResource(R.string.cwa_error, weatherError),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         if (air != null) {
             Text(
                 airSourceText(air) + (air.aqi?.let { " · AQI $it" } ?: ""),

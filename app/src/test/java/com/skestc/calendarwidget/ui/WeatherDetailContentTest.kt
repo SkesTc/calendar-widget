@@ -4,6 +4,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import com.skestc.calendarwidget.data.AirQuality
 import com.skestc.calendarwidget.data.AirSource
+import com.skestc.calendarwidget.data.CwaPeriod
+import com.skestc.calendarwidget.data.CwaWeather
 import com.skestc.calendarwidget.data.DayForecast
 import com.skestc.calendarwidget.data.HourForecast
 import com.skestc.calendarwidget.data.WeatherDetail
@@ -68,6 +70,23 @@ class WeatherDetailContentTest {
         rule.onNodeWithText("極特殊敏感族群請注意可能出現咳嗽或呼吸急促；其他人可正常戶外活動。").assertExists()
         rule.onNodeWithText("ppb").assertExists()
         rule.onNodeWithText("主要污染物：細懸浮微粒").assertExists()
+    }
+
+    @Test
+    fun cwaShowsStationDescriptionAndPeriods() {
+        val cwa = CwaWeather(
+            county = "臺中市", station = "臺中", observedAt = "2026-11-04 14:00", temperature = 26.4,
+            periods = listOf(
+                CwaPeriod(date.atTime(12, 0), date.atTime(18, 0), "多雲時晴", 3, 10, 24, 28),
+                CwaPeriod(date.atTime(18, 0), date.plusDays(1).atTime(6, 0), "多雲短暫雨", 8, 30, 20, 24),
+            ),
+        )
+        val withCwa = detail.copy(today = detail.today.copy(description = "多雲時晴"), cwa = cwa)
+        rule.setContent { CalendarWidgetTheme { WeatherDetailContent(withCwa, null, fetchedAt = 0) } }
+        rule.onNodeWithText("氣象署 臺中測站 · 2026-11-04 14:00").assertExists()
+        rule.onNodeWithText("未來 36 小時 · 中央氣象署").assertExists()
+        rule.onNodeWithText("多雲短暫雨").assertExists()
+        rule.onNodeWithText("18:00–06:00").assertExists()
     }
 
     @Test

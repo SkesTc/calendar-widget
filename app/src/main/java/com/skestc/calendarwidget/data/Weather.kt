@@ -22,6 +22,9 @@ data class WeatherToday(
     /** 空氣品質指標（環境部 AQI，或 Open-Meteo 依美國 EPA 算法推估，分級相同），沒有資料時為 null。 */
     val aqi: Int?,
     val fetchedAt: Long,
+    /** 來源給的天氣描述（氣象署，例如「多雲時晴」）；null 時用 [code] 對應的文字。 */
+    val description: String? = null,
+    val source: WeatherSource = WeatherSource.OPEN_METEO,
 )
 
 enum class AirSource { OPEN_METEO, MOENV }
@@ -176,6 +179,8 @@ data class WeatherDetail(
     val hours: List<HourForecast>,
     /** 明天起的幾天。 */
     val days: List<DayForecast>,
+    /** 天氣來源選氣象署時：觀測站與 36 小時預報。 */
+    val cwa: CwaWeather? = null,
 )
 
 object WeatherDetailParser {

@@ -56,6 +56,8 @@ import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.AirQuality
 import com.skestc.calendarwidget.data.AirSource
 import com.skestc.calendarwidget.data.AqiLevel
+import com.skestc.calendarwidget.data.CwaCodes
+import com.skestc.calendarwidget.data.CwaPeriod
 import com.skestc.calendarwidget.data.DayForecast
 import com.skestc.calendarwidget.data.HourForecast
 import com.skestc.calendarwidget.data.LocationReader
@@ -175,6 +177,11 @@ internal fun WeatherDetailContent(detail: WeatherDetail, air: AirQuality?, fetch
             item(key = "hours-title") { SectionTitle(stringResource(R.string.weather_next_hours)) }
             item(key = "hours") { HourStrip(detail.hours) }
         }
+        val periods = detail.cwa?.periods.orEmpty()
+        if (periods.isNotEmpty()) {
+            item(key = "cwa-title") { SectionTitle(stringResource(R.string.cwa_periods_title)) }
+            item(key = "cwa") { CwaPeriodsCard(periods) }
+        }
         if (air?.aqi != null) {
             item(key = "air-title") { SectionTitle(stringResource(R.string.air_quality)) }
             item(key = "air") { AirCard(air) }
@@ -217,7 +224,7 @@ private fun NowCard(detail: WeatherDetail, updated: String) {
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(
-                        stringResource(WeatherCodes.description(today.code)),
+                        today.description ?: stringResource(WeatherCodes.description(today.code)),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
@@ -239,6 +246,13 @@ private fun NowCard(detail: WeatherDetail, updated: String) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
+            detail.cwa?.station?.let { station ->
+                Text(
+                    listOfNotNull(stringResource(R.string.cwa_station, station), detail.cwa.observedAt).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                )
+            }
             Text(
                 stringResource(R.string.weather_updated_at, updated),
                 style = MaterialTheme.typography.bodySmall,
@@ -372,6 +386,47 @@ internal fun uvLevel(index: Double): Int = when {
     index < 8 -> R.string.uv_high
     index < 11 -> R.string.uv_very_high
     else -> R.string.uv_extreme
+}
+
+/** 氣象署 36 小時預報的三個時段。 */
+@Composable
+private fun CwaPeriodsCard(periods: List<CwaPeriod>) {
+    val locale = Locale.getDefault()
+    val dayFormat = remember(locale) { DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MdEEE"), locale) }
+    val timeFormat = remember { DateTimeFormatter.ofPattern("HH:mm") }
+    SettingsGroup {
+        for ((i, period) in periods.withIndex()) {
+            if (i > 0) GroupDivider()
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.width(96.dp)) {
+                    Text(dayFormat.format(period.start), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "${timeFormat.format(period.start)}–${timeFormat.format(period.end)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                val wmo = period.code?.let(CwaCodes::toWmo) ?: 2
+                Text(WeatherCodes.emoji(wmo, period.start.hour in 6..17), fontSize = 22.sp)
+                Spacer(Modifier.width(8.dp))
+                Text(period.text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                period.rainChance?.let {
+                    Text(
+                        stringResource(R.string.percent, it),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                }
+                if (period.low != null && period.high != null) {
+                    Text(stringResource(R.string.weather_high_low, period.low, period.high), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+        }
+    }
 }
 
 @Composable

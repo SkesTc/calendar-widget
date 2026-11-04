@@ -5,6 +5,9 @@ import java.util.Locale
 /** 可以選的天氣地區：台灣各縣市（座標取縣市政府所在地）。 */
 data class WeatherPlace(val id: String, val zh: String, val en: String, val latitude: Double, val longitude: Double) {
     fun name(locale: Locale = Locale.getDefault()): String = if (locale.language == "zh") zh else en
+
+    /** 氣象署預報用的縣市名稱（不含括號裡的說明）。 */
+    val cwaName: String get() = zh.substringBefore("（")
 }
 
 object WeatherPlaces {

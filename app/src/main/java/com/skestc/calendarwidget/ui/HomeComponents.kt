@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import com.skestc.calendarwidget.data.SchoolWeeks
 import android.content.Context
 import com.skestc.calendarwidget.data.AirSource
+import com.skestc.calendarwidget.data.WeatherSource
 import com.skestc.calendarwidget.data.WeatherLocationMode
 import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.widget.RefreshAction
@@ -362,8 +363,11 @@ internal fun weatherSummary(context: Context): String {
         WeatherLocationMode.GPS -> context.getString(R.string.weather_location_gps)
         else -> store.place?.name().orEmpty()
     }
-    val source = context.getString(
+    val weather = context.getString(
+        if (store.weatherSource == WeatherSource.CWA) R.string.weather_source_cwa_short else R.string.air_source_open_meteo_short,
+    )
+    val air = context.getString(
         if (store.airSource == AirSource.MOENV) R.string.air_source_moenv_short else R.string.air_source_open_meteo_short,
     )
-    return "$where · $source"
+    return listOf(where, weather, air).distinct().joinToString(" · ")
 }

@@ -56,7 +56,6 @@
     <string name="aqi_very_unhealthy">Very unhealthy</string>
     <string name="aqi_hazardous">Hazardous</string>
     <string name="weather_off_summary">Off — show weather and AQI at the top of Agenda</string>
-    <string name="weather_source">Weather from Open-Meteo (model forecast). Air quality from MOENV monitoring stations (with your API key) or Open-Meteo estimates. Only the coordinates are sent; nothing from your calendar.</string>
     <string name="weather_settings">Weather settings</string>
     <string name="weather_section_location">Location</string>
     <string name="weather_location_gps">Current location (GPS)</string>
@@ -110,6 +109,19 @@
     <string name="aqi_advice_unhealthy">Everyone should reduce strenuous outdoor activity; sensitive groups should stay indoors.</string>
     <string name="aqi_advice_very_unhealthy">Everyone should reduce outdoor activity; sensitive groups should stay indoors.</string>
     <string name="aqi_advice_hazardous">Everyone should avoid outdoor activity and keep doors and windows closed.</string>
+    <string name="weather_source">Weather from Open-Meteo, or the Central Weather Administration (with your authorization code); air quality from MOENV stations (with your API key) or Open-Meteo. Only coordinates or the county name are sent; nothing from your calendar.</string>
+    <string name="weather_source_title">Weather source</string>
+    <string name="weather_source_open_meteo_hint">No key needed. Model forecast with hourly and 3-day outlook.</string>
+    <string name="weather_source_cwa">Central Weather Administration (Taiwan)</string>
+    <string name="weather_source_cwa_hint">Current readings from the nearest weather station and the county\'s 36-hour forecast. Needs a free authorization code. Hourly and 3-day outlook still come from Open-Meteo.</string>
+    <string name="weather_source_cwa_short">CWA</string>
+    <string name="cwa_key_label">CWA authorization code</string>
+    <string name="cwa_key_steps">1. Open the CWA open-data platform and sign up / log in\n2. Get your authorization code (API key) from the member page\n3. Paste it here and tap Save &amp; test</string>
+    <string name="cwa_station">CWA %1$s station</string>
+    <string name="cwa_forecast_county">CWA forecast for %1$s</string>
+    <string name="cwa_error">Couldn\'t get CWA data (%1$s); using Open-Meteo for now.</string>
+    <string name="cwa_error_no_key">no authorization code</string>
+    <string name="cwa_periods_title">Next 36 hours · CWA</string>
     <string name="onboarding_step">Step %1$d of %2$d</string>
     <string name="onboarding_welcome_title">Welcome</string>
     <string name="onboarding_widget_body">Tap a widget below and your home screen will ask where to put it. You can also add one later: long-press an empty spot on the home screen → Widgets.</string>

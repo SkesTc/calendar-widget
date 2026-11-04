@@ -185,7 +185,7 @@ class WeatherTest {
 
     @Test
     fun urlsAskForTheFieldsTheParserNeeds() {
-        val target = WeatherTarget(25.0375, 121.5637, "臺北市")
+        val target = WeatherTarget(25.0375, 121.5637, "臺北市", "臺北市")
         val url = WeatherStore.forecastUrl(target)
         for (field in listOf(
             "temperature_2m", "apparent_temperature", "relative_humidity_2m", "wind_speed_10m", "is_day",
@@ -195,6 +195,12 @@ class WeatherTest {
         }
         assertTrue("forecast_days=4" in url)
         for (field in listOf("us_aqi", "pm2_5", "pm10", "ozone")) assertTrue(field, field in WeatherStore.airUrl(target))
+        assertTrue("O-A0003-001" in WeatherStore.cwaObservationUrl("CWA-1"))
+        assertTrue("Authorization=CWA-1" in WeatherStore.cwaObservationUrl("CWA-1"))
+        val forecastUrl = WeatherStore.cwaForecastUrl("CWA-1", "臺中市")
+        assertTrue("F-C0032-001" in forecastUrl)
+        assertTrue("locationName=%E8%87%BA%E4%B8%AD%E5%B8%82" in forecastUrl)
+        assertEquals("連江縣", WeatherPlaces.byId("lienchiang")?.cwaName)
         assertTrue("aqx_p_432" in WeatherStore.moenvUrl("ab c"))
         assertTrue("api_key=ab+c" in WeatherStore.moenvUrl("ab c"))
     }

@@ -56,7 +56,6 @@
     <string name="aqi_very_unhealthy">非常不健康</string>
     <string name="aqi_hazardous">危害</string>
     <string name="weather_off_summary">未開啟，可在行程清單最上方顯示天氣與 AQI</string>
-    <string name="weather_source">天氣來自 Open-Meteo（模型預報）；空氣品質來自環境部測站（需要你的 API 金鑰）或 Open-Meteo 模型推估。只會送出座標，不會送出任何行程資料。</string>
     <string name="weather_settings">天氣設定</string>
     <string name="weather_section_location">地點</string>
     <string name="weather_location_gps">跟隨目前位置（GPS）</string>
@@ -110,6 +109,19 @@
     <string name="aqi_advice_unhealthy">所有人都應減少戶外劇烈活動；敏感族群建議留在室內。</string>
     <string name="aqi_advice_very_unhealthy">所有人都應減少戶外活動；敏感族群應留在室內並減少體力消耗。</string>
     <string name="aqi_advice_hazardous">所有人都應避免戶外活動，室內請緊閉門窗。</string>
+    <string name="weather_source">天氣來自 Open-Meteo，或中央氣象署（需要你的授權碼）；空氣品質來自環境部測站（需要你的 API 金鑰）或 Open-Meteo。只會送出座標或縣市名稱，不會送出任何行程資料。</string>
+    <string name="weather_source_title">天氣資料來源</string>
+    <string name="weather_source_open_meteo_hint">免金鑰。模型預報，含逐時與未來三天。</string>
+    <string name="weather_source_cwa">中央氣象署</string>
+    <string name="weather_source_cwa_hint">最近氣象站的即時觀測與縣市 36 小時預報，需要免費申請的授權碼。逐時與未來三天仍來自 Open-Meteo。</string>
+    <string name="weather_source_cwa_short">氣象署</string>
+    <string name="cwa_key_label">氣象署授權碼</string>
+    <string name="cwa_key_steps">1. 開啟氣象資料開放平臺，註冊或登入會員\n2. 在會員頁取得「API授權碼」\n3. 把授權碼貼在上面，按「儲存並測試」</string>
+    <string name="cwa_station">氣象署 %1$s測站</string>
+    <string name="cwa_forecast_county">氣象署 %1$s預報</string>
+    <string name="cwa_error">無法取得氣象署資料（%1$s），暫時改用 Open-Meteo。</string>
+    <string name="cwa_error_no_key">尚未輸入授權碼</string>
+    <string name="cwa_periods_title">未來 36 小時 · 中央氣象署</string>
     <string name="onboarding_step">第 %1$d 步，共 %2$d 步</string>
     <string name="onboarding_welcome_title">歡迎使用行事曆小工具</string>
     <string name="onboarding_widget_body">點下面任一種小工具，桌面會詢問要放在哪裡。之後也可以在桌面長按空白處 →「小工具」加入。</string>
