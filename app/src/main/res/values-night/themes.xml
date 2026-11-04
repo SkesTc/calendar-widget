@@ -1,0 +1,8 @@
+<resources>
+    <style name="Theme.CalendarWidget" parent="android:Theme.Material.NoActionBar" />
+
+    <!-- 看不見的中繼頁：不顯示畫面、沒有進出動畫 -->
+    <style name="Theme.CalendarWidget.Transparent" parent="android:Theme.Translucent.NoTitleBar">
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
+</resources>

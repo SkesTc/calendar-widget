@@ -1,0 +1,712 @@
+package com.skestc.calendarwidget.config
+
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import com.skestc.calendarwidget.settings.HeaderButton
+import com.skestc.calendarwidget.settings.WeekStart
+import android.appwidget.AppWidgetManager
+import android.content.Intent
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TriStateCheckbox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.unit.dp
+import androidx.glance.GlanceId
+import androidx.glance.appwidget.GlanceAppWidget
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import androidx.glance.appwidget.state.getAppWidgetState
+import androidx.glance.appwidget.state.updateAppWidgetState
+import androidx.glance.state.PreferencesGlanceStateDefinition
+import androidx.lifecycle.lifecycleScope
+import com.skestc.calendarwidget.R
+import com.skestc.calendarwidget.data.CalendarInfo
+import com.skestc.calendarwidget.data.CalendarRepository
+import com.skestc.calendarwidget.settings.Appearance
+import com.skestc.calendarwidget.settings.FontChoice
+import com.skestc.calendarwidget.settings.AgendaLayout
+import com.skestc.calendarwidget.settings.WidgetSettings
+import com.skestc.calendarwidget.theme.DynamicSpec
+import com.skestc.calendarwidget.theme.specFor
+import com.skestc.calendarwidget.theme.WidgetThemeId
+import com.skestc.calendarwidget.ui.LongEventsActivity
+import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
+import com.skestc.calendarwidget.widget.AgendaWidget
+import com.skestc.calendarwidget.widget.MonthWidget
+import com.skestc.calendarwidget.widget.MonthWidgetReceiver
+import com.skestc.calendarwidget.widget.NextEventWidget
+import com.skestc.calendarwidget.widget.NextEventWidgetReceiver
+import com.skestc.calendarwidget.widget.WeekWidget
+import com.skestc.calendarwidget.widget.WeekWidgetReceiver
+import com.skestc.calendarwidget.widget.TimelineWidget
+import com.skestc.calendarwidget.widget.TimelineWidgetReceiver
+import com.skestc.calendarwidget.widget.WidgetUpdater
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+
+/**
+ * 新增 widget 時（以及長按 widget →「編輯小工具」時）開啟的設定頁。
+ * 每個 widget 的設定分開儲存，例如工作用和家庭用各放一個、各用不同主題。
+ */
+class WidgetConfigActivity : ComponentActivity() {
+
+    private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        appWidgetId = intent?.extras?.getInt(
+            AppWidgetManager.EXTRA_APPWIDGET_ID,
+            AppWidgetManager.INVALID_APPWIDGET_ID,
+        ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
+
+        // 使用者按返回鍵就當作取消新增。
+        setResult(RESULT_CANCELED, resultIntent())
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
+        }
+
+        val providerClass = AppWidgetManager.getInstance(this)
+            .getAppWidgetInfo(appWidgetId)?.provider?.className
+        val kind = when (providerClass) {
+            MonthWidgetReceiver::class.java.name -> WidgetKind.MONTH
+            TimelineWidgetReceiver::class.java.name -> WidgetKind.TIMELINE
+            NextEventWidgetReceiver::class.java.name -> WidgetKind.NEXT
+            WeekWidgetReceiver::class.java.name -> WidgetKind.WEEK
+            else -> WidgetKind.AGENDA
+        }
+        val widget: GlanceAppWidget = when (kind) {
+            WidgetKind.AGENDA -> AgendaWidget()
+            WidgetKind.MONTH -> MonthWidget()
+            WidgetKind.TIMELINE -> TimelineWidget()
+            WidgetKind.NEXT -> NextEventWidget()
+            WidgetKind.WEEK -> WeekWidget()
+        }
+
+        enableEdgeToEdge()
+        setContent {
+            CalendarWidgetTheme {
+                ConfigScreen(
+                    kind = kind,
+                    loadSettings = { glanceId -> loadSettings(glanceId) },
+                    glanceId = { GlanceAppWidgetManager(this).getGlanceIdBy(appWidgetId) },
+                    onSave = { glanceId, settings, applyToAll -> save(widget, glanceId, settings, applyToAll) },
+                )
+            }
+        }
+    }
+
+    private suspend fun loadSettings(glanceId: GlanceId): WidgetSettings =
+        WidgetSettings.from(getAppWidgetState(this, PreferencesGlanceStateDefinition, glanceId))
+
+    private fun save(widget: GlanceAppWidget, glanceId: GlanceId, settings: WidgetSettings, applyToAll: Boolean) {
+        lifecycleScope.launch {
+            updateAppWidgetState(this@WidgetConfigActivity, glanceId) { prefs -> settings.writeTo(prefs) }
+            widget.update(this@WidgetConfigActivity, glanceId)
+            // 「套用到所有小工具」：其他 widget 也寫入同樣的設定（月份、選取的日期這些各自的狀態不動）。
+            if (applyToAll) {
+                val manager = GlanceAppWidgetManager(this@WidgetConfigActivity)
+                for ((other, _) in WidgetUpdater.widgets) {
+                    for (otherId in manager.getGlanceIds(other.javaClass)) {
+                        if (otherId == glanceId) continue
+                        updateAppWidgetState(this@WidgetConfigActivity, otherId) { prefs -> settings.writeTo(prefs) }
+                        other.update(this@WidgetConfigActivity, otherId)
+                    }
+                }
+            }
+            WidgetUpdater.syncSchedules(this@WidgetConfigActivity)
+            setResult(RESULT_OK, resultIntent())
+            finish()
+        }
+    }
+
+    private fun resultIntent() = Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ConfigScreen(
+    kind: WidgetKind,
+    loadSettings: suspend (GlanceId) -> WidgetSettings,
+    glanceId: () -> GlanceId,
+    onSave: (GlanceId, WidgetSettings, Boolean) -> Unit,
+) {
+    val context = LocalContext.current
+    val repository = remember { CalendarRepository(context) }
+    val id = remember { glanceId() }
+
+    var calendars by remember { mutableStateOf<List<CalendarInfo>>(emptyList()) }
+    var settings by remember { mutableStateOf(WidgetSettings()) }
+
+    LaunchedEffect(id) {
+        settings = loadSettings(id)
+        calendars = repository.calendars()
+    }
+
+    fun updateAppearance(change: (Appearance) -> Appearance) {
+        settings = settings.copy(appearance = change(settings.appearance))
+    }
+
+    // 內容最常調整，一定展開；外觀與進階可以收合，免得要捲很久才找到日曆。
+    var appearanceOpen by remember { mutableStateOf(true) }
+    var advancedOpen by remember { mutableStateOf(false) }
+    var confirmApplyAll by remember { mutableStateOf(false) }
+    val hasHeader = kind != WidgetKind.NEXT
+
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.config_title)) }) }) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        ) {
+            WidgetPreview(
+                appearance = settings.appearance,
+                kind = kind,
+                darkTheme = isSystemInDarkTheme(),
+                agendaLayout = settings.agendaLayout,
+                headerButtons = settings.headerButtons,
+                weekStart = settings.weekStart,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+            )
+
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                item { Spacer(Modifier.size(4.dp)) }
+
+                // ── 內容 ──
+                item { GroupHeader(stringResource(R.string.group_content), expanded = null) }
+
+                if (kind == WidgetKind.AGENDA) {
+                    item {
+                        Section(stringResource(R.string.section_agenda_layout)) {
+                            Segmented(
+                                options = listOf(
+                                    AgendaLayout.LIST to stringResource(R.string.agenda_layout_list),
+                                    AgendaLayout.TIMELINE to stringResource(R.string.agenda_layout_timeline),
+                                    AgendaLayout.DAYS to stringResource(R.string.agenda_layout_days),
+                                ),
+                                selected = settings.agendaLayout,
+                                onSelect = { v -> settings = settings.copy(agendaLayout = v) },
+                            )
+                        }
+                    }
+                    item {
+                        Section(stringResource(R.string.section_days)) {
+                            Segmented(
+                                options = WidgetSettings.AGENDA_DAY_OPTIONS.mapIndexed { i, days -> days to stringResource(R.string.months_option, i + 1) },
+                                selected = settings.agendaDays,
+                                onSelect = { v -> settings = settings.copy(agendaDays = v) },
+                            )
+                        }
+                    }
+                }
+
+                if (kind == WidgetKind.WEEK) {
+                    item {
+                        Section(stringResource(R.string.section_week_start)) {
+                            Segmented(
+                                options = listOf(
+                                    WeekStart.TODAY to stringResource(R.string.week_start_today),
+                                    WeekStart.MONDAY to stringResource(R.string.week_start_monday),
+                                    WeekStart.SUNDAY to stringResource(R.string.week_start_sunday),
+                                ),
+                                selected = settings.weekStart,
+                                onSelect = { v -> settings = settings.copy(weekStart = v) },
+                            )
+                        }
+                    }
+                }
+
+                // 「下一個行程」沒有日期格子，不顯示農曆。
+                if (kind != WidgetKind.NEXT) item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { settings = settings.copy(showLunar = !settings.showLunar) }
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.show_lunar_title), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                stringResource(R.string.show_lunar_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = settings.showLunar,
+                            onCheckedChange = { settings = settings.copy(showLunar = it) },
+                        )
+                    }
+                }
+
+                item {
+                    Section(stringResource(R.string.section_calendars)) {
+                        if (!repository.hasPermission()) {
+                            Text(
+                                stringResource(R.string.config_no_permission),
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
+                    }
+                }
+                // 依帳號分組：帳號那一列可以一次顯示／隱藏該帳號的所有日曆。
+                for ((account, accountCalendars) in calendars.groupBy { it.accountName }) {
+                    item(key = "account:$account") {
+                        val ids = accountCalendars.map { it.id }.toSet()
+                        AccountCheckRow(
+                            account = account,
+                            shownCount = ids.count { it !in settings.hiddenCalendarIds },
+                            total = ids.size,
+                            onToggle = { showAll ->
+                                settings = settings.copy(
+                                    hiddenCalendarIds = if (showAll) settings.hiddenCalendarIds - ids else settings.hiddenCalendarIds + ids,
+                                )
+                            },
+                        )
+                    }
+                    items(accountCalendars, key = { it.id }) { calendar ->
+                        val hidden = settings.hiddenCalendarIds
+                        CalendarCheckRow(
+                            calendar = calendar,
+                            checked = calendar.id !in hidden,
+                            onToggle = {
+                                settings = settings.copy(
+                                    hiddenCalendarIds = if (calendar.id in hidden) hidden - calendar.id else hidden + calendar.id,
+                                )
+                            },
+                        )
+                    }
+                }
+
+                // ── 外觀 ──
+                item {
+                    GroupHeader(
+                        stringResource(R.string.group_appearance),
+                        expanded = appearanceOpen,
+                        summary = stringResource(settings.appearance.theme.labelRes),
+                        onToggle = { appearanceOpen = !appearanceOpen },
+                    )
+                }
+                if (appearanceOpen) {
+                    item {
+                        Section(stringResource(R.string.section_theme)) {
+                            ThemePicker(
+                                appearance = settings.appearance,
+                                onSelect = { theme -> updateAppearance { it.copy(theme = theme) } },
+                            )
+                        }
+                    }
+
+                    if (settings.appearance.theme == WidgetThemeId.CUSTOM) {
+                        item {
+                            Section(stringResource(R.string.section_custom_colors)) {
+                                CustomColorEditor(
+                                    primary = settings.appearance.customPrimary,
+                                    background = settings.appearance.customBackground,
+                                    onChange = { primary, background ->
+                                        updateAppearance { it.copy(customPrimary = primary, customBackground = background) }
+                                    },
+                                )
+                            }
+                        }
+                    }
+
+                    if (settings.appearance.theme.supportsOpacity) {
+                        item {
+                            Section(stringResource(R.string.section_opacity, settings.appearance.backgroundOpacity)) {
+                                Slider(
+                                    value = settings.appearance.backgroundOpacity.toFloat(),
+                                    onValueChange = { v ->
+                                        updateAppearance { it.copy(backgroundOpacity = v.roundToInt()) }
+                                    },
+                                    valueRange = 0f..100f,
+                                    steps = 9,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                )
+                            }
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_corner)) {
+                            Segmented(
+                                options = Appearance.CORNER_OPTIONS.map { it to stringResource(cornerLabel(it)) },
+                                selected = settings.appearance.cornerDp,
+                                onSelect = { v -> updateAppearance { it.copy(cornerDp = v) } },
+                            )
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_text_size)) {
+                            Segmented(
+                                options = Appearance.TEXT_SCALE_OPTIONS.map { it to stringResource(textScaleLabel(it)) },
+                                selected = settings.appearance.textScalePercent,
+                                onSelect = { v -> updateAppearance { it.copy(textScalePercent = v) } },
+                            )
+                        }
+                    }
+
+                    item {
+                        Section(stringResource(R.string.section_font)) {
+                            Segmented(
+                                options = FontChoice.entries.map { it to stringResource(it.labelRes) },
+                                selected = settings.appearance.font,
+                                onSelect = { v -> updateAppearance { it.copy(font = v) } },
+                            )
+                        }
+                    }
+                }
+
+                // ── 進階 ──
+                item {
+                    GroupHeader(
+                        stringResource(R.string.group_advanced),
+                        expanded = advancedOpen,
+                        onToggle = { advancedOpen = !advancedOpen },
+                    )
+                }
+                if (advancedOpen) {
+                    if (hasHeader) {
+                        item {
+                            Section(stringResource(R.string.section_header_buttons)) {
+                                Text(
+                                    stringResource(R.string.header_buttons_hint),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                )
+                                for (button in HeaderButton.entries) {
+                                    val checked = button in settings.headerButtons
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                settings = settings.copy(
+                                                    headerButtons = HeaderButton.entries.filter {
+                                                        if (it == button) !checked else it in settings.headerButtons
+                                                    },
+                                                )
+                                            }
+                                            .padding(horizontal = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Checkbox(checked = checked, onCheckedChange = null, modifier = Modifier.padding(12.dp))
+                                        Text(stringResource(button.labelRes), style = MaterialTheme.typography.bodyLarge)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 有「＋」按鈕的 widget 才需要選新增行程的 App。
+                    if (hasHeader) {
+                        item {
+                            Section(stringResource(R.string.section_editor)) {
+                                EventEditorPicker()
+                            }
+                        }
+                    }
+
+                    item {
+                        TextButton(
+                            onClick = { context.startActivity(Intent(context, LongEventsActivity::class.java)) },
+                            modifier = Modifier.padding(horizontal = 8.dp),
+                        ) {
+                            Text(stringResource(R.string.long_events_manage_link))
+                        }
+                    }
+                }
+                item { Spacer(Modifier.size(8.dp)) }
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                OutlinedButton(onClick = { confirmApplyAll = true }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.apply_to_all), maxLines = 1)
+                }
+                Button(onClick = { onSave(id, settings, false) }, modifier = Modifier.weight(1f)) {
+                    Text(stringResource(R.string.done))
+                }
+            }
+        }
+    }
+
+    if (confirmApplyAll) {
+        AlertDialog(
+            onDismissRequest = { confirmApplyAll = false },
+            title = { Text(stringResource(R.string.apply_to_all)) },
+            text = { Text(stringResource(R.string.apply_to_all_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmApplyAll = false
+                    onSave(id, settings, true)
+                }) { Text(stringResource(R.string.apply_to_all_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmApplyAll = false }) { Text(stringResource(android.R.string.cancel)) }
+            },
+        )
+    }
+}
+
+/** 設定分組的標題：[expanded] 為 null 時不能收合（「內容」）；可以收合時右邊顯示目前的摘要與箭頭。 */
+@Composable
+private fun GroupHeader(title: String, expanded: Boolean?, summary: String? = null, onToggle: () -> Unit = {}) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .then(if (expanded != null) Modifier.clickable(onClick = onToggle) else Modifier)
+            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.weight(1f),
+        )
+        if (expanded == false && summary != null) {
+            Text(
+                summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(end = 8.dp),
+            )
+        }
+        if (expanded != null) {
+            Icon(
+                painterResource(if (expanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+private val HeaderButton.labelRes: Int
+    get() = when (this) {
+        HeaderButton.SEARCH -> R.string.search_title
+        HeaderButton.REFRESH -> R.string.refresh
+        HeaderButton.SETTINGS -> R.string.widget_settings
+    }
+
+@Composable
+private fun Section(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
+        content()
+    }
+}
+
+/** 每個主題一顆色票：背景色＋主色圓點，下面是名稱。 */
+@Composable
+private fun ThemePicker(appearance: Appearance, onSelect: (WidgetThemeId) -> Unit) {
+    val context = LocalContext.current
+    val dynamic = remember { DynamicSpec.resolve(context) }
+    val dark = isSystemInDarkTheme()
+    val selected = appearance.theme
+    LazyRow(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp),
+    ) {
+        items(WidgetThemeId.entries) { theme ->
+            // 自訂主題的色票顯示目前選的顏色。
+            val spec = specFor(appearance.copy(theme = theme)) ?: dynamic
+            val bg = Color(if (dark) spec.background.night else spec.background.day)
+            val primary = Color(if (dark) spec.primary.night else spec.primary.day)
+            val isSelected = theme == selected
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.clickable { onSelect(theme) },
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF8E8E93))
+                        .background(bg)
+                        .border(
+                            width = if (isSelected) 3.dp else 1.dp,
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                            shape = CircleShape,
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(Modifier.size(18.dp).clip(CircleShape).background(primary))
+                }
+                Text(
+                    stringResource(theme.labelRes),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun <T> Segmented(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+    SingleChoiceSegmentedButtonRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+    ) {
+        options.forEachIndexed { index, (value, label) ->
+            SegmentedButton(
+                selected = value == selected,
+                onClick = { onSelect(value) },
+                shape = SegmentedButtonDefaults.itemShape(index, options.size),
+                icon = {},
+                label = { Text(label, maxLines = 1) },
+            )
+        }
+    }
+}
+
+/** 帳號那一列：全部顯示時打勾、全部隱藏時空白、部分顯示時顯示「—」。 */
+@Composable
+private fun AccountCheckRow(account: String, shownCount: Int, total: Int, onToggle: (showAll: Boolean) -> Unit) {
+    val state = when (shownCount) {
+        total -> ToggleableState.On
+        0 -> ToggleableState.Off
+        else -> ToggleableState.Indeterminate
+    }
+    // 部分顯示時按一下改成全部顯示。
+    val showAll = state != ToggleableState.On
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onToggle(showAll) }
+            .padding(start = 4.dp, end = 16.dp, top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TriStateCheckbox(state = state, onClick = { onToggle(showAll) })
+        Column(Modifier.weight(1f)) {
+            Text(account, style = MaterialTheme.typography.titleSmall)
+            Text(
+                stringResource(R.string.account_calendars_shown, shownCount, total),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalendarCheckRow(calendar: CalendarInfo, checked: Boolean, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            // 縮排在帳號底下。
+            .padding(start = 28.dp, end = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = { onToggle() })
+        Box(
+            modifier = Modifier
+                .size(12.dp)
+                .clip(CircleShape)
+                .background(Color(calendar.color)),
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(calendar.displayName, style = MaterialTheme.typography.bodyLarge)
+    }
+}
+
+private val WidgetThemeId.labelRes: Int
+    get() = when (this) {
+        WidgetThemeId.DYNAMIC -> R.string.theme_dynamic
+        WidgetThemeId.AMOLED -> R.string.theme_amoled
+        WidgetThemeId.MORANDI -> R.string.theme_morandi
+        WidgetThemeId.JOURNAL -> R.string.theme_journal
+        WidgetThemeId.GLASS -> R.string.theme_glass
+        WidgetThemeId.CUSTOM -> R.string.theme_custom
+    }
+
+private val FontChoice.labelRes: Int
+    get() = when (this) {
+        FontChoice.THEME -> R.string.font_theme
+        FontChoice.SANS -> R.string.font_sans
+        FontChoice.SERIF -> R.string.font_serif
+        FontChoice.MONO -> R.string.font_mono
+    }
+
+private fun cornerLabel(cornerDp: Int): Int = when (cornerDp) {
+    Appearance.SYSTEM_CORNER -> R.string.corner_system
+    0 -> R.string.corner_square
+    12 -> R.string.size_small
+    24 -> R.string.size_medium
+    else -> R.string.size_large
+}
+
+private fun textScaleLabel(percent: Int): Int = when (percent) {
+    90 -> R.string.size_small
+    100 -> R.string.size_medium
+    115 -> R.string.size_large
+    else -> R.string.size_xlarge
+}
