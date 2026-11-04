@@ -536,18 +536,27 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, now: Long, ma
             .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Row(
-            modifier = GlanceModifier.fillMaxWidth().clickable(openInCalendar(openDayIntent(date))),
+            modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = title,
-                modifier = GlanceModifier.defaultWeight(),
-                style = style.text(12, style.colors.onCard, FontWeight.Bold),
-            )
-            Text(
-                text = glanceString(R.string.month_open_day),
-                style = style.text(11, style.colors.onCard),
-            )
+            // 日期與「開啟」：點了在日曆 App 打開這一天。
+            Row(
+                modifier = GlanceModifier.defaultWeight().clickable(openInCalendar(openDayIntent(date))),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = title,
+                    modifier = GlanceModifier.defaultWeight(),
+                    style = style.text(12, style.colors.onCard, FontWeight.Bold),
+                )
+                Text(
+                    text = glanceString(R.string.month_open_day),
+                    style = style.text(11, style.colors.onCard),
+                )
+            }
+            // 「＋」：直接在選取的這一天新增行程。
+            Spacer(GlanceModifier.width(8.dp))
+            AddEventButton(size = 24.dp, date = date)
         }
         if (events.isEmpty()) {
             Text(text = glanceString(R.string.month_day_empty), style = style.text(12, style.colors.onCard))

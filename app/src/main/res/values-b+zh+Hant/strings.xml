@@ -158,6 +158,7 @@
     <string name="refresh">重新整理</string>
     <string name="refreshed">已重新整理小工具</string>
     <string name="add_event">新增行程</string>
+    <string name="add_event_on">在%1$s新增行程</string>
     <string name="search_title">搜尋行程</string>
     <string name="search_hint">輸入關鍵字</string>
     <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。</string>

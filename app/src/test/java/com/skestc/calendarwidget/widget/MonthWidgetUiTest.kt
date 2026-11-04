@@ -84,6 +84,17 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun dayPanelHasAddButtonForTheSelectedDay() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val state = (october() as MonthState.Loaded).copy(selected = LocalDate.of(2026, 10, 20))
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        onNode(hasContentDescriptionEqualTo("在10月20日新增行程")).assertExists()
+        // 標題列原本的「＋」還在。
+        onNode(hasContentDescriptionEqualTo("新增行程")).assertExists()
+    }
+
+    @Test
     fun shortMonthLeavesWeatherOut() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 260.dp))

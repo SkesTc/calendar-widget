@@ -5,6 +5,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.provider.CalendarContract
 import com.skestc.calendarwidget.R
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 
 /**
  * widget 上「＋」要開哪個 App 的新增行程畫面（所有 widget 共用）：
@@ -39,6 +43,23 @@ object EventEditor {
     }
 
     fun insertIntent(): Intent = Intent(Intent.ACTION_INSERT, CalendarContract.Events.CONTENT_URI)
+
+    /**
+     * 在 [date] 新增行程：今天從下一個整點開始，其他日子從早上 9 點開始，預設一小時。
+     */
+    fun insertIntent(date: LocalDate, now: LocalDateTime = LocalDateTime.now(), zone: ZoneId = ZoneId.systemDefault()): Intent {
+        val start = if (date == now.toLocalDate()) {
+            now.truncatedTo(ChronoUnit.HOURS).plusHours(1)
+        } else {
+            date.atTime(DEFAULT_START_HOUR, 0)
+        }
+        val begin = start.atZone(zone).toInstant().toEpochMilli()
+        return insertIntent()
+            .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, begin)
+            .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, begin + 60 * 60 * 1000L)
+    }
+
+    private const val DEFAULT_START_HOUR = 9
 
     /** 裝置上能新增行程的 App（Google 日曆、三星日曆、Outlook…），依名稱排序。 */
     fun apps(context: Context): List<App> {
@@ -81,6 +102,7 @@ object EventEditor {
 
     private fun forPackage(pkg: String, target: Intent): List<Intent> = listOf(
         Intent(target).setPackage(pkg),
-        Intent(Intent.ACTION_INSERT).setType(EVENT_ITEM_TYPE).setPackage(pkg),
+        // 帶上原本的開始、結束時間（從月曆選的日期新增時）。
+        Intent(Intent.ACTION_INSERT).setType(EVENT_ITEM_TYPE).setPackage(pkg).apply { target.extras?.let(::putExtras) },
     )
 }

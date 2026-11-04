@@ -2,6 +2,7 @@ package com.skestc.calendarwidget.widget
 
 import android.content.ContentUris
 import android.content.Context
+import android.text.format.DateFormat
 import android.content.Intent
 import android.provider.CalendarContract
 import androidx.compose.runtime.Composable
@@ -450,21 +451,30 @@ internal fun HeaderActions() {
 }
 
 @Composable
-internal fun AddEventButton(size: Dp = 36.dp) {
+internal fun AddEventButton(size: Dp = 36.dp, date: LocalDate? = null) {
     val style = LocalWidgetStyle.current
+    val locale = Locale.getDefault()
     Box(
         modifier = GlanceModifier
             .size(size)
             .background(style.colors.primary)
             .cornerRadius(size / 2)
             // 依設定開啟指定 App 的新增行程畫面（或每次詢問）。
-            .clickable(openInCalendar(EventEditor.insertIntent(), editor = true)),
+            // 有指定日期時（月曆下方的當天行程），新增的行程直接落在那一天。
+            .clickable(
+                openInCalendar(date?.let { EventEditor.insertIntent(it) } ?: EventEditor.insertIntent(), editor = true),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         // 用向量圖示而不是「+」文字：字型的上下留白會讓文字在圓圈裡偏離中心。
         Image(
             provider = ImageProvider(R.drawable.ic_add),
-            contentDescription = glanceString(R.string.add_event),
+            contentDescription = date?.let {
+                glanceString(
+                    R.string.add_event_on,
+                    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMd"), locale).format(it),
+                )
+            } ?: glanceString(R.string.add_event),
             colorFilter = ColorFilter.tint(style.colors.onPrimary),
             modifier = GlanceModifier.size(size * 0.6f),
         )

@@ -165,6 +165,7 @@ S = [
  ("refresh", "Refresh", "重新整理"),
  ("refreshed", "Widgets refreshed", "已重新整理小工具"),
  ("add_event", "Add event", "新增行程"),
+ ("add_event_on", "Add an event on %1$s", "在%1$s新增行程"),
  ("search_title", "Search events", "搜尋行程"),
  ("search_hint", "Keyword", "輸入關鍵字"),
  ("search_intro", "Search titles, locations and notes from a year ago to two years ahead. Tap a result to edit it.", "搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。"),

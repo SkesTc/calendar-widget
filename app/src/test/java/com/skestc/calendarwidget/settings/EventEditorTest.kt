@@ -15,6 +15,37 @@ class EventEditorTest {
 
     private val target = EventEditor.insertIntent()
 
+    private val zone = java.time.ZoneId.of("Asia/Taipei")
+
+    private fun millis(date: java.time.LocalDate, hour: Int) = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli()
+
+    @Test
+    fun insertOnAnotherDayStartsAtNine() {
+        val now = java.time.LocalDateTime.of(2026, 11, 4, 14, 20)
+        val day = java.time.LocalDate.of(2026, 11, 20)
+        val intent = EventEditor.insertIntent(day, now, zone)
+        assertEquals(millis(day, 9), intent.getLongExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, 0))
+        assertEquals(millis(day, 10), intent.getLongExtra(android.provider.CalendarContract.EXTRA_EVENT_END_TIME, 0))
+    }
+
+    @Test
+    fun insertTodayStartsAtTheNextHour() {
+        val now = java.time.LocalDateTime.of(2026, 11, 4, 14, 20)
+        val intent = EventEditor.insertIntent(now.toLocalDate(), now, zone)
+        assertEquals(millis(now.toLocalDate(), 15), intent.getLongExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, 0))
+    }
+
+    @Test
+    fun fallbackIntentsKeepTheChosenDay() {
+        val dated = EventEditor.insertIntent(java.time.LocalDate.of(2026, 11, 20), java.time.LocalDateTime.of(2026, 11, 4, 8, 0), zone)
+        val intents = EventEditor.launchIntents(null, dated, "t")
+        // 「單筆事件」類型的備援也要帶著開始時間。
+        assertEquals(
+            millis(java.time.LocalDate.of(2026, 11, 20), 9),
+            intents[1].getLongExtra(android.provider.CalendarContract.EXTRA_EVENT_BEGIN_TIME, 0),
+        )
+    }
+
     @Test
     fun defaultPrefersGoogleCalendarThenTheSystem() {
         val intents = EventEditor.launchIntents(null, target, "t")
