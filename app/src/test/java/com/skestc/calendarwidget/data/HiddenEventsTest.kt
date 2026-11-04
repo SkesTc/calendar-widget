@@ -25,6 +25,16 @@ class HiddenEventsTest {
     }
 
     @Test
+    fun hideAllAndShowAllAtOnce() {
+        store.setHidden(1, "暑假", hidden = true)
+        store.setHidden(mapOf(2L to "寒假", 3L to "第一學期"), hidden = true)
+        assertEquals(setOf(1L, 2L, 3L), store.ids())
+
+        store.setHidden(mapOf(1L to "暑假", 3L to "第一學期"), hidden = false)
+        assertEquals(mapOf(2L to "寒假"), store.all())
+    }
+
+    @Test
     fun startsEmpty() {
         assertEquals(emptySet<Long>(), store.ids())
     }

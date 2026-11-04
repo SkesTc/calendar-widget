@@ -119,7 +119,7 @@ class WeatherStore(context: Context) {
         val openMeteo = prefs.getString(KEY_FORECAST, null)
             ?.let { runCatching { WeatherParser.parse(it, air, fetchedAt()) }.getOrNull() }
             ?.takeIf { it.date == now.toLocalDate() }
-        return WeatherMerge.today(openMeteo, cachedCwa(now), air?.aqi, now, fetchedAt())
+        return WeatherMerge.today(openMeteo, cachedCwa(now), air, now, fetchedAt())
             ?.takeIf { it.date == now.toLocalDate() }
     }
 

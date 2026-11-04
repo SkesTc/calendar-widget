@@ -201,7 +201,7 @@ object CwaCodes {
 
 /** 把氣象署的資料蓋在 Open-Meteo 上：現在溫度、天氣描述、高低溫、降雨機率用氣象署的。 */
 object WeatherMerge {
-    fun today(openMeteo: WeatherToday?, cwa: CwaWeather?, aqi: Int?, now: LocalDateTime, fetchedAt: Long): WeatherToday? {
+    fun today(openMeteo: WeatherToday?, cwa: CwaWeather?, air: AirQuality?, now: LocalDateTime, fetchedAt: Long): WeatherToday? {
         if (cwa == null) return openMeteo
         val date = now.toLocalDate()
         val period = cwa.periodAt(now)
@@ -222,7 +222,8 @@ object WeatherMerge {
             high = high,
             low = low,
             rainChance = todayPeriods.mapNotNull { it.rainChance }.maxOrNull() ?: openMeteo?.rainChance,
-            aqi = aqi,
+            aqi = air?.aqi,
+            aqiEstimated = air?.source == AirSource.OPEN_METEO,
             fetchedAt = fetchedAt,
             description = period?.text,
             source = WeatherSource.CWA,

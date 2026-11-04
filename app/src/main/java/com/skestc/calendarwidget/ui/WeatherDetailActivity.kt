@@ -246,6 +246,13 @@ private fun NowCard(detail: WeatherDetail, updated: String) {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
+            if (today.weatherEstimated) {
+                Text(
+                    stringResource(R.string.weather_estimate_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
+                )
+            }
             detail.cwa?.station?.let { station ->
                 Text(
                     listOfNotNull(stringResource(R.string.cwa_station, station), detail.cwa.observedAt).joinToString(" · "),

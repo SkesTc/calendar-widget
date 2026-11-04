@@ -49,6 +49,10 @@
     <string name="weather_unknown">Weather</string>
     <string name="aqi_format">AQI %1$d %2$s</string>
     <string name="aqi_short">AQI %1$d</string>
+    <string name="aqi_format_estimate">AQI ~%1$d %2$s</string>
+    <string name="aqi_short_estimate">AQI ~%1$d</string>
+    <string name="estimate_tag">est.</string>
+    <string name="weather_estimate_note">Open-Meteo model estimate, not a station reading</string>
     <string name="aqi_good">Good</string>
     <string name="aqi_moderate">Moderate</string>
     <string name="aqi_sensitive">Sensitive</string>
@@ -140,6 +144,8 @@
     <string name="no_calendars">No calendars found. Make sure calendar sync is on in Settings → Accounts → Google.</string>
     <string name="holiday_hint_title">Show public holidays</string>
     <string name="holiday_hint_body">In Google Calendar on the web: Settings → Add calendar → Browse calendars of interest → Holidays, then pick your region. After it syncs, days off are shown in red.</string>
+    <string name="long_events_hide_all">Hide all</string>
+    <string name="long_events_show_all">Show all</string>
     <string name="long_events_title">Long events</string>
     <string name="long_events_manage_link">Hide long events…</string>
     <string name="section_editor">“+” opens</string>

@@ -106,7 +106,7 @@ class CwaWeatherTest {
     fun cwaOverridesOpenMeteoForToday() {
         val cwa = CwaParsers.observation(observation, 24.1477, 120.6736)!!.copy(periods = CwaParsers.forecast36h(forecast))
         val openMeteo = WeatherToday(LocalDate.of(2026, 11, 4), 23, 2, true, 25, 18, 5, 60, 0)
-        val merged = WeatherMerge.today(openMeteo, cwa, aqi = 60, now = now, fetchedAt = 9)!!
+        val merged = WeatherMerge.today(openMeteo, cwa, air = AirQuality(60, AirSource.MOENV, station = "忠明"), now = now, fetchedAt = 9)!!
         assertEquals(WeatherSource.CWA, merged.source)
         assertEquals(26, merged.temperature)
         assertEquals("多雲時晴", merged.description)
@@ -116,16 +116,19 @@ class CwaWeatherTest {
         assertEquals(20, merged.low)
         assertEquals(30, merged.rainChance)
         assertEquals(60, merged.aqi)
+        assertEquals(false, merged.aqiEstimated)
+        assertEquals(false, merged.weatherEstimated)
         assertTrue(merged.isDay)
     }
 
     @Test
     fun cwaWorksWithoutOpenMeteo() {
         val cwa = CwaWeather(county = "臺中市", periods = CwaParsers.forecast36h(forecast))
-        val merged = WeatherMerge.today(null, cwa, aqi = null, now = now, fetchedAt = 0)!!
+        val merged = WeatherMerge.today(null, cwa, air = AirQuality(40, AirSource.OPEN_METEO), now = now, fetchedAt = 0)!!
         // 沒有觀測：溫度用這個時段的高低溫平均。
         assertEquals(26, merged.temperature)
         assertEquals(LocalDate.of(2026, 11, 4), merged.date)
+        assertEquals(true, merged.aqiEstimated)
         assertNull(WeatherMerge.today(null, null, null, now, 0))
     }
 

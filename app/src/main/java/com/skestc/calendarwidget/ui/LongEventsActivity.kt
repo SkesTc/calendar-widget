@@ -20,7 +20,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -108,6 +110,34 @@ private fun LongEventsScreen(onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
+            }
+            if (!entries.isNullOrEmpty()) {
+                item {
+                    // 一鍵全部隱藏／全部顯示（可以再逐一調整）。
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        val visible = entries.filter { !it.hidden }
+                        val hiddenOnes = entries.filter { it.hidden }
+                        Button(
+                            enabled = visible.isNotEmpty(),
+                            onClick = {
+                                hiddenStore.setHidden(visible.associate { it.eventId to it.title }, true)
+                                hidden = hiddenStore.all()
+                                scope.launch { WidgetUpdater.refreshAll(context) }
+                            },
+                        ) { Text(stringResource(R.string.long_events_hide_all)) }
+                        OutlinedButton(
+                            enabled = hiddenOnes.isNotEmpty(),
+                            onClick = {
+                                hiddenStore.setHidden(hiddenOnes.associate { it.eventId to it.title }, false)
+                                hidden = hiddenStore.all()
+                                scope.launch { WidgetUpdater.refreshAll(context) }
+                            },
+                        ) { Text(stringResource(R.string.long_events_show_all)) }
+                    }
+                }
             }
             if (entries != null && entries.isEmpty()) {
                 item {

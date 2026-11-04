@@ -84,6 +84,21 @@ class AgendaWidgetUiTest {
         onNode(hasTextEqualTo("24°")).assertExists()
         onNode(hasText("多雲 · 19°–27° · 降雨 30%")).assertExists()
         onNode(hasTextEqualTo("AQI 72 普通")).assertExists()
+        // Open-Meteo 的溫度是模型推估。
+        onNode(hasTextEqualTo("推估")).assertExists()
+    }
+
+    @Test
+    fun estimatesAreLabelledOnlyForModelData() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 300.dp))
+        // 氣象署觀測＋Open-Meteo 的空氣品質：溫度不標推估，AQI 標「約」。
+        val state = (loaded() as AgendaState.Loaded).copy(
+            weather = weather.copy(source = com.skestc.calendarwidget.data.WeatherSource.CWA, aqiEstimated = true),
+        )
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasTextEqualTo("推估")).assertDoesNotExist()
+        onNode(hasTextEqualTo("AQI 約72 普通")).assertExists()
     }
 
     @Test

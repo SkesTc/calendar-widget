@@ -23,9 +23,12 @@ class HiddenEvents(context: Context) {
 
     fun ids(): Set<Long> = all().keys
 
-    fun setHidden(eventId: Long, title: String, hidden: Boolean) {
+    fun setHidden(eventId: Long, title: String, hidden: Boolean) = setHidden(mapOf(eventId to title), hidden)
+
+    /** 一次隱藏（或取消隱藏）多個行程：[events] 是 eventId → 標題。 */
+    fun setHidden(events: Map<Long, String>, hidden: Boolean) {
         val updated = all().toMutableMap()
-        if (hidden) updated[eventId] = title else updated.remove(eventId)
+        if (hidden) updated.putAll(events) else events.keys.forEach { updated.remove(it) }
         prefs.edit {
             putString(KEY, JSONObject().apply { updated.forEach { (id, t) -> put(id.toString(), t) } }.toString())
         }

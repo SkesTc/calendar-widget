@@ -276,6 +276,11 @@ internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
             glanceString(R.string.weather_temperature, weather.temperature),
             style = style.text(18, style.colors.onCard, FontWeight.Bold),
         )
+        // Open-Meteo 的模型資料不是氣象站實測：溫度旁標「推估」。
+        if (weather.weatherEstimated) {
+            Spacer(GlanceModifier.width(4.dp))
+            Text(glanceString(R.string.estimate_tag), style = style.text(10, style.colors.onSurfaceVariant))
+        }
         Spacer(GlanceModifier.width(8.dp))
         Text(
             if (compact) "" else details,
@@ -287,10 +292,11 @@ internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
             val level = AqiLevel.of(aqi)
             Spacer(GlanceModifier.width(6.dp))
             Text(
-                if (compact) {
-                    glanceString(R.string.aqi_short, aqi)
-                } else {
-                    glanceString(R.string.aqi_format, aqi, glanceString(level.label))
+                when {
+                    compact && weather.aqiEstimated -> glanceString(R.string.aqi_short_estimate, aqi)
+                    compact -> glanceString(R.string.aqi_short, aqi)
+                    weather.aqiEstimated -> glanceString(R.string.aqi_format_estimate, aqi, glanceString(level.label))
+                    else -> glanceString(R.string.aqi_format, aqi, glanceString(level.label))
                 },
                 maxLines = 1,
                 modifier = GlanceModifier

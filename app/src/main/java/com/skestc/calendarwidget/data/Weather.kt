@@ -25,7 +25,12 @@ data class WeatherToday(
     /** 來源給的天氣描述（氣象署，例如「多雲時晴」）；null 時用 [code] 對應的文字。 */
     val description: String? = null,
     val source: WeatherSource = WeatherSource.OPEN_METEO,
-)
+    /** AQI 是 Open-Meteo 的模型推估（不是環境部測站的實測值）。 */
+    val aqiEstimated: Boolean = false,
+) {
+    /** 溫度與天氣來自模型推估（Open-Meteo），不是氣象站觀測。 */
+    val weatherEstimated: Boolean get() = source == WeatherSource.OPEN_METEO
+}
 
 enum class AirSource { OPEN_METEO, MOENV }
 
@@ -145,6 +150,7 @@ object WeatherParser {
             low = Math.round(daily.getJSONArray("temperature_2m_min").getDouble(0)).toInt(),
             rainChance = daily.optJSONArray("precipitation_probability_max").intOrNull(0),
             aqi = air?.aqi,
+            aqiEstimated = air?.source == AirSource.OPEN_METEO,
             fetchedAt = fetchedAt,
         )
     }
