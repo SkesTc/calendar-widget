@@ -100,6 +100,22 @@ object EventEditor {
         else -> forPackage(choice, target) + target
     }
 
+    /**
+     * 用使用者選的日曆 App 開啟（檢視、編輯某個行程或某一天）：依序嘗試 [targets]（例如先「編輯」再「檢視」），
+     * 選的 App 都不接受時交給系統預設。與新增不同，不會改成「新增行程」的類型。
+     */
+    fun openIntents(context: Context, targets: List<Intent>): List<Intent> = openIntents(
+        choice(context),
+        targets,
+        chooserTitle = context.getString(R.string.editor_chooser_title),
+    )
+
+    internal fun openIntents(choice: String?, targets: List<Intent>, chooserTitle: String): List<Intent> = when (choice) {
+        null -> targets.map { Intent(it).setPackage(GOOGLE_CALENDAR) } + targets
+        ASK -> listOf(Intent.createChooser(targets.first(), chooserTitle)) + targets
+        else -> targets.map { Intent(it).setPackage(choice) } + targets
+    }
+
     private fun forPackage(pkg: String, target: Intent): List<Intent> = listOf(
         Intent(target).setPackage(pkg),
         // 帶上原本的開始、結束時間（從月曆選的日期新增時）。

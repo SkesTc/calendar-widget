@@ -48,6 +48,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextDecoration
 import androidx.glance.unit.ColorProvider
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
@@ -56,7 +58,6 @@ import com.skestc.calendarwidget.data.DayCell
 import com.skestc.calendarwidget.data.MonthBuilder
 import com.skestc.calendarwidget.data.MonthLayout
 import com.skestc.calendarwidget.data.SchoolWeeks
-import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.data.WeatherToday
 import com.skestc.calendarwidget.data.MonthData
 import com.skestc.calendarwidget.settings.WidgetSettings
@@ -66,6 +67,8 @@ import com.skestc.calendarwidget.theme.WidgetStyle
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
+import com.skestc.calendarwidget.ui.MonthPickerActivity
+import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
@@ -144,8 +147,8 @@ class MonthWidget : GlanceAppWidget() {
             }
             val shown = (state as? MonthState.Loaded)
                 ?.withSelection(settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
-                // 快取的資料可能是幾分鐘前載入的：「已結束」以現在時間判斷。
-                ?.copy(now = System.currentTimeMillis())
+                // 快取的資料可能是幾分鐘前載入的：「已結束」以現在時間判斷；天氣另外讀。
+                ?.copy(now = System.currentTimeMillis(), weather = rememberWeather(context))
                 ?: state
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
@@ -171,10 +174,6 @@ class MonthWidget : GlanceAppWidget() {
         val events = repository.instances(start, end, settings.hiddenCalendarIds)
         val labeler = if (settings.showLunar) MonthCache.labeler else null
         val selected = builder.selectedDate(month, today, null)
-        val weatherStore = WeatherStore(context)
-        val weather = weatherStore.cached()
-        // 快取太舊就補抓（15 分鐘內不重複排），抓到後會再更新 widget。
-        if (weatherStore.claimRefresh(current = weather)) WeatherWorker.fetchNow(context)
         return MonthState.Loaded(
             data = builder.build(month, today, events, labeler),
             monthOffset = settings.monthOffset,
@@ -182,7 +181,6 @@ class MonthWidget : GlanceAppWidget() {
             selectedEvents = builder.eventsOn(events, selected),
             events = events,
             schoolStart = SchoolWeeks.start(context),
-            weather = weather,
         )
     }
 }
@@ -321,24 +319,47 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
     val monthTitle = format("MMMM")
     // 標題字級含使用者的文字大小與系統字型縮放，估算寬度時一起算進去。
     val titleSp = 16f * style.textScale * context.resources.configuration.fontScale
+    // 不在本月時多一顆「今」按鈕（約 34dp 加間距），標題可用的寬度少一點。
     val fit = MonthLayout.headerFit(
-        widthDp = widthDp,
+        widthDp = widthDp - if (monthOffset != 0) TODAY_BUTTON_DP else 0f,
         yearTitleDp = MonthLayout.textWidthDp(yearTitle, titleSp),
         monthTitleDp = MonthLayout.textWidthDp(monthTitle, titleSp),
         enabled = style.headerButtons,
     )
     val backToThisMonth = actionRunCallback<ChangeMonthAction>(actionParametersOf(ChangeMonthAction.DeltaKey to 0))
+    // 點標題：跳出選擇月份的對話框（預覽、測試時沒有 widget id 就照舊回到本月）。
+    val pickMonth = appWidgetIdOrNull()
+        ?.let { actionStartIntent(MonthPickerActivity.intentFor(context, it, monthOffset)) }
+        ?: backToThisMonth
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(start = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 點標題回到本月；不在本月時標題用主色提示。
+        // 點標題選其他月份；不在本月時標題用主色提示。
         Text(
             text = if (fit.showYear) yearTitle else monthTitle,
             maxLines = 1,
-            modifier = GlanceModifier.defaultWeight().clickable(backToThisMonth),
+            modifier = GlanceModifier.defaultWeight().clickable(pickMonth),
             style = style.text(16, if (monthOffset != 0) style.colors.primary else style.colors.onSurface, FontWeight.Bold),
         )
+        // 不在本月時：「今」一鍵回到本月（選取今天）。
+        if (monthOffset != 0) {
+            Box(
+                modifier = GlanceModifier
+                    .height(30.dp)
+                    .background(style.colors.primary)
+                    .cornerRadius(15.dp)
+                    .padding(horizontal = 10.dp)
+                    .clickable(backToThisMonth),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = glanceString(R.string.today_short),
+                    style = style.text(13, style.colors.onPrimary, FontWeight.Bold),
+                )
+            }
+            Spacer(GlanceModifier.width(4.dp))
+        }
         NavIconButton(R.drawable.ic_chevron_left, glanceString(R.string.previous_month), delta = -1, size = 30.dp)
         Spacer(GlanceModifier.width(4.dp))
         NavIconButton(R.drawable.ic_chevron_right, glanceString(R.string.next_month), delta = 1, size = 30.dp)
@@ -375,6 +396,9 @@ private fun NavIconButton(icon: Int, description: String, delta: Int, size: Dp) 
 }
 
 private val WEEK_NUMBER_WIDTH = 16.dp
+
+/** 「今」按鈕加間距的寬度（dp）。 */
+private const val TODAY_BUTTON_DP = 40f
 
 /** 學期週次（開學前或太久以後留白）。 */
 @Composable
@@ -424,11 +448,12 @@ private fun DayCellView(
 ) {
     val style = LocalWidgetStyle.current
     val isToday = day.date == today
+    // 今天的圓圈比其他日子大一號，一眼就找得到。
     val circle = when {
         compact -> 22.dp
         showLabel -> 24.dp
         else -> 28.dp
-    }
+    } + if (isToday) 4.dp else 0.dp
 
     val textColor = when {
         isToday -> style.colors.onPrimary
@@ -439,8 +464,14 @@ private fun DayCellView(
         else -> weekendColor(day.date.dayOfWeek) ?: style.colors.onSurface
     }
 
+    val description = dayDescription(day, isToday, selected)
     Column(
-        modifier = modifier.clickable(
+        modifier = modifier
+            // 讓 TalkBack 唸出完整的日期與狀態，而不是只有數字。
+            .semantics { contentDescription = description }
+            // 今天整格加上卡片色的圓角底，再配上主色實心圓，比只有圓圈更醒目。
+            .then(if (isToday) GlanceModifier.background(style.colors.card).cornerRadius(10.dp) else GlanceModifier)
+            .clickable(
             if (selectInWidget) {
                 actionRunCallback<SelectDayAction>(actionParametersOf(SelectDayAction.EpochDayKey to day.date.toEpochDay()))
             } else {
@@ -466,7 +497,7 @@ private fun DayCellView(
             Text(
                 text = day.date.dayOfMonth.toString(),
                 style = style.text(
-                    size = if (compact) 12 else 14,
+                    size = (if (compact) 12 else 14) + if (isToday) 2 else 0,
                     color = textColor,
                     // 有行程的日子數字加粗，搭配下方圓點更好辨識。
                     weight = if (isToday || (day.inMonth && day.eventColors.isNotEmpty())) FontWeight.Bold else FontWeight.Normal,
@@ -477,13 +508,31 @@ private fun DayCellView(
                 },
             )
         }
-        if (showLabel) DayLabelText(day)
+        if (showLabel) DayLabelText(day, isToday)
         EventDots(day.eventColors, dimmed = !day.inMonth, dot = if (compact) 6.dp else 7.dp)
     }
 }
 
+/** 月曆格子的語音描述，例如「10月10日 星期六，今天，國慶日，有行程」。 */
 @Composable
-private fun DayLabelText(day: DayCell) {
+private fun dayDescription(day: DayCell, isToday: Boolean, selected: Boolean): String {
+    val locale = Locale.getDefault()
+    val date = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(day.date)
+    return listOfNotNull(
+        date,
+        if (isToday) glanceString(R.string.today_word) else null,
+        if (selected) glanceString(R.string.a11y_selected) else null,
+        when (day.holiday) {
+            HolidayKind.MAKEUP_WORKDAY -> glanceString(R.string.makeup_workday)
+            HolidayKind.DAY_OFF -> day.label ?: glanceString(R.string.a11y_day_off)
+            else -> day.label?.takeIf { day.labelHighlighted }
+        },
+        glanceString(if (day.eventColors.isNotEmpty()) R.string.a11y_has_events else R.string.month_day_empty),
+    ).joinToString("，")
+}
+
+@Composable
+private fun DayLabelText(day: DayCell, isToday: Boolean = false) {
     val style = LocalWidgetStyle.current
     val text = when (day.holiday) {
         HolidayKind.MAKEUP_WORKDAY -> glanceString(R.string.makeup_workday)
@@ -492,13 +541,13 @@ private fun DayLabelText(day: DayCell) {
     val color = when {
         !day.inMonth -> style.colors.outline
         day.holiday == HolidayKind.DAY_OFF -> style.colors.sunday
-        day.labelHighlighted -> style.colors.primary
+        day.labelHighlighted || isToday -> style.colors.primary
         else -> style.colors.onSurfaceVariant
     }
     Text(
         text = text,
         maxLines = 1,
-        style = style.text(9, color, align = TextAlign.Center),
+        style = style.text(9, color, if (isToday) FontWeight.Bold else null, align = TextAlign.Center),
     )
 }
 

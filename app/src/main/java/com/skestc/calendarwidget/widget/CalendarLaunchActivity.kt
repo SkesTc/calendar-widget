@@ -47,19 +47,28 @@ class CalendarLaunchActivity : ComponentActivity() {
             return
         }
         val editor = intent.getBooleanExtra(EXTRA_EDITOR, false)
-        // 點日期或行程：預設開 App 內的行程檢視（只顯示這個 widget 勾選的日曆），不開日曆 App。
-        if (!editor && DayOpen.inApp(this)) {
-            EventView.targetOf(target)?.let { viewTarget ->
+        val inChosenApp = intent.getBooleanExtra(EXTRA_CHOSEN_APP, false)
+        // 點日期或行程：依首頁的設定，開 App 內的行程檢視（只顯示這個 widget 勾選的日曆），
+        // 或用選定的日曆 App 開啟（行程直接進編輯）。明確指定要開日曆 App 的不轉。
+        var chosenAppTargets: List<Intent>? = null
+        val viewTarget = if (editor || inChosenApp) null else EventView.targetOf(target)
+        if (viewTarget != null) {
+            val isEvent = viewTarget.eventId != null
+            if (if (isEvent) DayOpen.eventsInApp(this) else DayOpen.inApp(this)) {
                 val hidden = intent.getLongArrayExtra(EXTRA_HIDDEN_CALENDARS)?.toSet().orEmpty()
                 calendar.launch(EventViewerActivity.intent(this, viewTarget.date, hidden, viewTarget.eventId))
                 return
             }
+            // 行程：先試編輯，不支援時改成檢視。
+            chosenAppTargets = if (isEvent) listOf(Intent(target).setAction(Intent.ACTION_EDIT), target) else listOf(target)
         }
         val preferred = intent.getStringExtra(EXTRA_PACKAGE)
         // 備用目標：例如「編輯」不被接受時改成「檢視」。
         val targets = listOfNotNull(target, intentExtra(intent, EXTRA_FALLBACK))
         val attempts = when {
             editor -> EventEditor.launchIntents(this, target)
+            inChosenApp -> EventEditor.openIntents(this, targets)
+            chosenAppTargets != null -> EventEditor.openIntents(this, chosenAppTargets)
             preferred != null -> targets.map { Intent(it).setPackage(preferred) } + targets
             else -> targets
         }
@@ -114,6 +123,7 @@ class CalendarLaunchActivity : ComponentActivity() {
         private const val EXTRA_EDITOR = "editor"
         private const val EXTRA_FALLBACK = "fallback"
         private const val EXTRA_HIDDEN_CALENDARS = "hidden_calendars"
+        private const val EXTRA_CHOSEN_APP = "chosen_app"
 
         /**
          * [preferredPackage]：優先用這個 App 開（例如 Google 日曆），沒裝時用系統預設。
@@ -126,15 +136,17 @@ class CalendarLaunchActivity : ComponentActivity() {
             editor: Boolean = false,
             fallback: Intent? = null,
             hiddenCalendarIds: Set<Long> = emptySet(),
+            chosenApp: Boolean = false,
         ): Intent {
             val key = target.toUri(Intent.URI_INTENT_SCHEME) + "|" + preferredPackage + "|" + editor +
-                "|" + hiddenCalendarIds.sorted().joinToString(",")
+                "|" + hiddenCalendarIds.sorted().joinToString(",") + "|" + chosenApp
             return Intent(context, CalendarLaunchActivity::class.java)
                 .putExtra(EXTRA_TARGET, target)
                 .putExtra(EXTRA_PACKAGE, preferredPackage)
                 .putExtra(EXTRA_EDITOR, editor)
                 .putExtra(EXTRA_FALLBACK, fallback)
                 .putExtra(EXTRA_HIDDEN_CALENDARS, hiddenCalendarIds.toLongArray())
+                .putExtra(EXTRA_CHOSEN_APP, chosenApp)
                 // PendingIntent 比對不看 extras；用 data 區分不同的目標，避免點到別的行程。
                 .setData(Uri.parse("calendarwidget://open/" + key.hashCode()))
         }
@@ -159,4 +171,14 @@ fun openInCalendar(target: Intent, preferredPackage: String? = null, editor: Boo
             LocalContext.current, target, preferredPackage, editor,
             hiddenCalendarIds = LocalWidgetStyle.current.hiddenCalendarIds,
         ),
+    )
+
+/**
+ * 用「＋」設定裡選的日曆 App 開啟（不經過 App 內的行程檢視）：
+ * 先試 [target]（例如編輯行程），不接受時再試 [fallback]（例如檢視行程）。
+ */
+@Composable
+fun openInChosenApp(target: Intent, fallback: Intent? = null): Action =
+    actionStartIntent(
+        CalendarLaunchActivity.intentFor(LocalContext.current, target, fallback = fallback, chosenApp = true),
     )

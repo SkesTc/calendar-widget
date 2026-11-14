@@ -73,6 +73,8 @@ data class WidgetSettings(
         val KEY_AGENDA_LAYOUT = stringPreferencesKey("agenda_layout")
         val KEY_WEEK_START = stringPreferencesKey("week_start")
         val KEY_HEADER_BUTTONS = stringSetPreferencesKey("header_buttons")
+        /** 天氣更新時加一：只讓天氣列重畫，不重新查詢行程（不屬於 [WidgetSettings]，不影響資料快取）。 */
+        val KEY_WEATHER_VERSION = longPreferencesKey("weather_version")
 
         fun defaultShowLunar(): Boolean = Locale.getDefault().language == "zh"
 

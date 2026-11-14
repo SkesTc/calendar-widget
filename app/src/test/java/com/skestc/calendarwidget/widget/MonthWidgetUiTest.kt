@@ -243,8 +243,26 @@ class MonthWidgetUiTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))
         provideComposable { WidgetFrame { MonthContent(october(monthOffset = 1)) } }
-        // 不在本月時沒有額外的「今」按鈕，點標題就回到本月。
-        onNode(hasTextEqualTo("今")).assertDoesNotExist()
+        // 不在本月時多一顆「今」，一鍵回到本月（點標題改成選擇月份）。
+        onNode(hasTextEqualTo("今")).assertExists()
         onNode(hasTextEqualTo("10月")).assertExists()
+    }
+
+    @Test
+    fun dayCellsDescribeThemselvesForTalkBack() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 320.dp))
+        provideComposable { WidgetFrame { MonthContent(october()) } }
+        onNode(hasContentDescriptionEqualTo("10月26日 星期一，今天，沒有行程")).assertExists()
+        onNode(hasContentDescriptionEqualTo("10月10日 星期六，國慶日，沒有行程")).assertExists()
+        onNode(hasContentDescriptionEqualTo("10月17日 星期六，補班，沒有行程")).assertExists()
+    }
+
+    @Test
+    fun thisMonthHasNoTodayButton() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(300.dp, 320.dp))
+        provideComposable { WidgetFrame { MonthContent(october()) } }
+        onNode(hasTextEqualTo("今")).assertDoesNotExist()
     }
 }

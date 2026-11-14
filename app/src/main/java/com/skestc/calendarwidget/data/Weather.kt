@@ -27,6 +27,8 @@ data class WeatherToday(
     val source: WeatherSource = WeatherSource.OPEN_METEO,
     /** AQI 是 Open-Meteo 的模型推估（不是環境部測站的實測值）。 */
     val aqiEstimated: Boolean = false,
+    /** 氣象署目前生效的天氣特報（例如「大雨特報」），有授權碼時才有。 */
+    val warnings: List<String> = emptyList(),
 ) {
     /** 溫度與天氣來自模型推估（Open-Meteo），不是氣象站觀測。 */
     val weatherEstimated: Boolean get() = source == WeatherSource.OPEN_METEO

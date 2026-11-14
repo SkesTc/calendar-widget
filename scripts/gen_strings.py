@@ -131,6 +131,7 @@ S = [
  ("cwa_error", "Couldn't get CWA data (%1$s); using Open-Meteo for now.", "無法取得氣象署資料（%1$s），暫時改用 Open-Meteo。"),
  ("cwa_error_no_key", "no authorization code", "尚未輸入授權碼"),
  ("cwa_periods_title", "Next 36 hours · CWA", "未來 36 小時 · 中央氣象署"),
+ ("weather_warnings_title", "Weather warnings (CWA)", "天氣特報（中央氣象署）"),
  # 第一次使用引導
  ("onboarding_step", "Step %1$d of %2$d", "第 %1$d 步，共 %2$d 步"),
  ("onboarding_welcome_title", "Welcome", "歡迎使用行事曆小工具"),
@@ -166,6 +167,16 @@ S = [
  ("refreshed", "Widgets refreshed", "已重新整理小工具"),
  ("add_event", "Add event", "新增行程"),
  ("add_event_on", "Add an event on %1$s", "在%1$s新增行程"),
+ # 月曆：選擇月份
+ ("today_short", "Today", "今"),
+ ("back_to_this_month", "This month", "回到本月"),
+ ("year_title", "%1$d", "%1$d 年"),
+ ("previous_year", "Previous year", "上一年"),
+ ("next_year", "Next year", "下一年"),
+ ("tap_timing_title", "Month widget response time", "月曆反應時間"),
+ ("tap_timing_summary", "Last tap: %1$s s (drawing %2$d ms)", "上次點按：%1$s 秒（重畫 %2$d 毫秒）"),
+ ("tap_timing_cold", "app had to restart", "App 剛被喚醒"),
+ ("tap_timing_none", "Tap a date or switch months on the month widget to measure", "在月曆小工具切換月份或點日期後會顯示"),
  # App 內行程檢視
  ("view_title", "Events", "行程檢視"),
  ("view_day", "Day", "當天"),
@@ -176,11 +187,19 @@ S = [
  ("view_next", "Next", "下一段"),
  ("view_includes_today", "%1$d · includes today", "%1$d · 含今天"),
  ("view_empty", "No events in this period", "這段期間沒有行程"),
- ("day_open_title", "Tapping a date or event", "點小工具的日期或行程時"),
+ ("view_copied", "Copied", "已複製"),
+ ("a11y_selected", "selected", "已選取"),
+ ("a11y_day_off", "day off", "放假"),
+ ("a11y_has_events", "has events", "有行程"),
+ ("day_open_title", "Tapping a date", "點小工具的日期時"),
  ("day_open_in_app", "Open in this app", "開啟 App 內的行程檢視"),
  ("day_open_in_app_hint", "Day, week, month or 4 weeks; only that widget's calendars, without hidden events", "可切換當天、當週、當月、近四週；只顯示該小工具勾選的日曆，不含隱藏的行程"),
  ("day_open_calendar", "Open the calendar app", "開啟日曆 App"),
- ("day_open_calendar_hint", "Google Calendar, or the system calendar if it isn't installed", "Google 日曆（沒安裝時用系統的日曆 App）"),
+ ("day_open_calendar_hint", "The app chosen for “+” (Google Calendar by default)", "「＋」設定裡選的日曆 App（預設 Google 日曆）"),
+ ("event_open_title", "Tapping an event", "點小工具的行程時"),
+ ("event_open_in_app_hint", "Shows the event in its day; tap it there to edit", "在行程檢視裡顯示並框起那個行程，再點一下可以編輯"),
+ ("event_open_calendar", "Edit in the calendar app", "用日曆 App 開啟編輯"),
+ ("event_open_calendar_hint", "Opens the event in the app chosen for “+” so you can edit it right away", "用「＋」設定裡選的日曆 App 打開，可以直接修改"),
  ("search_title", "Search events", "搜尋行程"),
  ("search_hint", "Keyword", "輸入關鍵字"),
  ("search_intro", "Search titles, locations and notes from a year ago to two years ahead. Tap a result to edit it.", "搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。"),
@@ -348,7 +367,8 @@ ARRAYS = [
 ]
 
 def esc(v):
-    v = escape(v).replace("'", "\\'").replace('"', '\\"')
+    # 真的換行字元也轉成 \n：Android 字串資源裡的換行會被當成空白。
+    v = escape(v).replace("'", "\\'").replace('"', '\\"').replace("\n", "\\n")
     if v != v.strip(): v = '"' + v + '"'
     return v
 

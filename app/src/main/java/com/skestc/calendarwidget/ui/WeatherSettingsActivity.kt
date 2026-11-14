@@ -95,7 +95,7 @@ internal suspend fun updateWeatherNow(context: Context): FetchResult? {
     } else {
         null
     }
-    WidgetUpdater.refreshAll(app)
+    WidgetUpdater.refreshWeather(app)
     return result
 }
 

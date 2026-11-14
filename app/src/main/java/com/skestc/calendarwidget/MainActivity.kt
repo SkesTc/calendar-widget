@@ -41,7 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
@@ -54,7 +53,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
@@ -65,8 +63,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.LocationReader
 import com.skestc.calendarwidget.data.WeatherStore
@@ -81,6 +77,7 @@ import com.skestc.calendarwidget.lunar.IcuLunarSource
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.ui.DayOpenRow
 import com.skestc.calendarwidget.ui.EventEditorRow
+import com.skestc.calendarwidget.ui.EventOpenRow
 import com.skestc.calendarwidget.ui.GroupDivider
 import com.skestc.calendarwidget.ui.LongEventsRow
 import com.skestc.calendarwidget.ui.Onboarding
@@ -89,7 +86,9 @@ import com.skestc.calendarwidget.ui.SchoolWeeksRow
 import com.skestc.calendarwidget.ui.SearchActivity
 import com.skestc.calendarwidget.ui.SectionTitle
 import com.skestc.calendarwidget.ui.SettingsGroup
+import com.skestc.calendarwidget.ui.TapTimingRow
 import com.skestc.calendarwidget.ui.UpdateHelpRow
+import com.skestc.calendarwidget.ui.rememberResumeCount
 import com.skestc.calendarwidget.ui.WeatherSettingsRow
 import com.skestc.calendarwidget.ui.openEventEditor
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
@@ -153,15 +152,7 @@ private fun HomeScreen() {
         }
     }
     // 每次回到首頁（例如編輯完行程）都重新讀今天的行程。
-    var resumes by remember { mutableIntStateOf(0) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumes++
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val resumes = rememberResumeCount()
     LaunchedEffect(granted, resumes) {
         if (granted) today = loadToday(repository)
         // 天氣跟隨 GPS 時，開 App 是更新位置的機會（Android 不讓背景取得位置）。
@@ -227,6 +218,8 @@ private fun HomeScreen() {
                     GroupDivider()
                     DayOpenRow()
                     GroupDivider()
+                    EventOpenRow()
+                    GroupDivider()
                     LongEventsRow()
                     GroupDivider()
                     SchoolWeeksRow()
@@ -234,6 +227,8 @@ private fun HomeScreen() {
                     WeatherSettingsRow()
                     GroupDivider()
                     UpdateHelpRow()
+                    GroupDivider()
+                    TapTimingRow()
                 }
             }
 

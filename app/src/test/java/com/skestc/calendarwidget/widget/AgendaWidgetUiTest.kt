@@ -89,6 +89,16 @@ class AgendaWidgetUiTest {
     }
 
     @Test
+    fun weatherWarningIsShownFirst() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 300.dp))
+        val state = (loaded() as AgendaState.Loaded).copy(weather = weather.copy(warnings = listOf("大雨特報")))
+        provideComposable { WidgetFrame { AgendaContent(state) } }
+        onNode(hasTextEqualTo("⚠ 大雨特報")).assertExists()
+        onNode(hasText("降雨 30%")).assertDoesNotExist()
+    }
+
+    @Test
     fun estimatesAreLabelledOnlyForModelData() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(320.dp, 300.dp))

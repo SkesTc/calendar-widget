@@ -57,7 +57,6 @@ import com.skestc.calendarwidget.data.AgendaRow
 import com.skestc.calendarwidget.data.AqiLevel
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.WeatherCodes
-import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.data.WeatherToday
 import com.skestc.calendarwidget.ui.WeatherDetailActivity
 import com.skestc.calendarwidget.data.CalendarRepository
@@ -132,7 +131,8 @@ class AgendaWidget : GlanceAppWidget() {
             }
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
-                    AgendaContent(state)
+                    val weather = rememberWeather(context)
+                    AgendaContent((state as? AgendaState.Loaded)?.copy(weather = weather) ?: state)
                 }
             }
         }
@@ -157,10 +157,6 @@ class AgendaWidget : GlanceAppWidget() {
         events.filter { !it.allDay && it.end > now }.minOfOrNull { it.end }
             ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
-        val weatherStore = WeatherStore(context)
-        val weather = weatherStore.cached()
-        // 快取太舊（例如背景更新被省電機制擋掉）就補抓（15 分鐘內不重複排），抓到後會再更新 widget。
-        if (weatherStore.claimRefresh(now, weather)) WeatherWorker.fetchNow(context)
         return AgendaState.Loaded(
             today = today,
             days = settings.agendaDays,
@@ -169,7 +165,6 @@ class AgendaWidget : GlanceAppWidget() {
             schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context)),
             layout = settings.agendaLayout,
             now = now,
-            weather = weather,
             dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
                 dayRowsOf(events, today, settings.agendaDays, labeler)
             } else {
@@ -216,8 +211,10 @@ internal fun AgendaContent(state: AgendaState) {
 private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
-    // 點日期（左上角）開啟 Google 日曆的今天；沒裝 Google 日曆時用系統預設的日曆 App。
+    // 點大日期：開 App 內的行程檢視（設定可改成開日曆 App）。
     val openToday = openInCalendar(openDayIntent(today), preferredPackage = EventEditor.GOOGLE_CALENDAR)
+    // 點星期幾那一欄：用選定的日曆 App 開到今天（日曆 App 會用它上次的檢視方式，例如月曆）。
+    val openCalendarApp = openInChosenApp(openDayIntent(today))
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -229,7 +226,7 @@ private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
             modifier = GlanceModifier.clickable(openToday),
         )
         Spacer(GlanceModifier.width(10.dp))
-        Column(modifier = GlanceModifier.defaultWeight().clickable(openToday)) {
+        Column(modifier = GlanceModifier.defaultWeight().clickable(openCalendarApp)) {
             Text(
                 text = today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
                 style = style.text(16, style.colors.onSurface, FontWeight.Bold),
@@ -284,11 +281,22 @@ internal fun WeatherRow(weather: WeatherToday, compact: Boolean) {
             Text(glanceString(R.string.estimate_tag), style = style.text(10, style.colors.onSurfaceVariant))
         }
         Spacer(GlanceModifier.width(8.dp))
+        // 有天氣特報時優先顯示（紅字），例如「⚠ 大雨特報」；窄的 widget 只顯示「⚠」。
+        val warning = weather.warnings.firstOrNull()
         Text(
-            if (compact) "" else details,
+            when {
+                warning != null && compact -> "⚠"
+                warning != null -> "⚠ " + weather.warnings.joinToString("、")
+                compact -> ""
+                else -> details
+            },
             maxLines = 1,
             modifier = GlanceModifier.defaultWeight(),
-            style = style.text(12, style.colors.onCard),
+            style = if (warning != null) {
+                style.text(12, style.colors.sunday, FontWeight.Bold)
+            } else {
+                style.text(12, style.colors.onCard)
+            },
         )
         weather.aqi?.let { aqi ->
             val level = AqiLevel.of(aqi)
@@ -588,6 +596,7 @@ private fun EventRow(
     segment: Segment = Segment.SINGLE,
 ) {
     val style = LocalWidgetStyle.current
+    // 開什麼由首頁設定決定（預設用選定的日曆 App 開啟編輯）。
     val openEvent = Intent(
         Intent.ACTION_VIEW,
         ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, event.eventId),

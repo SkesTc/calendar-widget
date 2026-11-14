@@ -38,6 +38,19 @@ object WidgetUpdater {
         }
     }
 
+    /** 有天氣列的 widget（行程清單、月曆）：天氣更新時只重畫天氣，不重新查日曆。 */
+    suspend fun refreshWeather(context: Context) {
+        val manager = GlanceAppWidgetManager(context)
+        for (widget in listOf(AgendaWidget(), MonthWidget())) {
+            for (id in manager.getGlanceIds(widget.javaClass)) {
+                updateAppWidgetState(context, id) { prefs ->
+                    prefs[WidgetSettings.KEY_WEATHER_VERSION] = (prefs[WidgetSettings.KEY_WEATHER_VERSION] ?: 0L) + 1
+                }
+                widget.update(context, id)
+            }
+        }
+    }
+
     fun hasAnyWidget(context: Context): Boolean {
         val manager = AppWidgetManager.getInstance(context)
         return widgets.any { (_, receiver) ->

@@ -47,6 +47,18 @@ class EventEditorTest {
     }
 
     @Test
+    fun openingAnEventTriesTheChosenAppForEditThenView() {
+        val edit = Intent(Intent.ACTION_EDIT)
+        val view = Intent(Intent.ACTION_VIEW)
+        val intents = EventEditor.openIntents("com.example.cal", listOf(edit, view), "t")
+        assertEquals(listOf("com.example.cal", "com.example.cal", null, null), intents.map { it.`package` })
+        assertEquals(listOf(Intent.ACTION_EDIT, Intent.ACTION_VIEW, Intent.ACTION_EDIT, Intent.ACTION_VIEW), intents.map { it.action })
+        // 預設用 Google 日曆；「每次詢問」先跳出選擇器。
+        assertEquals(EventEditor.GOOGLE_CALENDAR, EventEditor.openIntents(null, listOf(edit), "t").first().`package`)
+        assertEquals(Intent.ACTION_CHOOSER, EventEditor.openIntents(EventEditor.ASK, listOf(edit), "t").first().action)
+    }
+
+    @Test
     fun defaultPrefersGoogleCalendarThenTheSystem() {
         val intents = EventEditor.launchIntents(null, target, "t")
         assertEquals(EventEditor.GOOGLE_CALENDAR, intents[0].`package`)

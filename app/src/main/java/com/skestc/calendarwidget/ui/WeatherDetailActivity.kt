@@ -172,6 +172,9 @@ internal fun WeatherDetailContent(detail: WeatherDetail, air: AirQuality?, fetch
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (detail.today.warnings.isNotEmpty()) {
+            item(key = "warnings") { WarningsCard(detail.today.warnings) }
+        }
         item(key = "now") { NowCard(detail, timeFormat.format(Date(fetchedAt))) }
         if (detail.hours.isNotEmpty()) {
             item(key = "hours-title") { SectionTitle(stringResource(R.string.weather_next_hours)) }
@@ -197,6 +200,29 @@ internal fun WeatherDetailContent(detail: WeatherDetail, air: AirQuality?, fetch
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 8.dp),
+            )
+        }
+    }
+}
+
+/** 氣象署天氣特報：最上方的醒目卡片。 */
+@Composable
+private fun WarningsCard(warnings: List<String>) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.errorContainer,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                "⚠ " + stringResource(R.string.weather_warnings_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+            )
+            Text(
+                warnings.joinToString("、"),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onErrorContainer,
             )
         }
     }

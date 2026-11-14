@@ -26,7 +26,7 @@ class WeatherWorker(
         val store = WeatherStore(applicationContext)
         if (!store.enabled) {
             // 天氣關閉了：更新一次讓 widget 拿掉天氣列。
-            WidgetUpdater.refreshAll(applicationContext)
+            WidgetUpdater.refreshWeather(applicationContext)
             return Result.success()
         }
         // 背景拿不到新的位置，用系統記得的最後位置（有的話）。
@@ -37,7 +37,8 @@ class WeatherWorker(
             FetchResult.WeatherFailed -> Result.retry()
             FetchResult.NoLocation -> Result.success()
             else -> {
-                WidgetUpdater.refreshAll(applicationContext)
+                // 只重畫天氣列，不重新查行程、不讓月曆快取失效。
+                WidgetUpdater.refreshWeather(applicationContext)
                 Result.success()
             }
         }

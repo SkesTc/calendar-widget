@@ -14,6 +14,7 @@ import com.skestc.calendarwidget.data.WeatherSource
 import com.skestc.calendarwidget.data.WeatherLocationMode
 import com.skestc.calendarwidget.data.WeatherStore
 import com.skestc.calendarwidget.widget.RefreshAction
+import com.skestc.calendarwidget.widget.TapTiming
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -48,7 +49,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -58,13 +58,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.config.EventEditorPicker
 import com.skestc.calendarwidget.config.rememberAppIcon
@@ -203,15 +200,9 @@ fun EventEditorRow() {
 @Composable
 fun LongEventsRow() {
     val context = LocalContext.current
-    var hiddenCount by remember { mutableIntStateOf(HiddenEvents(context).ids().size) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) hiddenCount = HiddenEvents(context).ids().size
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    // 從「長期行程」頁回來時更新數量。
+    val resumes = rememberResumeCount()
+    val hiddenCount = remember(resumes) { HiddenEvents(context).ids().size }
     SettingsRow(
         icon = R.drawable.ic_visibility_off,
         title = stringResource(R.string.long_events_title),
@@ -338,15 +329,7 @@ fun SchoolWeeksRow() {
 fun WeatherSettingsRow() {
     val context = LocalContext.current
     // 從設定頁回來時更新摘要。
-    var resumes by remember { mutableIntStateOf(0) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumes++
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val resumes = rememberResumeCount()
     val summary = remember(resumes) { weatherSummary(context) }
     SettingsRow(
         icon = R.drawable.ic_weather,
@@ -373,31 +356,59 @@ internal fun weatherSummary(context: Context): String {
     return listOf(where, weather, air).distinct().joinToString(" · ")
 }
 
-/** 在小工具上點日期或行程時：開 App 內的行程檢視，或開日曆 App。 */
+/** 在小工具上點日期時：開 App 內的行程檢視，或開日曆 App。 */
 @Composable
-fun DayOpenRow() {
+fun DayOpenRow() = OpenChoiceRow(
+    title = R.string.day_open_title,
+    inAppHint = R.string.day_open_in_app_hint,
+    appLabel = R.string.day_open_calendar,
+    appHint = R.string.day_open_calendar_hint,
+    read = DayOpen::inApp,
+    write = DayOpen::setInApp,
+)
+
+/** 在小工具上點行程時：用選定的日曆 App 開啟編輯，或開 App 內的行程檢視。 */
+@Composable
+fun EventOpenRow() = OpenChoiceRow(
+    title = R.string.event_open_title,
+    inAppHint = R.string.event_open_in_app_hint,
+    appLabel = R.string.event_open_calendar,
+    appHint = R.string.event_open_calendar_hint,
+    read = DayOpen::eventsInApp,
+    write = DayOpen::setEventsInApp,
+)
+
+@Composable
+private fun OpenChoiceRow(
+    title: Int,
+    inAppHint: Int,
+    appLabel: Int,
+    appHint: Int,
+    read: (Context) -> Boolean,
+    write: (Context, Boolean) -> Unit,
+) {
     val context = LocalContext.current
-    var inApp by remember { mutableStateOf(DayOpen.inApp(context)) }
+    var inApp by remember { mutableStateOf(read(context)) }
     var picking by remember { mutableStateOf(false) }
     SettingsRow(
         icon = R.drawable.ic_event,
-        title = stringResource(R.string.day_open_title),
-        subtitle = stringResource(if (inApp) R.string.day_open_in_app else R.string.day_open_calendar),
+        title = stringResource(title),
+        subtitle = stringResource(if (inApp) R.string.day_open_in_app else appLabel),
         onClick = { picking = true },
     )
     if (picking) {
         fun choose(value: Boolean) {
             inApp = value
-            DayOpen.setInApp(context, value)
+            write(context, value)
             picking = false
         }
         AlertDialog(
             onDismissRequest = { picking = false },
-            title = { Text(stringResource(R.string.day_open_title)) },
+            title = { Text(stringResource(title)) },
             text = {
                 Column {
-                    DayOpenOption(stringResource(R.string.day_open_in_app), stringResource(R.string.day_open_in_app_hint), inApp) { choose(true) }
-                    DayOpenOption(stringResource(R.string.day_open_calendar), stringResource(R.string.day_open_calendar_hint), !inApp) { choose(false) }
+                    DayOpenOption(stringResource(R.string.day_open_in_app), stringResource(inAppHint), inApp) { choose(true) }
+                    DayOpenOption(stringResource(appLabel), stringResource(appHint), !inApp) { choose(false) }
                 }
             },
             confirmButton = { TextButton(onClick = { picking = false }) { Text(stringResource(R.string.done)) } },
@@ -421,4 +432,25 @@ private fun DayOpenOption(title: String, hint: String, selected: Boolean, onClic
             Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+/** 最近一次月曆點按（切換月份、點日期）的反應時間，用來判斷卡在哪裡。 */
+@Composable
+fun TapTimingRow() {
+    val context = LocalContext.current
+    val resumes = rememberResumeCount()
+    var taps by remember { mutableIntStateOf(0) }
+    val record = remember(resumes, taps) { TapTiming.last(context) }
+    SettingsRow(
+        icon = R.drawable.ic_refresh,
+        title = stringResource(R.string.tap_timing_title),
+        subtitle = record?.let {
+            val seconds = String.format(Locale.getDefault(), "%.2f", it.totalMs / 1000.0)
+            listOfNotNull(
+                stringResource(R.string.tap_timing_summary, seconds, it.composeMs),
+                if (it.coldStart) stringResource(R.string.tap_timing_cold) else null,
+            ).joinToString(" · ")
+        } ?: stringResource(R.string.tap_timing_none),
+        onClick = { taps++ },
+    )
 }

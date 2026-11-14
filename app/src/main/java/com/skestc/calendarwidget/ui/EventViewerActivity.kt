@@ -1,16 +1,22 @@
 package com.skestc.calendarwidget.ui
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +48,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -53,15 +58,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.CalendarRepository
@@ -141,15 +144,7 @@ private fun EventViewerScreen(start: LocalDate, hidden: Set<Long>, highlight: Lo
     val range = EventView.range(mode, anchor, builder.firstDayOfWeek)
 
     // 編輯完行程回來時重新讀取。
-    var resumes by remember { mutableIntStateOf(0) }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) resumes++
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
+    val resumes = rememberResumeCount()
     LaunchedEffect(range, resumes) {
         val zone = ZoneId.systemDefault()
         // 前後多抓一天，涵蓋以 UTC 午夜計的全天事件。
@@ -221,10 +216,30 @@ private fun EventViewerScreen(start: LocalDate, hidden: Set<Long>, highlight: Lo
                     Icon(painterResource(R.drawable.ic_chevron_right), contentDescription = stringResource(R.string.view_next))
                 }
             }
-            days?.let { EventViewerContent(it, highlight) }
+            // 左右滑動切換上一段／下一段。
+            var drag by remember { mutableStateOf(0f) }
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(mode) {
+                        detectHorizontalDragGestures(
+                            onDragStart = { drag = 0f },
+                            onDragEnd = {
+                                val threshold = SWIPE_DP.dp.toPx()
+                                if (drag > threshold) anchor = EventView.shift(mode, anchor, -1)
+                                if (drag < -threshold) anchor = EventView.shift(mode, anchor, 1)
+                            },
+                        ) { _, dx -> drag += dx }
+                    },
+            ) {
+                days?.let { EventViewerContent(it, highlight) }
+            }
         }
     }
 }
+
+/** 左右滑動超過這個距離（dp）才切換。 */
+private const val SWIPE_DP = 72
 
 /** 標題：當天「11月20日 星期五」、當週與近四週「11/16 – 11/22」、當月「2026年11月」。 */
 @Composable
@@ -294,6 +309,7 @@ internal fun EventViewerContent(days: List<ViewDay>, highlight: Long?) {
                         event = event,
                         past = !event.allDay && event.end <= now,
                         highlighted = event.eventId == highlight,
+                        onLongClick = { copyEvent(context, event) },
                     ) { openEventEditor(context, event) }
                 }
             }
@@ -352,8 +368,37 @@ private fun DayTitle(day: ViewDay, isToday: Boolean, lunar: String?) {
     }
 }
 
+/** 長按行程：把標題、時間、地點複製到剪貼簿（方便貼到訊息或筆記）。 */
+private fun copyEvent(context: Context, event: CalendarEvent) {
+    val timeFormat = DateFormat.getTimeFormat(context)
+    val dateFormat = DateFormat.getMediumDateFormat(context)
+    val time = if (event.allDay) {
+        context.getString(R.string.all_day)
+    } else {
+        "${timeFormat.format(Date(event.begin))} – ${timeFormat.format(Date(event.end))}"
+    }
+    val text = listOfNotNull(
+        event.title,
+        "${dateFormat.format(Date(event.begin))} $time",
+        event.location?.takeIf { it.isNotBlank() },
+    ).joinToString("\n")
+    val clipboard = context.getSystemService(ClipboardManager::class.java)
+    clipboard?.setPrimaryClip(ClipData.newPlainText(event.title, text))
+    // Android 13 起系統會自己顯示「已複製」，舊版才另外提示。
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+        Toast.makeText(context, R.string.view_copied, Toast.LENGTH_SHORT).show()
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ViewerEventRow(event: CalendarEvent, past: Boolean, highlighted: Boolean, onClick: () -> Unit) {
+private fun ViewerEventRow(
+    event: CalendarEvent,
+    past: Boolean,
+    highlighted: Boolean,
+    onLongClick: () -> Unit,
+    onClick: () -> Unit,
+) {
     val context = LocalContext.current
     val timeFormat = remember { DateFormat.getTimeFormat(context) }
     val alpha = if (past) 0.55f else 1f
@@ -366,7 +411,7 @@ private fun ViewerEventRow(event: CalendarEvent, past: Boolean, highlighted: Boo
                 if (highlighted) Modifier.border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp)) else Modifier,
             )
             .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
+            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(

@@ -10,6 +10,7 @@ import com.skestc.calendarwidget.settings.WidgetSettings
 /** 月曆 widget 的「上個月／下個月／回到本月」按鈕。 */
 class ChangeMonthAction : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
+        val startedAt = android.os.SystemClock.elapsedRealtime()
         val delta = parameters[DeltaKey] ?: 0
         updateAppWidgetState(context, glanceId) { prefs ->
             prefs[WidgetSettings.KEY_MONTH_OFFSET] =
@@ -17,7 +18,7 @@ class ChangeMonthAction : ActionCallback {
             // 換月份時清掉選取的日期，改選今天或該月 1 號。
             prefs.remove(WidgetSettings.KEY_SELECTED_DAY)
         }
-        InstantRender.render(context, MonthWidget(), glanceId)
+        InstantRender.render(context, MonthWidget(), glanceId, startedAt)
     }
 
     companion object {

@@ -121,7 +121,13 @@ class WeatherStore(context: Context) {
             ?.takeIf { it.date == now.toLocalDate() }
         return WeatherMerge.today(openMeteo, cachedCwa(now), air, now, fetchedAt())
             ?.takeIf { it.date == now.toLocalDate() }
+            ?.copy(warnings = cachedWarnings())
     }
+
+    /** 上次抓到的天氣特報（有氣象署授權碼時才會抓）。 */
+    fun cachedWarnings(): List<String> = prefs.getString(KEY_WARNINGS, null)
+        ?.let { runCatching { org.json.JSONArray(it).let { a -> (0 until a.length()).map(a::getString) } }.getOrNull() }
+        .orEmpty()
 
     fun cachedDetail(now: LocalDateTime = LocalDateTime.now()): WeatherDetail? {
         val today = cached(now) ?: return null
@@ -216,6 +222,12 @@ class WeatherStore(context: Context) {
             null
         }
         if (forecast == null && cwa == null) return@withContext FetchResult.WeatherFailed
+        // 天氣特報：有氣象署授權碼就抓（不論天氣來源選哪個）；抓不到時保留上次的。
+        val warnings = if (cwaKey.isBlank()) {
+            emptyList()
+        } else {
+            runCatching { get(cwaWarningsUrl(cwaKey)) }.getOrNull()?.let { CwaParsers.warnings(it, target.county) }
+        }
 
         var airError: String? = null
         val moenv = if (airSource == AirSource.MOENV) {
@@ -243,6 +255,7 @@ class WeatherStore(context: Context) {
         prefs.edit()
             .apply { if (forecast != null) putString(KEY_FORECAST, forecast) }
             .putString(KEY_CWA, cwa?.toJson())
+            .apply { if (warnings != null) putString(KEY_WARNINGS, org.json.JSONArray(warnings).toString()) }
             .putString(KEY_WEATHER_ERROR, weatherError)
             .putString(KEY_AIR, air?.toJson())
             .putLong(KEY_FETCHED_AT, System.currentTimeMillis())
@@ -264,6 +277,7 @@ class WeatherStore(context: Context) {
             .remove(KEY_FETCHED_LON)
             .remove(KEY_AIR_ERROR)
             .remove(KEY_CWA)
+            .remove(KEY_WARNINGS)
             .remove(KEY_WEATHER_ERROR)
             .apply()
     }
@@ -306,6 +320,7 @@ class WeatherStore(context: Context) {
         private const val KEY_CWA = "cwa"
         private const val KEY_WEATHER_ERROR = "weather_error"
         private const val KEY_LAST_REQUEST = "last_request"
+        private const val KEY_WARNINGS = "warnings"
         /** widget 自動要求更新的最短間隔。 */
         const val REQUEST_INTERVAL_MS = 15 * 60 * 1000L
         private const val TIMEOUT_MS = 15_000
@@ -335,6 +350,10 @@ class WeatherStore(context: Context) {
         internal fun cwaForecastUrl(key: String, county: String) =
             "$CWA_API/F-C0032-001?Authorization=${URLEncoder.encode(key, "UTF-8")}&format=JSON" +
                 "&locationName=${URLEncoder.encode(county, "UTF-8")}"
+
+        /** 各縣市目前的天氣警特報。 */
+        internal fun cwaWarningsUrl(key: String) =
+            "$CWA_API/W-C0033-001?Authorization=${URLEncoder.encode(key, "UTF-8")}&format=JSON"
 
         internal fun moenvUrl(key: String) =
             "https://data.moenv.gov.tw/api/v2/aqx_p_432?api_key=${URLEncoder.encode(key, "UTF-8")}&limit=1000&format=JSON"

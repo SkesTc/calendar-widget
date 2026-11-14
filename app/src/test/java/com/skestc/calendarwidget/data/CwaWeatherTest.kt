@@ -140,6 +140,26 @@ class CwaWeatherTest {
     }
 
     @Test
+    fun warningsForTheCounty() {
+        val json = """
+            {"success":"true","records":{"location":[
+              {"locationName":"臺北市","hazardConditions":{"hazards":[]}},
+              {"locationName":"臺中市","hazardConditions":{"hazards":[
+                {"info":{"language":"zh-TW","phenomena":"大雨","significance":"特報"},"validTime":{"startTime":"2026-11-04 08:00:00","endTime":"2026-11-04 20:00:00"}},
+                {"info":{"phenomena":"陸上強風","significance":"特報"}},
+                {"info":{"phenomena":"大雨","significance":"特報"}}]}}]}}
+        """.trimIndent()
+        assertEquals(listOf("大雨特報", "陸上強風特報"), CwaParsers.warnings(json, "臺中市"))
+        assertEquals(emptyList<String>(), CwaParsers.warnings(json, "臺北市"))
+        assertEquals(emptyList<String>(), CwaParsers.warnings(json, "高雄市"))
+        // 新版欄位大小寫不同也讀得到。
+        val pascal = json.replace("\"locationName\"", "\"LocationName\"").replace("\"phenomena\"", "\"Phenomena\"")
+            .replace("\"significance\"", "\"Significance\"").replace("\"records\"", "\"Records\"")
+        assertEquals(listOf("大雨特報", "陸上強風特報"), CwaParsers.warnings(pascal, "臺中市"))
+        assertEquals(emptyList<String>(), CwaParsers.warnings("not json", "臺中市"))
+    }
+
+    @Test
     fun cwaCodesMapToIcons() {
         assertEquals(0, CwaCodes.toWmo(1))
         assertEquals(61, CwaCodes.toWmo(14))

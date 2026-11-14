@@ -51,14 +51,15 @@ jobs:
         with:
           cache-read-only: false
 
-      # 一次 Gradle 呼叫做完 lint、debug APK 與 release（不簽署，只確認 R8 縮減／混淆後能正常建置），
-      # 省掉每一步重新設定專案的時間。tag 的發佈由下面的 release job 建置。
+      # 一次 Gradle 呼叫做完 lint、debug APK（main 再加 release：不簽署，只確認 R8 縮減／混淆後能正常建置），
+      # 省掉每一步重新設定專案的時間。
       - name: Lint and build
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            ./gradlew lintDebug assembleDebug
-          else
+          # PR 只建 debug（release 的 R8 最花時間）；推到 main 時才確認 release 建得起來，tag 由 release job 建。
+          if [[ "$GITHUB_REF" == refs/heads/main ]]; then
             ./gradlew lintDebug assembleDebug assembleRelease
+          else
+            ./gradlew lintDebug assembleDebug
           fi
 
       - uses: actions/upload-artifact@v5

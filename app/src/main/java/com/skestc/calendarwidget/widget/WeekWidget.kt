@@ -315,10 +315,11 @@ internal fun WeekDayRow(
         Column(modifier = GlanceModifier.defaultWeight().padding(start = 6.dp)) {
             val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label
             // 假日一定顯示；農曆、節氣只在還有空行時顯示，不擠掉行程。
-            val showLabel = label != null && (day.holiday != null || day.events.size < lines)
-            if (showLabel && label != null) {
+            val shownLabel = label?.takeIf { day.holiday != null || day.events.size < lines }
+            val showLabel = shownLabel != null
+            if (shownLabel != null) {
                 Text(
-                    text = label,
+                    text = shownLabel,
                     maxLines = 1,
                     style = style.text(
                         11,

@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -82,6 +83,8 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
+    // 安裝時依 baseline-prof.txt 預先編譯常用程式碼（側載的 APK 也適用），冷啟動更快。
+    implementation(libs.androidx.profileinstaller)
     debugImplementation(libs.androidx.compose.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)

@@ -153,6 +153,29 @@ object CwaParsers {
         }
     }.getOrDefault(emptyList())
 
+    /**
+     * 天氣警特報（W-C0033-001）：[county] 目前生效的特報，例如「大雨特報」「陸上強風特報」「颱風警報」。
+     * 只依欄位名稱找（不分大小寫、不管巢狀幾層），新舊版格式都能讀。
+     */
+    fun warnings(json: String, county: String): List<String> = runCatching {
+        val root = JSONObject(json).obj("records") ?: return emptyList()
+        val location = findObjects(root) { it.str("locationName") == county }.firstOrNull() ?: return emptyList()
+        findObjects(location) { it.key("phenomena") != null }
+            .mapNotNull { info ->
+                val phenomena = info.str("phenomena") ?: return@mapNotNull null
+                phenomena + info.str("significance").orEmpty()
+            }
+            .distinct()
+    }.getOrDefault(emptyList())
+
+    /** 往下找出所有符合條件的物件（含陣列裡的）。 */
+    private fun findObjects(node: Any?, match: (JSONObject) -> Boolean): List<JSONObject> = when (node) {
+        is JSONObject -> (if (match(node)) listOf(node) else emptyList()) +
+            node.keys().asSequence().toList().flatMap { findObjects(node.opt(it), match) }
+        is JSONArray -> (0 until node.length()).flatMap { findObjects(node.opt(it), match) }
+        else -> emptyList()
+    }
+
     private const val MAX_STATION_KM = 40.0
 
     /** 優先用 WGS84 座標（另一組是 TWD67）。 */
