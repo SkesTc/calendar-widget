@@ -37,8 +37,7 @@ import androidx.glance.appwidget.state.updateAppWidgetState
 import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.settings.WidgetSettings
 import com.skestc.calendarwidget.ui.theme.CalendarWidgetTheme
-import com.skestc.calendarwidget.widget.InstantRender
-import com.skestc.calendarwidget.widget.MonthWidget
+import com.skestc.calendarwidget.widget.renderMonthChange
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -92,7 +91,7 @@ class MonthPickerActivity : ComponentActivity() {
                     prefs[WidgetSettings.KEY_MONTH_OFFSET] = offset
                     prefs.remove(WidgetSettings.KEY_SELECTED_DAY)
                 }
-                InstantRender.render(context, MonthWidget(), glanceId)
+                renderMonthChange(context, glanceId, android.os.SystemClock.elapsedRealtime())
             }
         }
     }

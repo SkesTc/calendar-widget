@@ -189,8 +189,8 @@
     <string name="day_open_calendar_hint">The app chosen for “+” (Google Calendar by default)</string>
     <string name="event_open_title">Tapping an event</string>
     <string name="event_open_in_app_hint">Shows the event in its day; tap it there to edit</string>
-    <string name="event_open_calendar">Edit in the calendar app</string>
-    <string name="event_open_calendar_hint">Opens the event in the app chosen for “+” so you can edit it right away</string>
+    <string name="event_open_calendar">Open in the calendar app</string>
+    <string name="event_open_calendar_hint">Opens the event in the app chosen for “+”; tap its edit button to change it</string>
     <string name="search_title">Search events</string>
     <string name="search_hint">Keyword</string>
     <string name="search_intro">Search titles, locations and notes from a year ago to two years ahead. Tap a result to edit it.</string>
@@ -285,6 +285,7 @@
     <string name="makeup_workday">Work</string>
     <string name="month_open_day">Open ›</string>
     <string name="month_day_empty">No events</string>
+    <string name="month_loading">Loading…</string>
     <string name="in_progress_until">Now · until %1$s</string>
     <string name="next_empty">No events in the next 7 days</string>
     <string name="countdown_until">in %1$s</string>

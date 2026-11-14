@@ -189,8 +189,8 @@
     <string name="day_open_calendar_hint">「＋」設定裡選的日曆 App（預設 Google 日曆）</string>
     <string name="event_open_title">點小工具的行程時</string>
     <string name="event_open_in_app_hint">在行程檢視裡顯示並框起那個行程，再點一下可以編輯</string>
-    <string name="event_open_calendar">用日曆 App 開啟編輯</string>
-    <string name="event_open_calendar_hint">用「＋」設定裡選的日曆 App 打開，可以直接修改</string>
+    <string name="event_open_calendar">用日曆 App 開啟行程</string>
+    <string name="event_open_calendar_hint">用「＋」設定裡選的日曆 App 打開那個行程，按 App 裡的編輯就能修改</string>
     <string name="search_title">搜尋行程</string>
     <string name="search_hint">輸入關鍵字</string>
     <string name="search_intro">搜尋標題、地點與說明，範圍是一年前到兩年後。點結果可直接編輯。</string>
@@ -285,6 +285,7 @@
     <string name="makeup_workday">補班</string>
     <string name="month_open_day">開啟 ›</string>
     <string name="month_day_empty">沒有行程</string>
+    <string name="month_loading">讀取中…</string>
     <string name="in_progress_until">進行中 · 到 %1$s</string>
     <string name="next_empty">接下來 7 天沒有行程</string>
     <string name="countdown_until">%1$s後</string>

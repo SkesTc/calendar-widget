@@ -8,9 +8,10 @@ import kotlin.math.floor
  * 剩下的給月曆格子。行程少時不浪費空間，行程多時盡量多列幾筆。
  */
 object MonthLayout {
-    /** 上下內距 16 + 標題列 20 + 與月曆的間距 6。 */
-    private const val CHROME = 42f
-    private const val LINE = 20f
+    /** 上下內距 16 + 標題列 26（含「＋」按鈕 24）+ 與月曆的間距 6 + 2 的餘裕（最後一行字的下緣不被切掉）。 */
+    private const val CHROME = 50f
+    /** 每筆行程：上方間距 2 + 12sp 文字的行高。 */
+    private const val LINE = 21f
     private const val MORE = 16f
     const val MAX_SHARE = 0.45f
 

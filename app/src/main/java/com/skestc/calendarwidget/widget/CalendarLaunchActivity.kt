@@ -59,8 +59,8 @@ class CalendarLaunchActivity : ComponentActivity() {
                 calendar.launch(EventViewerActivity.intent(this, viewTarget.date, hidden, viewTarget.eventId))
                 return
             }
-            // 行程：先試編輯，不支援時改成檢視。
-            chosenAppTargets = if (isEvent) listOf(Intent(target).setAction(Intent.ACTION_EDIT), target) else listOf(target)
+            // 行程用「檢視」打開那一筆（再按日曆 App 裡的編輯）：Google 日曆收到「編輯」時會開成新增行程的畫面。
+            chosenAppTargets = listOf(target)
         }
         val preferred = intent.getStringExtra(EXTRA_PACKAGE)
         // 備用目標：例如「編輯」不被接受時改成「檢視」。

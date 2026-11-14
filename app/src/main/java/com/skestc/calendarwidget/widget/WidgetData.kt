@@ -22,12 +22,14 @@ fun <K, T> rememberWidgetData(
     key: K,
     initialKey: K,
     initial: T,
+    /** 目前的資料只是暫時的（例如月曆先畫日期、行程還沒讀）時回傳 true，會接著讀完整的資料。 */
+    needsLoad: (T) -> Boolean = { false },
     load: suspend (K) -> T,
 ): T {
     var value by remember { mutableStateOf(initial) }
     var loadedKey by remember { mutableStateOf(initialKey) }
-    LaunchedEffect(key) {
-        if (key != loadedKey) {
+    LaunchedEffect(key, needsLoad(value)) {
+        if (key != loadedKey || needsLoad(value)) {
             value = load(key)
             loadedKey = key
         }

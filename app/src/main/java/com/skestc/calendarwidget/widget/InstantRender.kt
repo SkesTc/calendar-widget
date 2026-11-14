@@ -44,6 +44,9 @@ internal object InstantRender {
         widget: GlanceAppWidget,
         glanceId: GlanceId,
         startedAt: Long = SystemClock.elapsedRealtime(),
+        /** 先畫一個暫時的畫面時設成 false：之後還會再畫完整的那一次，由那次負責通知工作階段。 */
+        updateAfter: Boolean = true,
+        recordTiming: Boolean = true,
     ) {
         runCatching {
             val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(glanceId)
@@ -54,7 +57,7 @@ internal object InstantRender {
             val views = mutex.withLock { widget.compose(context, glanceId, options = options, size = size) }
             manager.updateAppWidget(appWidgetId, views)
             val end = SystemClock.elapsedRealtime()
-            TapTiming.record(
+            if (recordTiming) TapTiming.record(
                 context,
                 totalMs = end - startedAt,
                 composeMs = end - composeStart,
@@ -62,7 +65,7 @@ internal object InstantRender {
                 coldStart = startedAt - Process.getStartElapsedRealtime() < COLD_START_MS,
             )
         }
-        widget.update(context, glanceId)
+        if (updateAfter) widget.update(context, glanceId)
     }
 
     private const val COLD_START_MS = 3_000L

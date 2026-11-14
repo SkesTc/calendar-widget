@@ -41,6 +41,19 @@ internal object MonthCache {
 
     fun clear() = synchronized(entries) { entries.clear() }
 
+    /** 已經載入過就直接回傳，不會去查詢。 */
+    fun peek(settings: WidgetSettings): MonthState.Loaded? = cached(Key(settings, LocalDate.now()))
+
+    // 切換到還沒載入過的月份時：下一次畫面先只畫日期（見 [MonthWidget]），行程讀完再補上。
+    private val quickFrames = java.util.concurrent.ConcurrentHashMap.newKeySet<androidx.glance.GlanceId>()
+
+    fun requestQuickFrame(id: androidx.glance.GlanceId) {
+        quickFrames.add(id)
+    }
+
+    /** 這個 widget 是否要求先畫只有日期的畫面（只用一次）。 */
+    fun takeQuickFrame(id: androidx.glance.GlanceId): Boolean = quickFrames.remove(id)
+
     private fun cached(key: Key): MonthState.Loaded? = synchronized(entries) { entries[key] }
 
     private fun put(key: Key, state: MonthState) {

@@ -259,6 +259,18 @@ class MonthWidgetUiTest {
     }
 
     @Test
+    fun datesOnlyFrameSaysLoading() = runGlanceAppWidgetUnitTest {
+        setContext(context)
+        setAppWidgetSize(DpSize(320.dp, 420.dp))
+        val state = (october() as MonthState.Loaded).copy(loading = true)
+        provideComposable { WidgetFrame { MonthContent(state) } }
+        // 日期先出來，下方行程區塊顯示「讀取中…」而不是「沒有行程」。
+        onNode(hasTextEqualTo("31")).assertExists()
+        onNode(hasTextEqualTo("讀取中…")).assertExists()
+        onNode(hasTextEqualTo("沒有行程")).assertDoesNotExist()
+    }
+
+    @Test
     fun thisMonthHasNoTodayButton() = runGlanceAppWidgetUnitTest {
         setContext(context)
         setAppWidgetSize(DpSize(300.dp, 320.dp))

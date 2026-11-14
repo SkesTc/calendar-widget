@@ -95,6 +95,8 @@ internal sealed interface MonthState {
         val events: List<CalendarEvent> = emptyList(),
         /** 有設定開學日時，每一週左邊標上學期週次。 */
         val schoolStart: LocalDate? = null,
+        /** 先畫出來的日期，行程還在讀取（圓點與下方行程稍後補上）。 */
+        val loading: Boolean = false,
         /** 今天的天氣與空氣品質（首頁開啟天氣時才有）。 */
         val weather: WeatherToday? = null,
     ) : MonthState {
@@ -137,12 +139,21 @@ class MonthWidget : GlanceAppWidget() {
         val initialSettings = WidgetSettings.from(
             getAppWidgetState(context, PreferencesGlanceStateDefinition, id),
         )
-        val initial = MonthCache.get(initialSettings.monthKey()) { load(context, repository, it) }
+        val key = initialSettings.monthKey()
+        // 切換到沒讀過的月份：先用只有日期的畫面（很快），行程在 composition 裡讀完再補上。
+        val initial = MonthCache.peek(key)
+            ?: if (MonthCache.takeQuickFrame(id)) datesOnly(context, initialSettings) else null
+            ?: MonthCache.get(key) { load(context, repository, it) }
 
         provideContent {
             val settings = WidgetSettings.from(currentState<Preferences>())
             // 點日期只改選取，不重新查詢：用已載入的整月事件挑出當天行程，畫面馬上更新。
-            val state = rememberWidgetData(settings.monthKey(), initialSettings.monthKey(), initial) { key ->
+            val state = rememberWidgetData(
+                settings.monthKey(),
+                initialSettings.monthKey(),
+                initial,
+                needsLoad = { it is MonthState.Loaded && it.loading },
+            ) { key ->
                 MonthCache.get(key) { load(context, repository, it) }
             }
             val shown = (state as? MonthState.Loaded)
@@ -156,6 +167,22 @@ class MonthWidget : GlanceAppWidget() {
                 }
             }
         }
+    }
+
+    /** 只有日期、農曆與週次的月曆（不查日曆，幾十毫秒內完成）；行程讀完前先顯示這個。 */
+    private fun datesOnly(context: Context, settings: WidgetSettings): MonthState {
+        if (!CalendarRepository(context).hasPermission()) return MonthState.NoPermission
+        val zone = ZoneId.systemDefault()
+        val today = LocalDate.now(zone)
+        val month = YearMonth.from(today).plusMonths(settings.monthOffset.toLong())
+        val builder = MonthBuilder(zone)
+        return MonthState.Loaded(
+            data = builder.build(month, today, emptyList(), if (settings.showLunar) MonthCache.labeler else null),
+            monthOffset = settings.monthOffset,
+            selected = builder.selectedDate(month, today, null),
+            schoolStart = SchoolWeeks.start(context),
+            loading = true,
+        )
     }
 
     private suspend fun load(context: Context, repository: CalendarRepository, settings: WidgetSettings): MonthState =
@@ -206,11 +233,13 @@ internal fun MonthContent(state: MonthState) {
                 val panelBelow = !wide && !compact && size.height >= MonthWidget.PANEL_MIN_HEIGHT
                 // 天氣列：平板放在右邊行程上方；一般大小夠高時放在月曆上方。
                 val weather = state.weather?.takeIf { wide || size.height >= MonthWidget.WEATHER_MIN_HEIGHT }
-                val weatherHeight = if (weather != null) weatherRowHeight(style.textScale) else 0f
+                // 文字大小設定加上系統字型縮放：行程區塊的高度要跟著放大，最後一行才不會被切掉。
+                val textScale = style.textScale * LocalContext.current.resources.configuration.fontScale
+                val weatherHeight = if (weather != null) weatherRowHeight(textScale) else 0f
                 val inner = size.height.value - 20f - if (wide) 0f else weatherHeight
                 // 下方區塊依當天行程數量長高（最多約一半），其餘留給月曆格子。
                 val panelHeight = if (panelBelow) {
-                    MonthLayout.panelHeight(inner, state.selectedEvents.size, style.textScale)
+                    MonthLayout.panelHeight(inner, state.selectedEvents.size, textScale)
                 } else {
                     0f
                 }
@@ -237,8 +266,9 @@ internal fun MonthContent(state: MonthState) {
                                 date = state.selected,
                                 events = state.selectedEvents,
                                 now = state.now,
+                                loading = state.loading,
                                 // 右側區塊沒有上方間距，算法同下方區塊。
-                                maxEvents = MonthLayout.eventsThatFit(inner + 6f - weatherHeight, state.selectedEvents.size, style.textScale),
+                                maxEvents = MonthLayout.eventsThatFit(inner + 6f - weatherHeight, state.selectedEvents.size, textScale),
                                 modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
                             )
                         }
@@ -257,7 +287,8 @@ internal fun MonthContent(state: MonthState) {
                             date = state.selected,
                             events = state.selectedEvents,
                             now = state.now,
-                            maxEvents = MonthLayout.eventsThatFit(panelHeight, state.selectedEvents.size, style.textScale),
+                            loading = state.loading,
+                            maxEvents = MonthLayout.eventsThatFit(panelHeight, state.selectedEvents.size, textScale),
                             modifier = GlanceModifier.fillMaxWidth().height((panelHeight - 6f).dp),
                         )
                     } else {
@@ -576,7 +607,14 @@ private fun EventDots(colors: List<Int>, dimmed: Boolean, dot: Dp) {
 
 /** 選取那天的日期與行程（下方或右側）；點行程開啟該事件、點標題開啟那一天。 */
 @Composable
-private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, now: Long, maxEvents: Int, modifier: GlanceModifier) {
+private fun DayPanel(
+    date: LocalDate,
+    events: List<CalendarEvent>,
+    now: Long,
+    maxEvents: Int,
+    modifier: GlanceModifier,
+    loading: Boolean = false,
+) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
     val title = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(date)
@@ -609,7 +647,10 @@ private fun DayPanel(date: LocalDate, events: List<CalendarEvent>, now: Long, ma
             AddEventButton(size = 24.dp, date = date)
         }
         if (events.isEmpty()) {
-            Text(text = glanceString(R.string.month_day_empty), style = style.text(12, style.colors.onCard))
+            Text(
+                text = glanceString(if (loading) R.string.month_loading else R.string.month_day_empty),
+                style = style.text(12, style.colors.onCard),
+            )
         }
         val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
         for (event in events.take(maxEvents)) {

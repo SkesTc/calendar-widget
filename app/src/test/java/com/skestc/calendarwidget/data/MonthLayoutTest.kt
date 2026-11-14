@@ -33,7 +33,7 @@ class MonthLayoutTest {
         val shown = MonthLayout.eventsThatFit(h, 30)
         assertTrue(shown in 1 until 30)
         // 多留一行給「+N」：比完全不保留時少一筆以上。
-        assertTrue(shown < ((h - 42f) / 20f).toInt() + 1)
+        assertTrue(shown < ((h - 50f) / 21f).toInt() + 1)
     }
 
     @Test
