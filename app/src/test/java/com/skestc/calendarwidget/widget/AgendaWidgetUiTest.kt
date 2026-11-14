@@ -57,6 +57,8 @@ class AgendaWidgetUiTest {
         onNode(hasText("遠足")).assertExists()
         // 前 7 天沒有行程的日子也列出來，顯示農曆。
         onNode(hasNumber("27")).assertExists()
+        // 農曆放在日期底下：沒有行程的日子也看得到，每天一筆。
+        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(state.dayRows.size)
         // 長標題完整顯示（換行），不截掉年度前綴。
         onNode(hasText("115學年度校慶運動會籌備會議暨各處室工作分配說明")).assertExists()
     }

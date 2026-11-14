@@ -279,22 +279,29 @@ internal fun WeekDayRow(
     lines: Int,
     modifier: GlanceModifier = GlanceModifier,
     wrapTitles: Boolean = false,
+    /**
+     * 行程清單的「每日」版面：每天一張卡片（交界清楚），今天的日期用主色實心圓標示，
+     * 農曆、節氣、傳統節日放在日期底下（假日名稱仍在右邊）。
+     */
+    cards: Boolean = false,
 ) {
     val style = LocalWidgetStyle.current
     val timeFormat = DateFormat.getTimeFormat(LocalContext.current)
     val color = dayColor(day)
+    // 日期底下的小字（農曆等）；假日、補班仍顯示在右邊。
+    val labelUnderDate = day.label?.takeIf { cards && day.holiday == null }
     Row(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                // 今天整列用卡片色標示。
-                if (isToday) {
+                // 今天整列用卡片色標示；「每日」版面每天都是一張卡片。
+                if (isToday || cards) {
                     GlanceModifier.cardBackground(style)
                 } else {
                     GlanceModifier
                 },
             )
-            .padding(horizontal = 4.dp, vertical = 2.dp)
+            .padding(horizontal = 4.dp, vertical = if (cards) 6.dp else 2.dp)
             .clickable(openInCalendar(openDay(day.date))),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -306,16 +313,33 @@ internal fun WeekDayRow(
                 text = day.date.dayOfWeek.getDisplayName(DayTextStyle.SHORT, Locale.getDefault()),
                 style = style.text(10, color, FontWeight.Medium, TextAlign.Center),
             )
-            ExpressiveText(
-                text = day.date.dayOfMonth.toString(),
-                size = 18,
-                color = if (isToday) style.colors.primary else color,
-            )
+            if (cards && isToday) {
+                // 每天都是卡片時，今天改用主色實心圓標出日期。
+                Box(
+                    modifier = GlanceModifier.size(30.dp).background(style.colors.primary).cornerRadius(15.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    ExpressiveText(text = day.date.dayOfMonth.toString(), size = 16, color = style.colors.onPrimary)
+                }
+            } else {
+                ExpressiveText(
+                    text = day.date.dayOfMonth.toString(),
+                    size = 18,
+                    color = if (isToday) style.colors.primary else color,
+                )
+            }
+            if (labelUnderDate != null) {
+                Text(
+                    text = labelUnderDate,
+                    maxLines = 1,
+                    style = style.text(9, if (isToday) style.colors.primary else style.colors.onSurfaceVariant, align = TextAlign.Center),
+                )
+            }
         }
         Column(modifier = GlanceModifier.defaultWeight().padding(start = 6.dp)) {
             val label = if (day.holiday == HolidayKind.MAKEUP_WORKDAY) glanceString(R.string.makeup_workday) else day.label
             // 假日一定顯示；農曆、節氣只在還有空行時顯示，不擠掉行程。
-            val shownLabel = label?.takeIf { day.holiday != null || day.events.size < lines }
+            val shownLabel = label?.takeIf { labelUnderDate == null && (day.holiday != null || day.events.size < lines) }
             val showLabel = shownLabel != null
             if (shownLabel != null) {
                 Text(
