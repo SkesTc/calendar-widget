@@ -313,6 +313,9 @@ private fun ColumnScope.MonthGrid(
     headerWidthDp: Float = LocalSize.current.width.value,
 ) {
     MonthHeader(state.data.month, state.monthOffset, headerWidthDp)
+    // 語音描述的日期格式整個月共用（每格都查一次很花時間）。
+    val locale = Locale.getDefault()
+    val dateFormat = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale)
     // 有設定開學日、而且格子夠大時，每週最左邊多一欄週次。
     val weekNumbers = !compact && state.schoolStart != null
     WeekdayRow(state.data.firstDayOfWeek, compact, weekNumbers)
@@ -332,6 +335,7 @@ private fun ColumnScope.MonthGrid(
                     selected = selectable && day.date == state.selected,
                     selectInWidget = selectable,
                     modifier = GlanceModifier.defaultWeight().fillMaxHeight(),
+                    dateFormat = dateFormat,
                 )
             }
         }
@@ -428,6 +432,9 @@ private fun NavIconButton(icon: Int, description: String, delta: Int, size: Dp) 
 
 private val WEEK_NUMBER_WIDTH = 16.dp
 
+/** 格子裡農曆小字（9sp）大約的行高。 */
+private val LABEL_HEIGHT = 12.dp
+
 /** 「今」按鈕加間距的寬度（dp）。 */
 private const val TODAY_BUTTON_DP = 40f
 
@@ -476,6 +483,7 @@ private fun DayCellView(
     selected: Boolean,
     selectInWidget: Boolean,
     modifier: GlanceModifier,
+    dateFormat: DateTimeFormatter,
 ) {
     val style = LocalWidgetStyle.current
     val isToday = day.date == today
@@ -495,20 +503,24 @@ private fun DayCellView(
         else -> weekendColor(day.date.dayOfWeek) ?: style.colors.onSurface
     }
 
-    val description = dayDescription(day, isToday, selected)
+    val description = dayDescription(day, isToday, selected, dateFormat)
+    // 前後月份的灰色日期：點了也只是回到本月，在可點選的月曆上不加點擊（每一格的點擊都要向系統登記，越少越快）。
+    val clickable = day.inMonth || !selectInWidget
     Column(
         modifier = modifier
             // 讓 TalkBack 唸出完整的日期與狀態，而不是只有數字。
             .semantics { contentDescription = description }
             // 今天整格加上卡片色的圓角底，再配上主色實心圓，比只有圓圈更醒目。
             .then(if (isToday) GlanceModifier.background(style.colors.card).cornerRadius(10.dp) else GlanceModifier)
-            .clickable(
-            if (selectInWidget) {
-                actionRunCallback<SelectDayAction>(actionParametersOf(SelectDayAction.EpochDayKey to day.date.toEpochDay()))
-            } else {
-                openInCalendar(openDayIntent(day.date))
-            },
-        ),
+            .then(
+                when {
+                    !clickable -> GlanceModifier
+                    selectInWidget -> GlanceModifier.clickable(
+                        actionRunCallback<SelectDayAction>(actionParametersOf(SelectDayAction.EpochDayKey to day.date.toEpochDay())),
+                    )
+                    else -> GlanceModifier.clickable(openInCalendar(openDayIntent(day.date)))
+                },
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -539,16 +551,21 @@ private fun DayCellView(
                 },
             )
         }
-        if (showLabel) DayLabelText(day, isToday)
-        EventDots(day.eventColors, dimmed = !day.inMonth, dot = if (compact) 6.dp else 7.dp)
+        val dot = if (compact) 6.dp else 7.dp
+        if (day.inMonth) {
+            if (showLabel) DayLabelText(day, isToday)
+            EventDots(day.eventColors, dimmed = false, dot = dot)
+        } else {
+            // 前後月份的日期不畫小字與圓點，用一個元件保留同樣的高度，數字才會和同一列對齊。
+            Spacer(GlanceModifier.height(dot + 3.dp + if (showLabel) LABEL_HEIGHT * style.textScale else 0.dp))
+        }
     }
 }
 
 /** 月曆格子的語音描述，例如「10月10日 星期六，今天，國慶日，有行程」。 */
 @Composable
-private fun dayDescription(day: DayCell, isToday: Boolean, selected: Boolean): String {
-    val locale = Locale.getDefault()
-    val date = DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, "MMMdEEEE"), locale).format(day.date)
+private fun dayDescription(day: DayCell, isToday: Boolean, selected: Boolean, dateFormat: DateTimeFormatter): String {
+    val date = dateFormat.format(day.date)
     return listOfNotNull(
         date,
         if (isToday) glanceString(R.string.today_word) else null,
@@ -585,13 +602,15 @@ private fun DayLabelText(day: DayCell, isToday: Boolean = false) {
 @Composable
 private fun EventDots(colors: List<Int>, dimmed: Boolean, dot: Dp) {
     // 沒有事件時也保留一樣的高度，讓每一格的日期數字對齊。
+    if (colors.isEmpty()) {
+        // 只用一個元件佔位（月曆約 40 格，元件越少，點按後重畫越快）。
+        Spacer(GlanceModifier.height(dot + 3.dp))
+        return
+    }
     Row(
         modifier = GlanceModifier.padding(top = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (colors.isEmpty()) {
-            Spacer(GlanceModifier.size(dot))
-        }
         colors.forEachIndexed { index, color ->
             if (index > 0) Spacer(GlanceModifier.width(3.dp))
             val dotColor = Color(color).let { if (dimmed) it.copy(alpha = 0.4f) else it }

@@ -60,8 +60,8 @@ class MonthWidgetUiTest {
         // 節氣是真的天文計算：2026/10/8 寒露、10/23 霜降，會取代農曆小字。
         onNode(hasTextEqualTo("寒露")).assertExists()
         onNode(hasTextEqualTo("霜降")).assertExists()
-        // 假農曆每天都是十七；10 月格子共 35 天，扣掉 2 個假日與 2 個節氣。
-        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(31)
+        // 假農曆每天都是十七：只畫在本月的 31 天（前面 9 月的 4 格不畫小字），扣掉 2 個假日與 2 個節氣。
+        onAllNodes(hasTextEqualTo("十七")).assertCountEquals(27)
     }
 
     private val weather = com.skestc.calendarwidget.data.WeatherToday(
