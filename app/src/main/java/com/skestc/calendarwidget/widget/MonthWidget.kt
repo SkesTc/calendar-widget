@@ -172,8 +172,9 @@ class MonthWidget : GlanceAppWidget() {
         val labeler = if (settings.showLunar) MonthCache.labeler else null
         val selected = builder.selectedDate(month, today, null)
         val weatherStore = WeatherStore(context)
-        // 快取太舊就補抓，抓到後會再更新 widget。
-        if (weatherStore.isStale()) WeatherWorker.fetchNow(context)
+        val weather = weatherStore.cached()
+        // 快取太舊就補抓（15 分鐘內不重複排），抓到後會再更新 widget。
+        if (weatherStore.claimRefresh(current = weather)) WeatherWorker.fetchNow(context)
         return MonthState.Loaded(
             data = builder.build(month, today, events, labeler),
             monthOffset = settings.monthOffset,
@@ -181,7 +182,7 @@ class MonthWidget : GlanceAppWidget() {
             selectedEvents = builder.eventsOn(events, selected),
             events = events,
             schoolStart = SchoolWeeks.start(context),
-            weather = weatherStore.cached(),
+            weather = weather,
         )
     }
 }

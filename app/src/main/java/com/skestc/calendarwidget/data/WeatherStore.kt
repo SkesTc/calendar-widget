@@ -160,9 +160,9 @@ class WeatherStore(context: Context) {
     fun airError(): String? = prefs.getString(KEY_AIR_ERROR, null)
 
     /** 快取太舊、不存在，或 GPS 位置移動太多時需要重新抓。 */
-    fun isStale(now: Long = System.currentTimeMillis()): Boolean {
+    fun isStale(now: Long = System.currentTimeMillis(), current: WeatherToday? = cached()): Boolean {
         if (!enabled) return false
-        if (cached() == null || now - fetchedAt() > MAX_AGE_MS) return true
+        if (current == null || now - fetchedAt() > MAX_AGE_MS) return true
         if (mode == WeatherLocationMode.GPS) {
             val (lat, lon) = lastGps() ?: return false
             val fetchedLat = prefs.getString(KEY_FETCHED_LAT, null)?.toDoubleOrNull() ?: return true
@@ -170,6 +170,17 @@ class WeatherStore(context: Context) {
             if (Geo.distanceKm(lat, lon, fetchedLat, fetchedLon) > MOVE_KM) return true
         }
         return false
+    }
+
+    /**
+     * widget 載入時用：快取需要更新、而且 [REQUEST_INTERVAL_MS] 內沒要求過時回傳 true 並記下時間。
+     * 抓不到（沒網路、來源故障）時不會每次重畫都再排一次，避免反覆更新造成卡頓。
+     */
+    fun claimRefresh(now: Long = System.currentTimeMillis(), current: WeatherToday? = cached()): Boolean {
+        if (!isStale(now, current)) return false
+        if (now - prefs.getLong(KEY_LAST_REQUEST, 0) < REQUEST_INTERVAL_MS) return false
+        prefs.edit().putLong(KEY_LAST_REQUEST, now).apply()
+        return true
     }
 
     /** 連網抓一次並存進快取；天氣失敗時保留舊的快取。 */
@@ -294,6 +305,9 @@ class WeatherStore(context: Context) {
         private const val KEY_CWA_KEY = "cwa_key"
         private const val KEY_CWA = "cwa"
         private const val KEY_WEATHER_ERROR = "weather_error"
+        private const val KEY_LAST_REQUEST = "last_request"
+        /** widget 自動要求更新的最短間隔。 */
+        const val REQUEST_INTERVAL_MS = 15 * 60 * 1000L
         private const val TIMEOUT_MS = 15_000
         /** 背景每小時更新；超過兩小時沒更新就在 widget 載入時補抓。 */
         const val MAX_AGE_MS = 2 * 60 * 60 * 1000L

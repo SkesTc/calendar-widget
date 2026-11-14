@@ -20,6 +20,10 @@ import kotlinx.coroutines.sync.withLock
  * 讓正在執行（或之後啟動）的工作階段也拿到新狀態，不會蓋回舊畫面。
  *
  * 只用在沒有清單（LazyColumn）的 widget：Android 12 以前清單需要工作階段提供內容。
+ *
+ * 一定要把桌面給這個 widget 的 options（實際尺寸）傳進 compose()：
+ * 沒傳時 Glance 會用 widget 宣告的「最小尺寸」來畫，月曆會先閃出縮小版（沒有下方行程、
+ * 沒有天氣列），要等背景工作用正確尺寸重畫，看起來就是又慢又跳。
  */
 internal object InstantRender {
     // 同一個 widget 同時只能有一個 compose()，連點時依序處理。
@@ -29,8 +33,10 @@ internal object InstantRender {
     suspend fun render(context: Context, widget: GlanceAppWidget, glanceId: GlanceId) {
         runCatching {
             val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(glanceId)
-            val views = mutex.withLock { widget.compose(context, glanceId) }
-            AppWidgetManager.getInstance(context).updateAppWidget(appWidgetId, views)
+            val manager = AppWidgetManager.getInstance(context)
+            val options = manager.getAppWidgetOptions(appWidgetId)
+            val views = mutex.withLock { widget.compose(context, glanceId, options = options) }
+            manager.updateAppWidget(appWidgetId, views)
         }
         widget.update(context, glanceId)
     }

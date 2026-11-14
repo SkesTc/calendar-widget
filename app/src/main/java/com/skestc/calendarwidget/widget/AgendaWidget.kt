@@ -158,8 +158,9 @@ class AgendaWidget : GlanceAppWidget() {
             ?.let { DayChangeScheduler.scheduleBoundary(context, it) }
         val labeler = if (settings.showLunar) DayLabeler(IcuLunarSource()) else null
         val weatherStore = WeatherStore(context)
-        // 快取太舊（例如背景更新被省電機制擋掉）就補抓，抓到後會再更新 widget。
-        if (weatherStore.isStale(now)) WeatherWorker.fetchNow(context)
+        val weather = weatherStore.cached()
+        // 快取太舊（例如背景更新被省電機制擋掉）就補抓（15 分鐘內不重複排），抓到後會再更新 widget。
+        if (weatherStore.claimRefresh(now, weather)) WeatherWorker.fetchNow(context)
         return AgendaState.Loaded(
             today = today,
             days = settings.agendaDays,
@@ -168,7 +169,7 @@ class AgendaWidget : GlanceAppWidget() {
             schoolWeek = SchoolWeeks.weekOf(today, SchoolWeeks.start(context)),
             layout = settings.agendaLayout,
             now = now,
-            weather = weatherStore.cached(),
+            weather = weather,
             dayRows = if (settings.agendaLayout == AgendaLayout.DAYS) {
                 dayRowsOf(events, today, settings.agendaDays, labeler)
             } else {
