@@ -163,10 +163,10 @@ class MonthWidgetUiTest {
             selectedEvents = (1..10).map { timed(it.toLong(), "行程$it", at(8, date = selected), at(9, date = selected)) },
         )
         provideComposable { WidgetFrame { MonthContent(state) } }
-        // 下方區塊最多占約一半高度：420dp 時放 6 筆，再加「+4」。
-        onNode(hasText("行程6")).assertExists()
-        onNode(hasText("行程7")).assertDoesNotExist()
-        onNode(hasTextEqualTo("+4")).assertExists()
+        // 下方區塊最多占約一半高度：420dp 時放 5 筆，再加「+5」（每行留足高度，最後一行不被切掉）。
+        onNode(hasText("行程5")).assertExists()
+        onNode(hasText("行程6")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+5")).assertExists()
     }
 
     @Test
@@ -196,10 +196,10 @@ class MonthWidgetUiTest {
         )
         provideComposable { WidgetFrame { MonthContent(state) } }
         onNode(hasTextEqualTo("開啟 ›")).assertExists()
-        // 300dp 高的右側區塊：放得下 11 筆，再加一行「+4」。
-        onNode(hasText("行程11")).assertExists()
-        onNode(hasText("行程12")).assertDoesNotExist()
-        onNode(hasTextEqualTo("+4")).assertExists()
+        // 300dp 高的右側區塊：放得下 10 筆，再加一行「+5」。
+        onNode(hasText("行程10")).assertExists()
+        onNode(hasText("行程11")).assertDoesNotExist()
+        onNode(hasTextEqualTo("+5")).assertExists()
         onNode(hasTextEqualTo("國慶日")).assertExists()
         // 夠寬：搜尋、重新整理、設定各一顆。
         onNode(hasContentDescriptionEqualTo("重新整理")).assertExists()
