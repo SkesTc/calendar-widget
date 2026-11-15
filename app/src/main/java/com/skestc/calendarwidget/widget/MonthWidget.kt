@@ -159,7 +159,11 @@ class MonthWidget : GlanceAppWidget() {
             val shown = (state as? MonthState.Loaded)
                 ?.withSelection(settings.selectedEpochDay?.let(LocalDate::ofEpochDay))
                 // 快取的資料可能是幾分鐘前載入的：「已結束」以現在時間判斷；天氣另外讀。
-                ?.copy(now = System.currentTimeMillis(), weather = rememberWeather(context))
+                ?.copy(
+                    now = System.currentTimeMillis(),
+                    // 這個 widget 關掉天氣時不顯示。
+                    weather = if (settings.showWeather) rememberWeather(context) else null,
+                )
                 ?: state
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {

@@ -294,11 +294,11 @@ internal fun WeekDayRow(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                // 今天整列用卡片色標示；「每日」版面每天都是一張卡片。
-                if (isToday || cards) {
-                    GlanceModifier.cardBackground(style)
-                } else {
-                    GlanceModifier
+                // 今天整列用卡片色標示；「每日」版面每天都是一張卡片，今天用帶主色的卡片和其他天分開。
+                when {
+                    cards && isToday -> GlanceModifier.cardBackground(style, color = style.colors.highlight)
+                    isToday || cards -> GlanceModifier.cardBackground(style)
+                    else -> GlanceModifier
                 },
             )
             .padding(horizontal = 4.dp, vertical = if (cards) 6.dp else 2.dp)

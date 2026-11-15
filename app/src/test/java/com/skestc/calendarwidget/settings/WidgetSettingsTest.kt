@@ -66,6 +66,14 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun weatherRowIsOnByDefaultAndCanBeTurnedOff() {
+        assertEquals(true, WidgetSettings.from(mutablePreferencesOf()).showWeather)
+        val prefs = mutablePreferencesOf()
+        WidgetSettings(showWeather = false).writeTo(prefs)
+        assertEquals(false, WidgetSettings.from(prefs).showWeather)
+    }
+
+    @Test
     fun weekStartFirstDay() {
         val wednesday = java.time.LocalDate.of(2026, 10, 28)
         assertEquals(wednesday, WeekStart.TODAY.firstDay(wednesday))

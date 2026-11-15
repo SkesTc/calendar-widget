@@ -228,6 +228,8 @@
     <string name="section_font">Font</string>
     <string name="show_lunar_title">Show lunar calendar and solar terms</string>
     <string name="show_lunar_subtitle">Public holidays come from Google Calendar’s holiday calendars</string>
+    <string name="show_weather_title">Show weather and AQI</string>
+    <string name="show_weather_subtitle">Area and data sources are set on the app\'s home screen</string>
     <string name="section_days">Days to show</string>
     <string name="section_agenda_layout">Layout</string>
     <string name="group_content">Content</string>

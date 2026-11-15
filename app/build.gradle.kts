@@ -21,6 +21,15 @@ android {
     }
 
     signingConfigs {
+        // 測試版（debug）固定用 repo 裡的這把金鑰簽：CI 每次在新機器上建置，
+        // 沒指定的話會各自產生一把，手機會因為簽章不同而拒絕「覆蓋安裝」，只能先移除（設定也跟著不見）。
+        // 這把只用於測試版，與上架用的金鑰無關（上架金鑰在 GitHub Secrets）。
+        getByName("debug") {
+            storeFile = file("debug-signing.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
         if (releaseKeystore != null) {
             create("release") {
                 storeFile = file(releaseKeystore)

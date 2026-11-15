@@ -228,6 +228,8 @@
     <string name="section_font">字型</string>
     <string name="show_lunar_title">顯示農曆、節氣與傳統節日</string>
     <string name="show_lunar_subtitle">國定假日與補班日來自 Google 日曆的「台灣的節慶假日」</string>
+    <string name="show_weather_title">顯示天氣與 AQI</string>
+    <string name="show_weather_subtitle">地區與資料來源在 App 首頁的「天氣與空氣品質」設定</string>
     <string name="section_days">顯示天數</string>
     <string name="section_agenda_layout">版面</string>
     <string name="group_content">內容</string>

@@ -268,6 +268,30 @@ private fun ConfigScreen(
                     }
                 }
 
+                // 行程清單與月曆：上方的天氣與 AQI 列可以個別關掉。
+                if (kind == WidgetKind.AGENDA || kind == WidgetKind.MONTH) item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { settings = settings.copy(showWeather = !settings.showWeather) }
+                            .padding(horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.show_weather_title), style = MaterialTheme.typography.titleSmall)
+                            Text(
+                                stringResource(R.string.show_weather_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Switch(
+                            checked = settings.showWeather,
+                            onCheckedChange = { settings = settings.copy(showWeather = it) },
+                        )
+                    }
+                }
+
                 // 「下一個行程」沒有日期格子，不顯示農曆。
                 if (kind != WidgetKind.NEXT) item {
                     Row(

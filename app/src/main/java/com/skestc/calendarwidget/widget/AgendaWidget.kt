@@ -131,7 +131,8 @@ class AgendaWidget : GlanceAppWidget() {
             }
             GlanceTheme {
                 ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
-                    val weather = rememberWeather(context)
+                    // 這個 widget 關掉天氣時不顯示（也不必讀快取）。
+                    val weather = if (settings.showWeather) rememberWeather(context) else null
                     AgendaContent((state as? AgendaState.Loaded)?.copy(weather = weather) ?: state)
                 }
             }

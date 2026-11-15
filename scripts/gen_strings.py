@@ -239,6 +239,8 @@ S = [
  ("section_font", "Font", "字型"),
  ("show_lunar_title", "Show lunar calendar and solar terms", "顯示農曆、節氣與傳統節日"),
  ("show_lunar_subtitle", "Public holidays come from Google Calendar’s holiday calendars", "國定假日與補班日來自 Google 日曆的「台灣的節慶假日」"),
+ ("show_weather_title", "Show weather and AQI", "顯示天氣與 AQI"),
+ ("show_weather_subtitle", "Area and data sources are set on the app's home screen", "地區與資料來源在 App 首頁的「天氣與空氣品質」設定"),
  ("section_days", "Days to show", "顯示天數"),
  ("section_agenda_layout", "Layout", "版面"),
  ("group_content", "Content", "內容"),

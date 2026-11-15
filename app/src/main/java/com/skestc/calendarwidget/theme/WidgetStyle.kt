@@ -41,6 +41,8 @@ class WidgetColors(
     val outline: ColorProvider,
     val sunday: ColorProvider,
     val saturday: ColorProvider,
+    /** 標出今天的卡片底色：比一般卡片多帶一點主色，和其他天分得開。 */
+    val highlight: ColorProvider = card,
 )
 
 class WidgetStyle(
@@ -194,7 +196,24 @@ private fun fixedColors(spec: ThemeSpec, appearance: Appearance): WidgetColors {
         outline = spec.outline.provider(),
         sunday = spec.sunday.provider(),
         saturday = spec.saturday.provider(),
+        highlight = DayNight(
+            mixArgb(spec.card.day, spec.primary.day, HIGHLIGHT_TINT),
+            mixArgb(spec.card.night, spec.primary.night, HIGHLIGHT_TINT),
+        ).provider(),
     )
+}
+
+/** 今天的卡片：卡片色混入多少主色。太多會讓卡片上的文字對比不足。 */
+private const val HIGHLIGHT_TINT = 0.28f
+
+/** 兩個 ARGB 顏色依比例混合（[t] 為 [b] 的比例）。 */
+internal fun mixArgb(a: Long, b: Long, t: Float): Long {
+    fun channel(shift: Int): Long {
+        val x = (a shr shift) and 0xFF
+        val y = (b shr shift) and 0xFF
+        return (x + (y - x) * t).toLong().coerceIn(0, 255) shl shift
+    }
+    return channel(24) or channel(16) or channel(8) or channel(0)
 }
 
 /**
@@ -221,6 +240,7 @@ private fun dynamicColors(context: Context, appearance: Appearance): WidgetColor
         outline = c.outline,
         sunday = c.error,
         saturday = c.tertiary,
+        highlight = c.primaryContainer,
     )
 }
 
