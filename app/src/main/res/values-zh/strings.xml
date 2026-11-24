@@ -170,6 +170,10 @@
     <string name="menu_view_today">今天的行程</string>
     <string name="menu_view_week">本週的行程</string>
     <string name="menu_open_app">開啟 %1$s</string>
+    <string name="title_tap_agenda">點左上角的日期時</string>
+    <string name="title_tap_month">點月份標題時</string>
+    <string name="title_tap_menu">每次跳出選單</string>
+    <string name="title_tap_missing_app">選的 App 已移除（改用系統預設的日曆 App）</string>
     <string name="tap_timing_title">月曆反應時間</string>
     <string name="tap_timing_summary">上次點按：%1$s 秒（重畫 %2$d 毫秒）</string>
     <string name="tap_timing_cold">App 剛被喚醒</string>

@@ -74,6 +74,19 @@ class WidgetSettingsTest {
     }
 
     @Test
+    fun titleTapRoundTrips() {
+        assertEquals(TitleTap.Menu, WidgetSettings.from(mutablePreferencesOf()).titleTap)
+        for (tap in listOf(TitleTap.Menu, TitleTap.Viewer, TitleTap.MonthPicker, TitleTap.App("com.samsung.android.calendar"))) {
+            val prefs = mutablePreferencesOf()
+            WidgetSettings(titleTap = tap).writeTo(prefs)
+            assertEquals(tap, WidgetSettings.from(prefs).titleTap)
+        }
+        // 壞掉的值退回選單。
+        assertEquals(TitleTap.Menu, TitleTap.fromKey("app:"))
+        assertEquals(TitleTap.Menu, TitleTap.fromKey("???"))
+    }
+
+    @Test
     fun weekStartFirstDay() {
         val wednesday = java.time.LocalDate.of(2026, 10, 28)
         assertEquals(wednesday, WeekStart.TODAY.firstDay(wednesday))

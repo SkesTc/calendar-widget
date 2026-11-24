@@ -170,6 +170,10 @@
     <string name="menu_view_today">Today\'s events</string>
     <string name="menu_view_week">This week\'s events</string>
     <string name="menu_open_app">Open %1$s</string>
+    <string name="title_tap_agenda">Tapping the date at the top left</string>
+    <string name="title_tap_month">Tapping the month title</string>
+    <string name="title_tap_menu">Show a menu each time</string>
+    <string name="title_tap_missing_app">Chosen app was removed (using the default calendar app)</string>
     <string name="tap_timing_title">Month widget response time</string>
     <string name="tap_timing_summary">Last tap: %1$s s (drawing %2$d ms)</string>
     <string name="tap_timing_cold">app had to restart</string>

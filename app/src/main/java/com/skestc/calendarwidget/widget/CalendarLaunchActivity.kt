@@ -51,7 +51,9 @@ class CalendarLaunchActivity : ComponentActivity() {
         // 點日期或行程：依首頁的設定，開 App 內的行程檢視（只顯示這個 widget 勾選的日曆），
         // 或用選定的日曆 App 開啟（行程直接進編輯）。明確指定要開日曆 App 的不轉。
         var chosenAppTargets: List<Intent>? = null
-        val viewTarget = if (editor || inChosenApp) null else EventView.targetOf(target)
+        val preferred = intent.getStringExtra(EXTRA_PACKAGE)
+        // 指定了 App（例如小工具設定裡選的日曆 App）就直接開它，不轉進 App 內的行程檢視。
+        val viewTarget = if (editor || inChosenApp || preferred != null) null else EventView.targetOf(target)
         if (viewTarget != null) {
             val isEvent = viewTarget.eventId != null
             if (if (isEvent) DayOpen.eventsInApp(this) else DayOpen.inApp(this)) {
@@ -62,7 +64,6 @@ class CalendarLaunchActivity : ComponentActivity() {
             // 行程用「檢視」打開那一筆（再按日曆 App 裡的編輯）：Google 日曆收到「編輯」時會開成新增行程的畫面。
             chosenAppTargets = listOf(target)
         }
-        val preferred = intent.getStringExtra(EXTRA_PACKAGE)
         // 備用目標：例如「編輯」不被接受時改成「檢視」。
         val targets = listOfNotNull(target, intentExtra(intent, EXTRA_FALLBACK))
         val attempts = when {

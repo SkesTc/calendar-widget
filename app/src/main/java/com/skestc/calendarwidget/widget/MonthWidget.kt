@@ -67,8 +67,6 @@ import com.skestc.calendarwidget.theme.WidgetStyle
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
-import com.skestc.calendarwidget.ui.DateMenuActivity
-import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.DayOfWeek
@@ -166,7 +164,7 @@ class MonthWidget : GlanceAppWidget() {
                 )
                 ?: state
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds, settings.titleTap) {
                     MonthContent(shown)
                 }
             }
@@ -366,10 +364,8 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
         enabled = style.headerButtons,
     )
     val backToThisMonth = actionRunCallback<ChangeMonthAction>(actionParametersOf(ChangeMonthAction.DeltaKey to 0))
-    // 點標題：跳出選單（選擇月份、回到本月、這個月的行程、開自選的日曆 App…）。
-    val pickMonth = actionStartIntent(
-        DateMenuActivity.monthIntent(context, appWidgetIdOrNull(), monthOffset, style.hiddenCalendarIds),
-    )
+    // 點標題：依小工具設定（選單、選擇月份、這個月的行程，或指定的日曆 App）。
+    val pickMonth = titleTapAction(isMonth = true, monthOffset = monthOffset)
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(start = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

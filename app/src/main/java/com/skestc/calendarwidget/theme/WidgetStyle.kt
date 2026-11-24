@@ -26,6 +26,7 @@ import com.skestc.calendarwidget.R
 import com.skestc.calendarwidget.settings.Appearance
 import com.skestc.calendarwidget.settings.FontChoice
 import com.skestc.calendarwidget.settings.HeaderButton
+import com.skestc.calendarwidget.settings.TitleTap
 import androidx.glance.color.ColorProvider as DayNightColorProvider
 
 /** widget 用到的顏色角色（Glance ColorProvider）。 */
@@ -54,6 +55,8 @@ class WidgetStyle(
     val headerButtons: List<HeaderButton> = HeaderButton.entries,
     /** 這個 widget 沒勾選的日曆：點進 App 內的行程檢視時一樣不顯示。 */
     val hiddenCalendarIds: Set<Long> = emptySet(),
+    /** 點左上角的日期／月份標題時要做什麼。 */
+    val titleTap: TitleTap = TitleTap.Menu,
 ) {
     /** 大號數字用圓潤粗體（[ExpressiveText]）；選了襯線／等寬字型時不用。 */
     val roundedNumerals: Boolean get() = fontFamily == null || fontFamily == FontFamily.SansSerif
@@ -87,6 +90,7 @@ fun ProvideWidgetStyle(
     appearance: Appearance,
     headerButtons: List<HeaderButton> = HeaderButton.entries,
     hiddenCalendarIds: Set<Long> = emptySet(),
+    titleTap: TitleTap = TitleTap.Menu,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -107,6 +111,7 @@ fun ProvideWidgetStyle(
         fontFamily = fontFamily,
         headerButtons = headerButtons,
         hiddenCalendarIds = hiddenCalendarIds,
+        titleTap = titleTap,
     )
     CompositionLocalProvider(LocalWidgetStyle provides style, content = content)
 }

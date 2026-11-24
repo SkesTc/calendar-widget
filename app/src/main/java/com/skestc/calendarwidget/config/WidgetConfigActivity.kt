@@ -268,6 +268,19 @@ private fun ConfigScreen(
                     }
                 }
 
+                // 行程清單：點左上角的日期；月曆：點月份標題。要做什麼由這裡決定。
+                if (kind == WidgetKind.AGENDA || kind == WidgetKind.MONTH) item {
+                    Section(
+                        stringResource(if (kind == WidgetKind.MONTH) R.string.title_tap_month else R.string.title_tap_agenda),
+                    ) {
+                        TitleTapPicker(
+                            isMonth = kind == WidgetKind.MONTH,
+                            selected = settings.titleTap,
+                            onSelect = { settings = settings.copy(titleTap = it) },
+                        )
+                    }
+                }
+
                 // 行程清單與月曆：上方的天氣與 AQI 列可以個別關掉。
                 if (kind == WidgetKind.AGENDA || kind == WidgetKind.MONTH) item {
                     Row(

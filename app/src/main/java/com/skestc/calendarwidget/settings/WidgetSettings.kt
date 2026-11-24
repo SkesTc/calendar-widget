@@ -35,6 +35,8 @@ data class WidgetSettings(
     val headerButtons: List<HeaderButton> = HeaderButton.entries,
     /** 行程清單、月曆上方的天氣與 AQI 列（首頁開啟天氣後才有資料）。 */
     val showWeather: Boolean = true,
+    /** 點行程清單左上角的日期、月曆的月份標題時要做什麼。 */
+    val titleTap: TitleTap = TitleTap.Menu,
 ) {
     /** 把使用者在設定頁調整的項目寫回 widget 的狀態，並讓 widget 重新讀取。月份、選取的日期不動。 */
     fun writeTo(prefs: MutablePreferences) {
@@ -52,6 +54,7 @@ data class WidgetSettings(
         prefs[KEY_WEEK_START] = weekStart.name
         prefs[KEY_HEADER_BUTTONS] = headerButtons.map { it.name }.toSet()
         prefs[KEY_SHOW_WEATHER] = showWeather
+        prefs[KEY_TITLE_TAP] = titleTap.key()
         prefs[KEY_REFRESH] = (prefs[KEY_REFRESH] ?: 0L) + 1
     }
 
@@ -77,6 +80,7 @@ data class WidgetSettings(
         val KEY_WEEK_START = stringPreferencesKey("week_start")
         val KEY_HEADER_BUTTONS = stringSetPreferencesKey("header_buttons")
         val KEY_SHOW_WEATHER = booleanPreferencesKey("show_weather")
+        val KEY_TITLE_TAP = stringPreferencesKey("title_tap")
         /** 天氣更新時加一：只讓天氣列重畫，不重新查詢行程（不屬於 [WidgetSettings]，不影響資料快取）。 */
         val KEY_WEATHER_VERSION = longPreferencesKey("weather_version")
 
@@ -108,6 +112,7 @@ data class WidgetSettings(
                 ?.let { names -> HeaderButton.entries.filter { it.name in names } }
                 ?: HeaderButton.entries,
             showWeather = prefs[KEY_SHOW_WEATHER] ?: true,
+            titleTap = TitleTap.fromKey(prefs[KEY_TITLE_TAP]),
         )
     }
 }

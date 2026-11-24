@@ -58,7 +58,6 @@ import com.skestc.calendarwidget.data.AqiLevel
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.WeatherCodes
 import com.skestc.calendarwidget.data.WeatherToday
-import com.skestc.calendarwidget.ui.DateMenuActivity
 import com.skestc.calendarwidget.ui.WeatherDetailActivity
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
@@ -131,7 +130,7 @@ class AgendaWidget : GlanceAppWidget() {
                 load(context, repository, it)
             }
             GlanceTheme {
-                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds) {
+                ProvideWidgetStyle(settings.appearance, settings.headerButtons, settings.hiddenCalendarIds, settings.titleTap) {
                     // 這個 widget 關掉天氣時不顯示（也不必讀快取）。
                     val weather = if (settings.showWeather) rememberWeather(context) else null
                     AgendaContent((state as? AgendaState.Loaded)?.copy(weather = weather) ?: state)
@@ -213,10 +212,8 @@ internal fun AgendaContent(state: AgendaState) {
 private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
-    // 點左上角的日期：跳出選單，選要看今天／本週的行程、開自選的日曆 App、新增或搜尋。
-    val openMenu = actionStartIntent(
-        DateMenuActivity.agendaIntent(LocalContext.current, appWidgetIdOrNull(), style.hiddenCalendarIds),
-    )
+    // 點左上角的日期：依小工具設定（選單、App 內的行程檢視，或指定的日曆 App）。
+    val openMenu = titleTapAction(isMonth = false)
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
