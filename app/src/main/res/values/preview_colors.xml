@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 小工具挑選畫面的預覽配色（淺色，Android 12 以下不會用到，作為預設值） -->
+<resources>
+    <color name="preview_bg">#F3F6FC</color>
+    <color name="preview_card">#DCE3F5</color>
+    <color name="preview_on_card">#131C2B</color>
+    <color name="preview_primary">#1A5FC4</color>
+    <color name="preview_on_primary">#FFFFFF</color>
+    <color name="preview_on_surface">#1B1C1F</color>
+    <color name="preview_variant">#4A4F5A</color>
+    <color name="preview_outline">#8A8F99</color>
+    <color name="preview_sunday">#C5221F</color>
+</resources>

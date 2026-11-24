@@ -1,0 +1,17 @@
+# 啟動設定檔（Baseline Profile）：安裝時預先編譯這些程式碼，不必等執行時再 JIT。
+# 月曆被系統清掉後第一次點按、從桌面開 App、widget 背景更新都會用到。
+# 規則格式見 https://developer.android.com/topic/performance/baselineprofiles/manually-create-measure
+
+# 這個 App 本身（widget、資料、農曆、天氣、畫面）
+HSPLcom/skestc/calendarwidget/**->**(**)**
+Lcom/skestc/calendarwidget/**;
+
+# Glance（widget 的組成與轉成 RemoteViews）
+HSPLandroidx/glance/**->**(**)**
+Landroidx/glance/**;
+
+# Compose runtime 與 DataStore（Glance 用到）
+HSPLandroidx/compose/runtime/**->**(**)**
+Landroidx/compose/runtime/**;
+HSPLandroidx/datastore/**->**(**)**
+Landroidx/datastore/**;
