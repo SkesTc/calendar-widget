@@ -96,9 +96,10 @@ class EventViewerActivity : ComponentActivity() {
         val date = LocalDate.ofEpochDay(intent.getLongExtra(EXTRA_DATE, LocalDate.now().toEpochDay()))
         val hidden = intent.getLongArrayExtra(EXTRA_HIDDEN_CALENDARS)?.toSet().orEmpty()
         val eventId = intent.getLongExtra(EXTRA_EVENT_ID, -1).takeIf { it >= 0 }
+        val mode = intent.getStringExtra(EXTRA_MODE)?.let { runCatching { ViewMode.valueOf(it) }.getOrNull() }
         setContent {
             CalendarWidgetTheme {
-                EventViewerScreen(date, hidden, eventId, onBack = ::finish)
+                EventViewerScreen(date, hidden, eventId, mode, onBack = ::finish)
             }
         }
     }
@@ -107,14 +108,27 @@ class EventViewerActivity : ComponentActivity() {
         private const val EXTRA_DATE = "date"
         private const val EXTRA_HIDDEN_CALENDARS = "hidden_calendars"
         private const val EXTRA_EVENT_ID = "event_id"
+        private const val EXTRA_MODE = "mode"
 
-        fun intent(context: Context, date: LocalDate, hiddenCalendarIds: Set<Long>, eventId: Long? = null): Intent =
+        /** [mode]：指定一開始的範圍（例如從月曆選單開「這個月」）；null 沿用上次選的。 */
+        fun intent(
+            context: Context,
+            date: LocalDate,
+            hiddenCalendarIds: Set<Long>,
+            eventId: Long? = null,
+            mode: ViewMode? = null,
+        ): Intent =
             Intent(context, EventViewerActivity::class.java)
                 .putExtra(EXTRA_DATE, date.toEpochDay())
                 .putExtra(EXTRA_HIDDEN_CALENDARS, hiddenCalendarIds.toLongArray())
                 .putExtra(EXTRA_EVENT_ID, eventId ?: -1L)
+                .putExtra(EXTRA_MODE, mode?.name)
                 // 每個日期、每組日曆各自一個 Intent。
-                .setData(Uri.parse("calendarwidget://view/${date.toEpochDay()}/${eventId ?: -1}/${hiddenCalendarIds.sorted().hashCode()}"))
+                .setData(
+                    Uri.parse(
+                        "calendarwidget://view/${date.toEpochDay()}/${eventId ?: -1}/$mode/${hiddenCalendarIds.sorted().hashCode()}",
+                    ),
+                )
     }
 }
 
@@ -134,12 +148,12 @@ private object ViewerPrefs {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EventViewerScreen(start: LocalDate, hidden: Set<Long>, highlight: Long?, onBack: () -> Unit) {
+private fun EventViewerScreen(start: LocalDate, hidden: Set<Long>, highlight: Long?, startMode: ViewMode?, onBack: () -> Unit) {
     val context = LocalContext.current
     val repository = remember { CalendarRepository(context) }
     val builder = remember { MonthBuilder() }
     var anchor by remember { mutableStateOf(start) }
-    var mode by remember { mutableStateOf(ViewerPrefs.mode(context)) }
+    var mode by remember { mutableStateOf(startMode ?: ViewerPrefs.mode(context)) }
     var days by remember { mutableStateOf<List<ViewDay>?>(null) }
     val range = EventView.range(mode, anchor, builder.firstDayOfWeek)
 

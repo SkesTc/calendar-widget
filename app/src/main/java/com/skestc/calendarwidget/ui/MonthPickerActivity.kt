@@ -80,7 +80,7 @@ class MonthPickerActivity : ComponentActivity() {
                 .setData(Uri.parse("calendarwidget://month-picker/$appWidgetId/$monthOffset"))
 
         /** 把月曆 widget 切到 [month]：存成相對本月的位移，清掉選取的日期，然後馬上重畫。 */
-        private fun jumpTo(context: Context, appWidgetId: Int, month: YearMonth) {
+        internal fun jumpTo(context: Context, appWidgetId: Int, month: YearMonth) {
             if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
             val offset = ChronoUnit.MONTHS.between(YearMonth.now(), month).toInt()
             // 在背景完成（不跟著這個對話框一起被取消）。

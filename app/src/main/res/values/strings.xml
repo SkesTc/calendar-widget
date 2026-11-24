@@ -165,6 +165,11 @@
     <string name="year_title">%1$d</string>
     <string name="previous_year">Previous year</string>
     <string name="next_year">Next year</string>
+    <string name="menu_pick_month">Choose a month…</string>
+    <string name="menu_view_month">This month\'s events</string>
+    <string name="menu_view_today">Today\'s events</string>
+    <string name="menu_view_week">This week\'s events</string>
+    <string name="menu_open_app">Open %1$s</string>
     <string name="tap_timing_title">Month widget response time</string>
     <string name="tap_timing_summary">Last tap: %1$s s (drawing %2$d ms)</string>
     <string name="tap_timing_cold">app had to restart</string>

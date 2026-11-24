@@ -172,13 +172,3 @@ fun openInCalendar(target: Intent, preferredPackage: String? = null, editor: Boo
             hiddenCalendarIds = LocalWidgetStyle.current.hiddenCalendarIds,
         ),
     )
-
-/**
- * 用「＋」設定裡選的日曆 App 開啟（不經過 App 內的行程檢視）：
- * 先試 [target]（例如編輯行程），不接受時再試 [fallback]（例如檢視行程）。
- */
-@Composable
-fun openInChosenApp(target: Intent, fallback: Intent? = null): Action =
-    actionStartIntent(
-        CalendarLaunchActivity.intentFor(LocalContext.current, target, fallback = fallback, chosenApp = true),
-    )

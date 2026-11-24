@@ -58,6 +58,7 @@ import com.skestc.calendarwidget.data.AqiLevel
 import com.skestc.calendarwidget.data.CalendarEvent
 import com.skestc.calendarwidget.data.WeatherCodes
 import com.skestc.calendarwidget.data.WeatherToday
+import com.skestc.calendarwidget.ui.DateMenuActivity
 import com.skestc.calendarwidget.ui.WeatherDetailActivity
 import com.skestc.calendarwidget.data.CalendarRepository
 import com.skestc.calendarwidget.lunar.DayLabeler
@@ -212,10 +213,10 @@ internal fun AgendaContent(state: AgendaState) {
 private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
     val style = LocalWidgetStyle.current
     val locale = Locale.getDefault()
-    // 點大日期：開 App 內的行程檢視（設定可改成開日曆 App）。
-    val openToday = openInCalendar(openDayIntent(today), preferredPackage = EventEditor.GOOGLE_CALENDAR)
-    // 點星期幾那一欄：用選定的日曆 App 開到今天（日曆 App 會用它上次的檢視方式，例如月曆）。
-    val openCalendarApp = openInChosenApp(openDayIntent(today))
+    // 點左上角的日期：跳出選單，選要看今天／本週的行程、開自選的日曆 App、新增或搜尋。
+    val openMenu = actionStartIntent(
+        DateMenuActivity.agendaIntent(LocalContext.current, appWidgetIdOrNull(), style.hiddenCalendarIds),
+    )
     Row(
         modifier = GlanceModifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -224,10 +225,10 @@ private fun DateHeader(today: LocalDate, lunar: String?, schoolWeek: Int?) {
             text = today.dayOfMonth.toString(),
             size = 40,
             color = style.colors.primary,
-            modifier = GlanceModifier.clickable(openToday),
+            modifier = GlanceModifier.clickable(openMenu),
         )
         Spacer(GlanceModifier.width(10.dp))
-        Column(modifier = GlanceModifier.defaultWeight().clickable(openCalendarApp)) {
+        Column(modifier = GlanceModifier.defaultWeight().clickable(openMenu)) {
             Text(
                 text = today.dayOfWeek.getDisplayName(DayTextStyle.FULL, locale),
                 style = style.text(16, style.colors.onSurface, FontWeight.Bold),

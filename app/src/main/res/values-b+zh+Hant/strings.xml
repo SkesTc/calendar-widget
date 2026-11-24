@@ -165,6 +165,11 @@
     <string name="year_title">%1$d 年</string>
     <string name="previous_year">上一年</string>
     <string name="next_year">下一年</string>
+    <string name="menu_pick_month">選擇月份…</string>
+    <string name="menu_view_month">這個月的行程</string>
+    <string name="menu_view_today">今天的行程</string>
+    <string name="menu_view_week">本週的行程</string>
+    <string name="menu_open_app">開啟 %1$s</string>
     <string name="tap_timing_title">月曆反應時間</string>
     <string name="tap_timing_summary">上次點按：%1$s 秒（重畫 %2$d 毫秒）</string>
     <string name="tap_timing_cold">App 剛被喚醒</string>

@@ -67,7 +67,7 @@ import com.skestc.calendarwidget.theme.WidgetStyle
 import com.skestc.calendarwidget.theme.cardBackground
 import com.skestc.calendarwidget.theme.ProvideWidgetStyle
 import com.skestc.calendarwidget.theme.widgetBackground
-import com.skestc.calendarwidget.ui.MonthPickerActivity
+import com.skestc.calendarwidget.ui.DateMenuActivity
 import androidx.glance.appwidget.action.actionStartActivity as actionStartIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -366,10 +366,10 @@ private fun MonthHeader(month: YearMonth, monthOffset: Int, widthDp: Float) {
         enabled = style.headerButtons,
     )
     val backToThisMonth = actionRunCallback<ChangeMonthAction>(actionParametersOf(ChangeMonthAction.DeltaKey to 0))
-    // 點標題：跳出選擇月份的對話框（預覽、測試時沒有 widget id 就照舊回到本月）。
-    val pickMonth = appWidgetIdOrNull()
-        ?.let { actionStartIntent(MonthPickerActivity.intentFor(context, it, monthOffset)) }
-        ?: backToThisMonth
+    // 點標題：跳出選單（選擇月份、回到本月、這個月的行程、開自選的日曆 App…）。
+    val pickMonth = actionStartIntent(
+        DateMenuActivity.monthIntent(context, appWidgetIdOrNull(), monthOffset, style.hiddenCalendarIds),
+    )
     Row(
         modifier = GlanceModifier.fillMaxWidth().padding(start = 4.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,

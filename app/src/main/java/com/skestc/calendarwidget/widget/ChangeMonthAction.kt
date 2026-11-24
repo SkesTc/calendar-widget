@@ -40,7 +40,7 @@ internal suspend fun renderMonthChange(context: Context, glanceId: GlanceId, sta
     if (!cached) {
         MonthCache.requestQuickFrame(glanceId)
         // 反應時間記這一次：使用者看到月份換掉的時間。
-        InstantRender.render(context, widget, glanceId, startedAt, updateAfter = false)
+        InstantRender.render(context, widget, glanceId, startedAt)
     }
     InstantRender.render(context, widget, glanceId, startedAt, recordTiming = cached)
 }
